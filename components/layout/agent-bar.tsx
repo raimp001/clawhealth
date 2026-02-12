@@ -81,6 +81,7 @@ export default function AgentBar() {
           </Link>
           <button
             onClick={() => setExpanded(!expanded)}
+            aria-label={expanded ? "Collapse agent panel" : "Expand agent panel"}
             className="p-0.5 hover:bg-white/10 rounded transition"
           >
             {expanded ? (

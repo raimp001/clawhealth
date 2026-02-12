@@ -139,7 +139,7 @@ export default function BillingPage() {
 
       {/* Claims Table */}
       <div className="bg-white rounded-2xl border border-sand overflow-hidden">
-        <div className="grid grid-cols-[1fr_auto_auto_auto_auto_auto] gap-4 px-5 py-3 bg-cream/50 border-b border-sand text-[10px] font-bold text-warm-500 uppercase tracking-wider">
+        <div className="hidden lg:grid grid-cols-[1fr_auto_auto_auto_auto_auto] gap-4 px-5 py-3 bg-cream/50 border-b border-sand text-[10px] font-bold text-warm-500 uppercase tracking-wider">
           <span>Patient / Claim</span>
           <span className="w-20 text-right">Amount</span>
           <span className="w-20 text-right">Ins. Paid</span>
@@ -153,7 +153,7 @@ export default function BillingPage() {
             return (
               <div
                 key={claim.id}
-                className="grid grid-cols-[1fr_auto_auto_auto_auto_auto] gap-4 px-5 py-3.5 hover:bg-cream/30 transition items-center"
+                className="lg:grid lg:grid-cols-[1fr_auto_auto_auto_auto_auto] gap-4 px-5 py-3.5 hover:bg-cream/30 transition items-center"
               >
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
@@ -178,28 +178,30 @@ export default function BillingPage() {
                     </div>
                   )}
                 </div>
-                <span className="w-20 text-right text-sm font-semibold text-warm-800">
-                  {formatCurrency(claim.total_amount)}
-                </span>
-                <span className="w-20 text-right text-sm text-warm-600">
-                  {formatCurrency(claim.insurance_paid)}
-                </span>
-                <span className="w-20 text-right text-sm text-warm-600">
-                  {formatCurrency(claim.patient_responsibility)}
-                </span>
-                <span className="w-24 text-center">
-                  <span
-                    className={cn(
-                      "text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide inline-block",
-                      getStatusColor(claim.status)
-                    )}
-                  >
-                    {claim.status}
+                <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 lg:mt-0 lg:contents">
+                  <span className="lg:w-20 text-right text-sm font-semibold text-warm-800">
+                    {formatCurrency(claim.total_amount)}
                   </span>
-                </span>
-                <span className="w-24 text-right text-xs text-warm-500">
-                  {formatDate(claim.date_of_service)}
-                </span>
+                  <span className="hidden lg:inline lg:w-20 text-right text-sm text-warm-600">
+                    {formatCurrency(claim.insurance_paid)}
+                  </span>
+                  <span className="hidden lg:inline lg:w-20 text-right text-sm text-warm-600">
+                    {formatCurrency(claim.patient_responsibility)}
+                  </span>
+                  <span className="lg:w-24 lg:text-center">
+                    <span
+                      className={cn(
+                        "text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide inline-block",
+                        getStatusColor(claim.status)
+                      )}
+                    >
+                      {claim.status}
+                    </span>
+                  </span>
+                  <span className="lg:w-24 text-right text-xs text-warm-500">
+                    {formatDate(claim.date_of_service)}
+                  </span>
+                </div>
               </div>
             )
           })}

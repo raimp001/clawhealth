@@ -24,7 +24,7 @@ export default function Topbar() {
       {/* Right side */}
       <div className="flex items-center gap-4">
         {/* Notifications */}
-        <button className="relative p-2 rounded-xl hover:bg-pampas transition">
+        <button aria-label="Notifications" className="relative p-2 rounded-xl hover:bg-pampas transition">
           <Bell size={18} className="text-warm-600" />
           {unread > 0 && (
             <span className="absolute -top-0.5 -right-0.5 bg-terra text-white text-[9px] font-bold rounded-full flex items-center justify-center min-w-[18px] h-[18px]">

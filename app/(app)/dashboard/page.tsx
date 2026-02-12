@@ -29,6 +29,7 @@ import {
   priorAuths,
 } from "@/lib/seed-data"
 import { cn, formatCurrency, formatTime, getStatusColor } from "@/lib/utils"
+import RevenueChart from "@/components/dashboard/revenue-chart"
 
 export default function DashboardPage() {
   const metrics = getDashboardMetrics()
@@ -341,6 +342,9 @@ export default function DashboardPage() {
           )}
         </div>
       </div>
+
+      {/* Revenue Chart */}
+      <RevenueChart />
 
       {/* OpenClaw Agent Activity Feed */}
       <div className="bg-white rounded-2xl border border-sand">

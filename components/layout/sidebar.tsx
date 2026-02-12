@@ -72,6 +72,7 @@ export default function Sidebar() {
         {/* Mobile close button */}
         <button
           onClick={() => setMobileOpen(false)}
+          aria-label="Close navigation"
           className="ml-auto lg:hidden p-1 rounded-lg hover:bg-pampas transition"
         >
           <X size={18} className="text-warm-600" />
