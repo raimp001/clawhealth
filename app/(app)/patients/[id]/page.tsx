@@ -29,15 +29,14 @@ import {
   AlertTriangle,
 } from "lucide-react"
 import Link from "next/link"
-import { use } from "react"
 import AIAction from "@/components/ai-action"
 
 export default function PatientDetailPage({
   params,
 }: {
-  params: Promise<{ id: string }>
+  params: { id: string }
 }) {
-  const { id } = use(params)
+  const { id } = params
   const patient = getPatient(id)
 
   if (!patient) {
