@@ -14,6 +14,8 @@ import {
   ExternalLink,
   Menu,
   X,
+  Stethoscope,
+  Building2,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useState, useEffect } from "react"
@@ -25,6 +27,8 @@ const navItems = [
   { href: "/billing", label: "Billing", icon: Receipt },
   { href: "/prescriptions", label: "Prescriptions", icon: Pill },
   { href: "/prior-auth", label: "Prior Auth", icon: ShieldCheck },
+  { href: "/providers", label: "Providers", icon: Stethoscope },
+  { href: "/pharmacy", label: "Pharmacy", icon: Building2 },
   { href: "/messages", label: "Messages", icon: MessageSquare },
   { href: "/chat", label: "AI Agent", icon: Bot },
 ]

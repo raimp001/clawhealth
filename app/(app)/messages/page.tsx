@@ -19,6 +19,8 @@ export default function MessagesPage() {
   const [selectedPatient, setSelectedPatient] = useState<string | null>(null)
   const [channelFilter, setChannelFilter] = useState("")
   const [convoSearch, setConvoSearch] = useState("")
+  const [newMessage, setNewMessage] = useState("")
+  const [isSending, setIsSending] = useState(false)
 
   // Group messages by patient
   const conversations = useMemo(() => {
@@ -286,10 +288,54 @@ export default function MessagesPage() {
                 <div className="flex gap-2">
                   <input
                     type="text"
+                    value={newMessage}
+                    onChange={(e) => setNewMessage(e.target.value)}
+                    onKeyDown={async (e) => {
+                      if (e.key === "Enter" && newMessage.trim() && !isSending) {
+                        setIsSending(true)
+                        // Send via OpenClaw coordinator agent
+                        try {
+                          await fetch("/api/openclaw/chat", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                              message: newMessage,
+                              agentId: "coordinator",
+                              patientId: activeConvo.patient.id,
+                              channel: "portal",
+                            }),
+                          })
+                        } catch {}
+                        setNewMessage("")
+                        setIsSending(false)
+                      }
+                    }}
                     placeholder="Type a message..."
-                    className="flex-1 px-4 py-2.5 rounded-xl border border-sand bg-cream/50 text-sm placeholder:text-cloudy focus:outline-none focus:border-terra/40 transition"
+                    disabled={isSending}
+                    className="flex-1 px-4 py-2.5 rounded-xl border border-sand bg-cream/50 text-sm placeholder:text-cloudy focus:outline-none focus:border-terra/40 transition disabled:opacity-50"
                   />
-                  <button className="px-4 py-2.5 bg-terra text-white text-sm font-semibold rounded-xl hover:bg-terra-dark transition">
+                  <button
+                    onClick={async () => {
+                      if (!newMessage.trim() || isSending) return
+                      setIsSending(true)
+                      try {
+                        await fetch("/api/openclaw/chat", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({
+                            message: newMessage,
+                            agentId: "coordinator",
+                            patientId: activeConvo.patient.id,
+                            channel: "portal",
+                          }),
+                        })
+                      } catch {}
+                      setNewMessage("")
+                      setIsSending(false)
+                    }}
+                    disabled={isSending || !newMessage.trim()}
+                    className="px-4 py-2.5 bg-terra text-white text-sm font-semibold rounded-xl hover:bg-terra-dark transition disabled:opacity-50"
+                  >
                     Send
                   </button>
                 </div>
