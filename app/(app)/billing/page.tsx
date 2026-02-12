@@ -70,7 +70,7 @@ export default function BillingPage() {
   }, [statusFilter])
 
   const statuses = useMemo(
-    () => [...new Set(claims.map((c) => c.status))],
+    () => Array.from(new Set(claims.map((c) => c.status))),
     []
   )
 

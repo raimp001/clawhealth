@@ -10,7 +10,7 @@ export default function PrescriptionsPage() {
   const [statusFilter, setStatusFilter] = useState("")
 
   const statuses = useMemo(
-    () => [...new Set(prescriptions.map((p) => p.status))],
+    () => Array.from(new Set(prescriptions.map((p) => p.status))),
     []
   )
 

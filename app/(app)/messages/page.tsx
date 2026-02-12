@@ -59,7 +59,7 @@ export default function MessagesPage() {
   }, [activeConvo, channelFilter])
 
   const channels = useMemo(
-    () => [...new Set(messages.map((m) => m.channel))],
+    () => Array.from(new Set(messages.map((m) => m.channel))),
     []
   )
 

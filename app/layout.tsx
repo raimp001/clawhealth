@@ -21,7 +21,7 @@ export const metadata: Metadata = {
   title: "ClawHealth — AI Healthcare Agent | Powered by OpenClaw",
   description:
     "AI-powered healthcare clinic management platform. Smart scheduling, billing, prior auth, prescriptions, care coordination, and more.",
-  metadataBase: new URL("https://clawhealth.vercel.app"),
+  metadataBase: new URL("https://clawhealth.io"),
   openGraph: {
     title: "ClawHealth — AI Healthcare Agent",
     description: "Smart scheduling, billing, prior auth, prescriptions & care coordination.",

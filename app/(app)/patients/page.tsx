@@ -11,7 +11,7 @@ export default function PatientsPage() {
   const [insuranceFilter, setInsuranceFilter] = useState("")
 
   const insuranceProviders = useMemo(
-    () => [...new Set(patients.map((p) => p.insurance_provider))],
+    () => Array.from(new Set(patients.map((p) => p.insurance_provider))),
     []
   )
 
