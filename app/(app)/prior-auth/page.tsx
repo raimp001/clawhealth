@@ -10,6 +10,7 @@ import {
   Clock,
   Send,
 } from "lucide-react"
+import AIAction from "@/components/ai-action"
 
 export default function PriorAuthPage() {
   const pending = priorAuths.filter(
@@ -33,24 +34,32 @@ export default function PriorAuthPage() {
 
   return (
     <div className="animate-slide-up space-y-6">
-      <div>
-        <h1 className="text-2xl font-serif text-warm-800">
-          Prior Authorizations
-        </h1>
-        <p className="text-sm text-warm-500 mt-1">
-          {priorAuths.length} total &middot;{" "}
-          <span className="text-yellow-600 font-medium">
-            {pending.length} pending
-          </span>{" "}
-          &middot;{" "}
-          <span className="text-accent font-medium">
-            {approved.length} approved
-          </span>{" "}
-          &middot;{" "}
-          <span className="text-soft-red font-medium">
-            {denied.length} denied
-          </span>
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-serif text-warm-800">
+            Prior Authorizations
+          </h1>
+          <p className="text-sm text-warm-500 mt-1">
+            {priorAuths.length} total &middot;{" "}
+            <span className="text-yellow-600 font-medium">
+              {pending.length} pending
+            </span>{" "}
+            &middot;{" "}
+            <span className="text-accent font-medium">
+              {approved.length} approved
+            </span>{" "}
+            &middot;{" "}
+            <span className="text-soft-red font-medium">
+              {denied.length} denied
+            </span>
+          </p>
+        </div>
+        <AIAction
+          agentId="prior-auth"
+          label="Check All PA Status"
+          prompt="Check the status of all pending and submitted prior authorizations. For any that are past expected turnaround time, escalate. For denied PAs, prepare peer-to-peer review materials."
+          context={`Pending: ${pending.length}, Denied: ${denied.length}`}
+        />
       </div>
 
       {/* Summary Stats */}
@@ -155,7 +164,27 @@ export default function PriorAuthPage() {
                       <p className="text-xs text-soft-red">
                         {pa.denial_reason}
                       </p>
+                      <AIAction
+                        agentId="prior-auth"
+                        label="Prepare Appeal"
+                        prompt={`Prepare a peer-to-peer review appeal for denied PA ${pa.reference_number}. Denial: "${pa.denial_reason}". Gather additional clinical evidence to support medical necessity.`}
+                        context={`Patient: ${getPatient(pa.patient_id)?.full_name}, Procedure: ${pa.procedure_name} (${pa.procedure_code}), ICD: ${pa.icd_codes.join(",")}, Insurer: ${pa.insurance_provider}`}
+                        variant="compact"
+                        className="mt-2"
+                      />
                     </div>
+                  )}
+                  {(pa.status === "pending" || pa.status === "submitted") && (
+                    <AIAction
+                      agentId="prior-auth"
+                      label={pa.status === "pending" ? "AI Submit" : "Check Status"}
+                      prompt={pa.status === "pending"
+                        ? `Auto-fill and submit prior authorization for ${pa.procedure_name}. Match clinical criteria to ${pa.insurance_provider} requirements and submit via ePA.`
+                        : `Check the current status of PA ${pa.reference_number} with ${pa.insurance_provider}. If past expected turnaround, escalate.`}
+                      context={`Patient: ${getPatient(pa.patient_id)?.full_name}, CPT: ${pa.procedure_code}, Insurer: ${pa.insurance_provider}`}
+                      variant="compact"
+                      className="mt-2"
+                    />
                   )}
                 </div>
                 <div className="text-right shrink-0">

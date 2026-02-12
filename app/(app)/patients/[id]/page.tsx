@@ -30,6 +30,7 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import { use } from "react"
+import AIAction from "@/components/ai-action"
 
 export default function PatientDetailPage({
   params,
@@ -151,6 +152,31 @@ export default function PatientDetailPage({
               </span>
             </div>
           )}
+
+          {/* AI Actions for this patient */}
+          <div className="mt-4 pt-4 border-t border-sand flex flex-wrap gap-2">
+            <AIAction
+              agentId="coordinator"
+              label="Message Patient"
+              prompt={`Draft a personalized check-in message for ${patient.full_name}. Consider their active conditions, upcoming appointments, and any adherence concerns.`}
+              context={`Conditions: ${patient.medical_history.map(h => `${h.condition} (${h.status})`).join(", ")}, Allergies: ${patient.allergies.join(", ") || "None"}, Insurance: ${patient.insurance_provider}`}
+              variant="inline"
+            />
+            <AIAction
+              agentId="rx"
+              label="Check Medications"
+              prompt={`Review all active medications for ${patient.full_name}. Check for drug-drug interactions, adherence issues, and upcoming refill needs.`}
+              context={`Patient: ${patient.full_name}, Active Rx: ${prescriptionsData.filter(r => r.status === "active").map(r => `${r.medication_name} ${r.dosage}`).join(", ")}`}
+              variant="inline"
+            />
+            <AIAction
+              agentId="billing"
+              label="Review Claims"
+              prompt={`Analyze all claims for ${patient.full_name}. Check for errors, denied claims needing appeal, and outstanding patient responsibility.`}
+              context={`Patient: ${patient.full_name}, Claims: ${claimsData.length}, Insurance: ${patient.insurance_provider} ${patient.insurance_plan}`}
+              variant="inline"
+            />
+          </div>
         </div>
       </div>
 

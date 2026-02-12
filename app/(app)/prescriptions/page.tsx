@@ -4,6 +4,7 @@ import { prescriptions, getPatient, getPhysician } from "@/lib/seed-data"
 import { cn, formatDate, getStatusColor } from "@/lib/utils"
 import { Pill, Search, AlertTriangle, RefreshCw, CheckCircle2 } from "lucide-react"
 import { useState, useMemo } from "react"
+import AIAction from "@/components/ai-action"
 
 export default function PrescriptionsPage() {
   const [search, setSearch] = useState("")
@@ -35,18 +36,34 @@ export default function PrescriptionsPage() {
 
   return (
     <div className="animate-slide-up space-y-6">
-      <div>
-        <h1 className="text-2xl font-serif text-warm-800">Prescriptions</h1>
-        <p className="text-sm text-warm-500 mt-1">
-          {prescriptions.length} prescriptions &middot;{" "}
-          <span className="text-soft-red font-medium">
-            {lowAdherenceCount} low adherence
-          </span>{" "}
-          &middot;{" "}
-          <span className="text-yellow-600 font-medium">
-            {pendingRefills} pending refills
-          </span>
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-serif text-warm-800">Prescriptions</h1>
+          <p className="text-sm text-warm-500 mt-1">
+            {prescriptions.length} prescriptions &middot;{" "}
+            <span className="text-soft-red font-medium">
+              {lowAdherenceCount} low adherence
+            </span>{" "}
+            &middot;{" "}
+            <span className="text-yellow-600 font-medium">
+              {pendingRefills} pending refills
+            </span>
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <AIAction
+            agentId="rx"
+            label="Check Adherence"
+            prompt="Run a full adherence check on all active prescriptions. For patients below 80%, suggest interventions and draft outreach messages."
+            context={`Low adherence: ${lowAdherenceCount} patients, Pending refills: ${pendingRefills}`}
+          />
+          <AIAction
+            agentId="rx"
+            label="Send Refill Alerts"
+            prompt="Identify all prescriptions that need refills within the next 7 days and send automated reminders to patients via their preferred channel."
+            variant="inline"
+          />
+        </div>
       </div>
 
       {/* Filters */}
@@ -201,6 +218,18 @@ export default function PrescriptionsPage() {
                   Last filled {formatDate(rx.last_filled)}
                 </div>
                 <div className="text-[10px] text-cloudy">{rx.pharmacy}</div>
+                {(isLowAdherence || rx.status === "pending-refill") && (
+                  <AIAction
+                    agentId="rx"
+                    label={isLowAdherence ? "AI Outreach" : "AI Refill"}
+                    prompt={isLowAdherence
+                      ? `Patient has ${rx.adherence_pct}% adherence for ${rx.medication_name}. Draft a personalized outreach message with tips to improve compliance.`
+                      : `Process refill request for ${rx.medication_name} ${rx.dosage} at ${rx.pharmacy}.`}
+                    context={`Patient: ${getPatient(rx.patient_id)?.full_name}, Medication: ${rx.medication_name} ${rx.dosage}, Adherence: ${rx.adherence_pct}%`}
+                    variant="compact"
+                    className="mt-1.5 justify-end"
+                  />
+                )}
               </div>
             </div>
           )

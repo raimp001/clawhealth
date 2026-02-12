@@ -5,6 +5,7 @@ import { cn, formatTime, formatDate, getStatusColor } from "@/lib/utils"
 import { Video, AlertTriangle } from "lucide-react"
 import Link from "next/link"
 import { useState, useMemo } from "react"
+import AIAction from "@/components/ai-action"
 
 type ViewMode = "today" | "upcoming" | "past"
 
@@ -48,12 +49,28 @@ export default function SchedulingPage() {
 
   return (
     <div className="animate-slide-up space-y-6">
-      <div>
-        <h1 className="text-2xl font-serif text-warm-800">Scheduling</h1>
-        <p className="text-sm text-warm-500 mt-1">
-          {todayApts.length} appointments today &middot; {upcomingApts.length}{" "}
-          upcoming
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-serif text-warm-800">Scheduling</h1>
+          <p className="text-sm text-warm-500 mt-1">
+            {todayApts.length} appointments today &middot; {upcomingApts.length}{" "}
+            upcoming
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <AIAction
+            agentId="scheduling"
+            label="Find Open Slots"
+            prompt="Check all physician availability for the next 7 days and suggest optimal appointment slots. Consider insurance networks, copay estimates, and existing schedule density."
+            context={`Today's appointments: ${todayApts.length}, Upcoming: ${upcomingApts.length}`}
+          />
+          <AIAction
+            agentId="scheduling"
+            label="Send Reminders"
+            prompt="Generate and send appointment reminders for all scheduled appointments tomorrow. Include time, physician name, location, and copay estimate."
+            variant="inline"
+          />
+        </div>
       </div>
 
       {/* Today Status Summary */}

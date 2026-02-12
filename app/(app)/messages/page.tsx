@@ -13,6 +13,7 @@ import {
   Wifi,
 } from "lucide-react"
 import { useState, useMemo } from "react"
+import AIAction from "@/components/ai-action"
 
 export default function MessagesPage() {
   const [selectedPatient, setSelectedPatient] = useState<string | null>(null)
@@ -281,7 +282,7 @@ export default function MessagesPage() {
               </div>
 
               {/* Input */}
-              <div className="px-5 py-3 border-t border-sand">
+              <div className="px-5 py-3 border-t border-sand space-y-2">
                 <div className="flex gap-2">
                   <input
                     type="text"
@@ -291,6 +292,22 @@ export default function MessagesPage() {
                   <button className="px-4 py-2.5 bg-terra text-white text-sm font-semibold rounded-xl hover:bg-terra-dark transition">
                     Send
                   </button>
+                </div>
+                <div className="flex items-center gap-2">
+                  <AIAction
+                    agentId="coordinator"
+                    label="AI Draft Reply"
+                    prompt={`Draft a professional reply to the most recent message from ${activeConvo.patient.full_name}. Consider their medical history and current context.`}
+                    context={`Patient: ${activeConvo.patient.full_name}, Last message: "${activeConvo.messages[activeConvo.messages.length - 1]?.content.slice(0, 200)}"`}
+                    variant="compact"
+                  />
+                  <AIAction
+                    agentId="triage"
+                    label="AI Triage"
+                    prompt={`Assess the recent messages from ${activeConvo.patient.full_name} for clinical urgency. Classify as EMERGENCY, URGENT, or ROUTINE and suggest appropriate next steps.`}
+                    context={`Patient: ${activeConvo.patient.full_name}, Recent messages: ${activeConvo.messages.slice(-3).map(m => m.content.slice(0, 100)).join(" | ")}`}
+                    variant="compact"
+                  />
                 </div>
               </div>
             </>

@@ -11,6 +11,7 @@ import {
   Filter,
 } from "lucide-react"
 import { useState, useMemo } from "react"
+import AIAction from "@/components/ai-action"
 
 export default function BillingPage() {
   const [statusFilter, setStatusFilter] = useState("")
@@ -73,13 +74,29 @@ export default function BillingPage() {
 
   return (
     <div className="animate-slide-up space-y-6">
-      <div>
-        <h1 className="text-2xl font-serif text-warm-800">Billing & Claims</h1>
-        <p className="text-sm text-warm-500 mt-1">
-          {claims.length} total claims &middot;{" "}
-          {claims.filter((c) => c.errors_detected.length > 0).length} with
-          errors
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-serif text-warm-800">Billing & Claims</h1>
+          <p className="text-sm text-warm-500 mt-1">
+            {claims.length} total claims &middot;{" "}
+            {claims.filter((c) => c.errors_detected.length > 0).length} with
+            errors
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <AIAction
+            agentId="billing"
+            label="Scan All Claims"
+            prompt="Analyze all current claims for billing errors, missing modifiers, CPT/ICD mismatches, and denial risks. Prioritize by potential revenue impact."
+            context={`Total claims: ${claims.length}, Denied: ${claims.filter(c => c.status === "denied").length}, With errors: ${claims.filter(c => c.errors_detected.length > 0).length}`}
+          />
+          <AIAction
+            agentId="billing"
+            label="Draft Appeals"
+            prompt="For all denied claims, draft appeal letters with supporting clinical documentation references, LCD/NCD criteria citations, and corrective actions."
+            variant="inline"
+          />
+        </div>
       </div>
 
       {/* Stat Cards */}
@@ -176,6 +193,18 @@ export default function BillingPage() {
                     <div className="text-[10px] text-soft-red mt-0.5 truncate">
                       {claim.denial_reason}
                     </div>
+                  )}
+                  {(claim.status === "denied" || claim.errors_detected.length > 0) && (
+                    <AIAction
+                      agentId="billing"
+                      label={claim.status === "denied" ? "AI Appeal" : "AI Analyze"}
+                      prompt={claim.status === "denied"
+                        ? `Draft an appeal for denied claim ${claim.claim_number}. Denial reason: "${claim.denial_reason}". Include clinical justification.`
+                        : `Analyze claim ${claim.claim_number} for errors and suggest corrections.`}
+                      context={`Patient: ${getPatient(claim.patient_id)?.full_name}, CPT: ${claim.cpt_codes.join(",")}, ICD: ${claim.icd_codes.join(",")}, Amount: $${claim.total_amount}`}
+                      variant="compact"
+                      className="mt-1.5"
+                    />
                   )}
                 </div>
                 <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 lg:mt-0 lg:contents">
