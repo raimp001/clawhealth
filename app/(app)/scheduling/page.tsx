@@ -2,7 +2,7 @@
 
 import { appointments, getPatient, getPhysician, physicians } from "@/lib/seed-data"
 import { cn, formatTime, formatDate, getStatusColor } from "@/lib/utils"
-import { Calendar, Clock, User, Filter, Video, AlertTriangle } from "lucide-react"
+import { Video, AlertTriangle } from "lucide-react"
 import Link from "next/link"
 import { useState, useMemo } from "react"
 

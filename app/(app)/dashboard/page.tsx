@@ -9,8 +9,6 @@ import {
   MessageSquare,
   AlertTriangle,
   TrendingUp,
-  Clock,
-  CheckCircle2,
   XCircle,
   ArrowRight,
 } from "lucide-react"

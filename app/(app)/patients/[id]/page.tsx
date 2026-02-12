@@ -27,7 +27,6 @@ import {
   MapPin,
   ShieldCheck,
   AlertTriangle,
-  Heart,
 } from "lucide-react"
 import Link from "next/link"
 import { use } from "react"
@@ -165,7 +164,7 @@ export default function PatientDetailPage({
             </h2>
           </div>
           <div className="divide-y divide-sand/50 max-h-[300px] overflow-y-auto">
-            {appointments
+            {[...appointments]
               .sort(
                 (a, b) =>
                   new Date(b.scheduled_at).getTime() -
@@ -288,7 +287,7 @@ export default function PatientDetailPage({
             </h2>
           </div>
           <div className="divide-y divide-sand/50 max-h-[300px] overflow-y-auto">
-            {messagesData
+            {[...messagesData]
               .sort(
                 (a, b) =>
                   new Date(b.created_at).getTime() -

@@ -5,14 +5,11 @@ import { cn, formatCurrency, formatDate, getStatusColor } from "@/lib/utils"
 import {
   Receipt,
   AlertTriangle,
-  TrendingUp,
-  DollarSign,
   XCircle,
   CheckCircle2,
   Clock,
   Filter,
 } from "lucide-react"
-import Link from "next/link"
 import { useState, useMemo } from "react"
 
 export default function BillingPage() {

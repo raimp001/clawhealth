@@ -7,9 +7,9 @@ export default function Topbar() {
   const unread = messages.filter((m) => !m.read).length
 
   return (
-    <header className="sticky top-0 z-30 h-16 border-b border-sand bg-white/80 backdrop-blur-sm flex items-center justify-between px-6">
+    <header className="sticky top-0 z-30 h-16 border-b border-sand bg-white/80 backdrop-blur-sm flex items-center justify-between px-4 lg:px-6">
       {/* Search */}
-      <div className="relative w-80">
+      <div className="relative w-full max-w-xs lg:max-w-sm ml-10 lg:ml-0">
         <Search
           size={16}
           className="absolute left-3 top-1/2 -translate-y-1/2 text-cloudy"
@@ -27,7 +27,7 @@ export default function Topbar() {
         <button className="relative p-2 rounded-xl hover:bg-pampas transition">
           <Bell size={18} className="text-warm-600" />
           {unread > 0 && (
-            <span className="absolute -top-0.5 -right-0.5 w-4.5 h-4.5 bg-terra text-white text-[9px] font-bold rounded-full flex items-center justify-center min-w-[18px] h-[18px]">
+            <span className="absolute -top-0.5 -right-0.5 bg-terra text-white text-[9px] font-bold rounded-full flex items-center justify-center min-w-[18px] h-[18px]">
               {unread}
             </span>
           )}

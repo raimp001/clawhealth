@@ -16,6 +16,7 @@ import { useState, useMemo } from "react"
 export default function MessagesPage() {
   const [selectedPatient, setSelectedPatient] = useState<string | null>(null)
   const [channelFilter, setChannelFilter] = useState("")
+  const [convoSearch, setConvoSearch] = useState("")
 
   // Group messages by patient
   const conversations = useMemo(() => {
@@ -43,13 +44,21 @@ export default function MessagesPage() {
     )
   }, [])
 
+  const filteredConversations = useMemo(() => {
+    if (!convoSearch) return conversations
+    const q = convoSearch.toLowerCase()
+    return conversations.filter((c) =>
+      c.patient.full_name.toLowerCase().includes(q)
+    )
+  }, [conversations, convoSearch])
+
   const activeConvo = selectedPatient
     ? conversations.find((c) => c.patient.id === selectedPatient)
     : conversations[0]
 
   const activeMessages = useMemo(() => {
     if (!activeConvo) return []
-    let msgs = activeConvo.messages
+    let msgs = [...activeConvo.messages]
     if (channelFilter) {
       msgs = msgs.filter((m) => m.channel === channelFilter)
     }
@@ -103,7 +112,7 @@ export default function MessagesPage() {
         </p>
       </div>
 
-      <div className="grid grid-cols-[300px_1fr] gap-4 h-[calc(100vh-220px)]">
+      <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-4 h-[calc(100vh-220px)]">
         {/* Conversation List */}
         <div className="bg-white rounded-2xl border border-sand overflow-hidden flex flex-col">
           <div className="p-3 border-b border-sand">
@@ -114,13 +123,15 @@ export default function MessagesPage() {
               />
               <input
                 type="text"
+                value={convoSearch}
+                onChange={(e) => setConvoSearch(e.target.value)}
                 placeholder="Search conversations..."
                 className="w-full pl-9 pr-3 py-2 rounded-lg border border-sand bg-cream/50 text-xs focus:outline-none focus:border-terra/40 transition"
               />
             </div>
           </div>
           <div className="flex-1 overflow-y-auto divide-y divide-sand/50">
-            {conversations.map((conv) => {
+            {filteredConversations.map((conv) => {
               const lastMsg = conv.messages[conv.messages.length - 1]
               const isActive =
                 (selectedPatient || conversations[0]?.patient.id) ===

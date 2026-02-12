@@ -2,7 +2,7 @@
 
 import { patients, getPhysician, getPatientAppointments, getPatientPrescriptions } from "@/lib/seed-data"
 import { cn, getInitials, formatDate, getStatusColor } from "@/lib/utils"
-import { Search, Filter, Phone, Mail, Calendar, Pill, ChevronRight } from "lucide-react"
+import { Search, Filter, Phone, Calendar, Pill, ChevronRight } from "lucide-react"
 import Link from "next/link"
 import { useState, useMemo } from "react"
 

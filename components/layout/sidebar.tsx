@@ -12,8 +12,11 @@ import {
   MessageSquare,
   Bot,
   ExternalLink,
+  Menu,
+  X,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useState, useEffect } from "react"
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -28,9 +31,24 @@ const navItems = [
 
 export default function Sidebar() {
   const pathname = usePathname()
+  const [mobileOpen, setMobileOpen] = useState(false)
 
-  return (
-    <aside className="fixed left-0 top-0 z-40 h-screen w-[240px] border-r border-sand bg-white flex flex-col">
+  // Close mobile sidebar on route change
+  useEffect(() => {
+    setMobileOpen(false)
+  }, [pathname])
+
+  // Close on escape key
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMobileOpen(false)
+    }
+    document.addEventListener("keydown", handleEscape)
+    return () => document.removeEventListener("keydown", handleEscape)
+  }, [])
+
+  const sidebarContent = (
+    <>
       {/* Logo */}
       <div className="flex items-center gap-3 px-5 py-5 border-b border-sand">
         <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-terra to-terra-dark flex items-center justify-center">
@@ -51,6 +69,13 @@ export default function Sidebar() {
             Powered by OpenClaw
           </p>
         </div>
+        {/* Mobile close button */}
+        <button
+          onClick={() => setMobileOpen(false)}
+          className="ml-auto lg:hidden p-1 rounded-lg hover:bg-pampas transition"
+        >
+          <X size={18} className="text-warm-600" />
+        </button>
       </div>
 
       {/* Nav */}
@@ -96,6 +121,42 @@ export default function Sidebar() {
           </p>
         </div>
       </div>
-    </aside>
+    </>
+  )
+
+  return (
+    <>
+      {/* Mobile hamburger button */}
+      <button
+        onClick={() => setMobileOpen(true)}
+        className="fixed top-4 left-4 z-50 lg:hidden p-2 bg-white rounded-xl border border-sand shadow-sm hover:shadow-md transition"
+        aria-label="Open navigation"
+      >
+        <Menu size={20} className="text-warm-700" />
+      </button>
+
+      {/* Mobile overlay */}
+      {mobileOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm lg:hidden"
+          onClick={() => setMobileOpen(false)}
+        />
+      )}
+
+      {/* Mobile sidebar */}
+      <aside
+        className={cn(
+          "fixed left-0 top-0 z-50 h-screen w-[280px] border-r border-sand bg-white flex flex-col transition-transform duration-300 lg:hidden",
+          mobileOpen ? "translate-x-0" : "-translate-x-full"
+        )}
+      >
+        {sidebarContent}
+      </aside>
+
+      {/* Desktop sidebar */}
+      <aside className="hidden lg:flex fixed left-0 top-0 z-40 h-screen w-[240px] border-r border-sand bg-white flex-col">
+        {sidebarContent}
+      </aside>
+    </>
   )
 }
