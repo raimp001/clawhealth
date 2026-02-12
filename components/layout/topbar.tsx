@@ -37,12 +37,12 @@ export default function Topbar() {
         <div className="flex items-center gap-3 pl-4 border-l border-sand">
           <div className="text-right">
             <p className="text-sm font-semibold text-warm-800">
-              Dr. Silbermann
+              Dr. Rai
             </p>
-            <p className="text-[10px] text-cloudy">Hematology/Oncology</p>
+            <p className="text-[10px] text-cloudy">Internal Medicine</p>
           </div>
           <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-terra to-terra-dark flex items-center justify-center text-cream text-sm font-bold font-serif">
-            SS
+            MR
           </div>
         </div>
       </div>

@@ -69,7 +69,7 @@ function getDemoResponse(agentId: AgentId, message: string): string {
       return "I'm the ClawHealth AI Coordinator. I can help with:\n\n• 📅 Scheduling appointments\n• 💳 Billing & claims questions\n• 💊 Prescription management\n• 🛡️ Prior authorizations\n• 🏥 Symptom triage\n\nWhat can I help you with today?"
 
     case "scheduling":
-      return "I've checked your insurance network and physician availability.\n\nAvailable slots this week:\n• Dr. Silbermann — Thu 9:30 AM (est. copay $40)\n• Dr. Chen — Fri 2:00 PM (est. copay $35)\n• Dr. Rivera — Mon 10:00 AM (est. copay $40)\n\nWould you like to book one of these? I'll send pre-visit forms and set a reminder automatically."
+      return "I've checked your insurance network and physician availability.\n\nAvailable slots this week:\n• Dr. Rai — Thu 9:30 AM (est. copay $40)\n• Dr. Chen — Fri 2:00 PM (est. copay $35)\n• Dr. Rivera — Mon 10:00 AM (est. copay $40)\n\nWould you like to book one of these? I'll send pre-visit forms and set a reminder automatically."
 
     case "billing":
       return "I've analyzed your recent claims and found potential issues:\n\n✅ Claim BCB-2026-44201: Paid correctly ($285)\n⚠️ Claim MCR-2026-28744: Denied — missing prior auth for CPT 94060\n   → I can file a retroactive PA and appeal. Potential recovery: $1,200\n🔴 Claim BCB-2026-41882: Billed for no-show in error\n   → I'll flag this for correction\n\nShall I proceed with the appeal and correction?"

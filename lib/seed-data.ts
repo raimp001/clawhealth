@@ -127,9 +127,9 @@ export const physicians: Physician[] = [
   {
     id: "ph-001",
     email: "silbermann@ohsu.edu",
-    full_name: "Dr. Sarah Silbermann",
-    specialty: "Hematology/Oncology",
-    credentials: "MD, PhD, FACP",
+    full_name: "Dr. Manoj Rai",
+    specialty: "Internal Medicine",
+    credentials: "MD, MBA",
     phone: "(503) 494-8311",
     available_days: ["Mon", "Tue", "Wed", "Thu", "Fri"],
     available_start: "08:00",
@@ -566,7 +566,7 @@ export const messages: Message[] = [
   { id: "msg-002", patient_id: "pt-001", physician_id: "ph-002", sender_type: "physician", content: "James, please send me your readings for the past 7 days. Don't adjust the dose yet. We'll review at your next visit.", channel: "portal", read: true, created_at: daysAgo(2) },
   { id: "msg-003", patient_id: "pt-001", physician_id: "ph-002", sender_type: "patient", content: "Here are my readings: Mon 185, Tue 192, Wed 178, Thu 201, Fri 188, Sat 195, Sun 183. All fasting.", channel: "portal", read: true, created_at: daysAgo(1) },
   { id: "msg-004", patient_id: "pt-001", physician_id: "ph-002", sender_type: "agent", content: "Automated analysis: Average fasting glucose 189 mg/dL (target <130). Trending up from last month's average of 162. Flagged for physician review.", channel: "portal", read: true, created_at: daysAgo(1) },
-  { id: "msg-005", patient_id: "pt-002", physician_id: "ph-001", sender_type: "patient", content: "Dr. Silbermann, I've been having more nausea after my last chemo session. The ondansetron helps but wears off.", channel: "sms", read: true, created_at: daysAgo(3) },
+  { id: "msg-005", patient_id: "pt-002", physician_id: "ph-001", sender_type: "patient", content: "Dr. Rai, I've been having more nausea after my last chemo session. The ondansetron helps but wears off.", channel: "sms", read: true, created_at: daysAgo(3) },
   { id: "msg-006", patient_id: "pt-002", physician_id: "ph-001", sender_type: "physician", content: "Maria, I'm adding a prescription for prochlorperazine as a backup. Take it if ondansetron isn't enough. Stay hydrated.", channel: "sms", read: true, created_at: daysAgo(3) },
   { id: "msg-007", patient_id: "pt-003", physician_id: "ph-003", sender_type: "system", content: "Reminder: Your appointment with Dr. Rivera is tomorrow at 10:00 AM. Please arrive 15 minutes early.", channel: "sms", read: false, created_at: daysAgo(0) },
   { id: "msg-008", patient_id: "pt-004", physician_id: null, sender_type: "agent", content: "Sarah, you missed your migraine follow-up on Jan 12. Would you like to reschedule? Dr. Chen has availability this Thursday at 11 AM or Friday at 2 PM.", channel: "sms", read: false, created_at: daysAgo(5) },
@@ -575,7 +575,7 @@ export const messages: Message[] = [
   { id: "msg-011", patient_id: "pt-009", physician_id: "ph-004", sender_type: "agent", content: "ALERT: Patient Foster reports 4lb weight gain in 2 days with peripheral edema. Heart failure exacerbation risk. Flagged as URGENT for Dr. Park.", channel: "portal", read: false, created_at: daysAgo(0) },
   { id: "msg-012", patient_id: "pt-010", physician_id: "ph-001", sender_type: "agent", content: "Amanda, your iron supplement adherence has been 65% this month. Taking ferrous sulfate consistently is important for treating your anemia. Would you like tips on managing side effects?", channel: "sms", read: false, created_at: daysAgo(1) },
   { id: "msg-013", patient_id: "pt-010", physician_id: "ph-001", sender_type: "patient", content: "Yes please. It upsets my stomach and I keep forgetting the third dose.", channel: "sms", read: true, created_at: daysAgo(1) },
-  { id: "msg-014", patient_id: "pt-010", physician_id: "ph-001", sender_type: "agent", content: "Tips: 1) Take with vitamin C (orange juice helps). 2) If stomach upset persists, try taking with a small snack. 3) I'll set reminders at 8 AM, 2 PM, and 8 PM. Dr. Silbermann may also consider switching to every-other-day dosing at your visit.", channel: "sms", read: false, created_at: daysAgo(1) },
+  { id: "msg-014", patient_id: "pt-010", physician_id: "ph-001", sender_type: "agent", content: "Tips: 1) Take with vitamin C (orange juice helps). 2) If stomach upset persists, try taking with a small snack. 3) I'll set reminders at 8 AM, 2 PM, and 8 PM. Dr. Rai may also consider switching to every-other-day dosing at your visit.", channel: "sms", read: false, created_at: daysAgo(1) },
 ]
 
 // ── Conversation Demos (from pitch) ────────────────────
@@ -587,7 +587,7 @@ export const CHAT_DEMOS = [
     messages: [
       { role: "patient" as const, content: "I need to see an oncologist. I have Blue Cross PPO. Mornings work best." },
       { role: "agent" as const, content: "Checking Blue Cross PPO network...\n\nFound 3 in-network oncologists at OHSU with morning openings:" },
-      { role: "agent" as const, content: "Dr. Silbermann — Hematology/Oncology\nNext available: Feb 14, 9:30 AM\nCopay: $40 | 4.9★ (312 reviews)\n\nShall I book and send pre-visit forms?" },
+      { role: "agent" as const, content: "Dr. Rai — Internal Medicine\nNext available: Feb 14, 9:30 AM\nCopay: $40 | 4.9★ (312 reviews)\n\nShall I book and send pre-visit forms?" },
       { role: "patient" as const, content: "Yes, book it." },
       { role: "agent" as const, content: "Confirmed: Feb 14 at 9:30 AM.\n\n• Pre-visit questionnaire sent\n• Directions shared to maps\n• Reminder set for Feb 13, 8 PM\n• Please bring current medication list" },
     ],

@@ -110,7 +110,7 @@ export default function DashboardPage() {
             : new Date().getHours() < 17
             ? "afternoon"
             : "evening"}
-          , Dr. Silbermann
+          , Dr. Rai
         </h1>
         <p className="text-sm text-warm-500 mt-1">
           {new Date().toLocaleDateString("en-US", {
