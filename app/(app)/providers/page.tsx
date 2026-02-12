@@ -5,12 +5,9 @@ import {
   Search,
   MapPin,
   Phone,
-  User,
   Stethoscope,
   Loader2,
-  ChevronRight,
   BadgeCheck,
-  Filter,
 } from "lucide-react"
 import { useState, useCallback } from "react"
 import AIAction from "@/components/ai-action"
@@ -24,94 +21,72 @@ interface Provider {
   taxonomyCode: string
   phone: string
   fax: string
-  address: {
-    line1: string
-    line2: string
-    city: string
-    state: string
-    zip: string
-  }
   fullAddress: string
   status: string
-  lastUpdated: string
 }
 
-const COMMON_SPECIALTIES = [
-  "Internal Medicine",
-  "Family Medicine",
-  "Cardiology",
-  "Dermatology",
-  "Emergency Medicine",
-  "Endocrinology",
-  "Gastroenterology",
-  "Hematology",
-  "Oncology",
-  "Neurology",
-  "Obstetrics & Gynecology",
-  "Ophthalmology",
-  "Orthopedic Surgery",
-  "Pediatrics",
-  "Psychiatry",
-  "Pulmonary Disease",
-  "Rheumatology",
-  "Surgery",
-  "Urology",
-]
+interface ParsedQuery {
+  city?: string
+  state?: string
+  zip?: string
+  specialty?: string
+  firstName?: string
+  lastName?: string
+}
 
-const US_STATES = [
-  "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA",
-  "KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ",
-  "NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT",
-  "VA","WA","WV","WI","WY","DC",
+const EXAMPLE_SEARCHES = [
+  "Cardiologist in Portland OR",
+  "Pediatrician 97201",
+  "Dermatologist New York",
+  "Family medicine Chicago IL",
+  "Oncologist 10001",
+  "Orthopedic surgeon Dallas Texas",
 ]
 
 export default function ProvidersPage() {
-  const [city, setCity] = useState("")
-  const [state, setState] = useState("")
-  const [zip, setZip] = useState("")
-  const [specialty, setSpecialty] = useState("")
-  const [name, setName] = useState("")
+  const [query, setQuery] = useState("")
   const [results, setResults] = useState<Provider[]>([])
   const [count, setCount] = useState(0)
+  const [parsed, setParsed] = useState<ParsedQuery | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [hasSearched, setHasSearched] = useState(false)
   const [error, setError] = useState("")
 
-  const searchProviders = useCallback(async () => {
-    if (!city && !zip && !specialty && !name && !state) {
-      setError("Please enter at least one search criteria.")
-      return
-    }
-
-    setIsLoading(true)
-    setError("")
-    setHasSearched(true)
-
-    try {
-      const params = new URLSearchParams()
-      if (city) params.set("city", city)
-      if (state) params.set("state", state)
-      if (zip) params.set("zip", zip)
-      if (specialty) params.set("specialty", specialty)
-      if (name) params.set("name", name)
-      params.set("limit", "20")
-
-      const res = await fetch(`/api/providers/search?${params}`)
-      const data = await res.json()
-
-      if (data.error) {
-        setError(data.error)
-        setResults([])
-      } else {
-        setResults(data.providers || [])
-        setCount(data.count || 0)
+  const searchProviders = useCallback(
+    async (searchQuery?: string) => {
+      const q = (searchQuery || query).trim()
+      if (!q) {
+        setError("Type what you're looking for.")
+        return
       }
-    } catch {
-      setError("Failed to search. Please try again.")
-    } finally {
-      setIsLoading(false)
-    }
-  }, [city, state, zip, specialty, name])
+
+      setIsLoading(true)
+      setError("")
+      setHasSearched(true)
+      if (searchQuery) setQuery(searchQuery)
+
+      try {
+        const res = await fetch(
+          `/api/providers/search?q=${encodeURIComponent(q)}&limit=20`
+        )
+        const data = await res.json()
+
+        if (data.error) {
+          setError(data.error)
+          setResults([])
+        } else {
+          setResults(data.providers || [])
+          setCount(data.count || 0)
+          setParsed(data.parsed || null)
+        }
+      } catch {
+        setError("Failed to search. Please try again.")
+      } finally {
+        setIsLoading(false)
+      }
+    },
+    [query]
+  )
 
   return (
     <div className="animate-slide-up space-y-6">
@@ -121,122 +96,75 @@ export default function ProvidersPage() {
             Find a Provider
           </h1>
           <p className="text-sm text-warm-500 mt-1">
-            Search the NPI Registry &middot; Real-time data from CMS NPPES
+            Search in plain English &middot; Live NPI Registry data
           </p>
         </div>
         <AIAction
           agentId="scheduling"
           label="AI Match"
-          prompt="Based on the clinic's patient panel, suggest in-network providers that would complement our existing specialty coverage. Consider insurance network compatibility and geographic accessibility."
+          prompt="Based on our patient panel, suggest in-network providers that complement our existing specialty coverage."
         />
       </div>
 
-      {/* Search Form */}
+      {/* Single Search Bar */}
       <div className="bg-white rounded-2xl border border-sand p-5">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <div>
-            <label className="text-xs font-semibold text-warm-700 mb-1.5 block">
-              City
-            </label>
-            <div className="relative">
-              <MapPin
-                size={14}
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-cloudy"
-              />
-              <input
-                type="text"
-                value={city}
-                onChange={(e) => setCity(e.target.value)}
-                placeholder="e.g. Portland"
-                className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-sand bg-cream/50 text-sm text-warm-800 placeholder:text-cloudy focus:outline-none focus:border-terra/40 focus:ring-1 focus:ring-terra/20 transition"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="text-xs font-semibold text-warm-700 mb-1.5 block">
-              State
-            </label>
-            <select
-              value={state}
-              onChange={(e) => setState(e.target.value)}
-              className="w-full px-3 py-2.5 rounded-xl border border-sand bg-cream/50 text-sm text-warm-800 focus:outline-none focus:border-terra/40 appearance-none cursor-pointer"
-            >
-              <option value="">Any State</option>
-              {US_STATES.map((s) => (
-                <option key={s} value={s}>{s}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="text-xs font-semibold text-warm-700 mb-1.5 block">
-              ZIP Code
-            </label>
+        <div className="flex gap-3">
+          <div className="relative flex-1">
+            <Search
+              size={18}
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-cloudy"
+            />
             <input
               type="text"
-              value={zip}
-              onChange={(e) => setZip(e.target.value.replace(/\D/g, "").slice(0, 5))}
-              placeholder="e.g. 97201"
-              maxLength={5}
-              className="w-full px-4 py-2.5 rounded-xl border border-sand bg-cream/50 text-sm text-warm-800 placeholder:text-cloudy focus:outline-none focus:border-terra/40 focus:ring-1 focus:ring-terra/20 transition"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && searchProviders()}
+              placeholder="e.g. Cardiologist in Portland OR, Pediatrician 97201, Dr. Smith..."
+              className="w-full pl-12 pr-4 py-3.5 rounded-xl border border-sand bg-cream/30 text-sm text-warm-800 placeholder:text-cloudy focus:outline-none focus:border-terra/40 focus:ring-2 focus:ring-terra/10 transition"
             />
           </div>
-
-          <div>
-            <label className="text-xs font-semibold text-warm-700 mb-1.5 block">
-              Specialty
-            </label>
-            <select
-              value={specialty}
-              onChange={(e) => setSpecialty(e.target.value)}
-              className="w-full px-3 py-2.5 rounded-xl border border-sand bg-cream/50 text-sm text-warm-800 focus:outline-none focus:border-terra/40 appearance-none cursor-pointer"
-            >
-              <option value="">Any Specialty</option>
-              {COMMON_SPECIALTIES.map((s) => (
-                <option key={s} value={s}>{s}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="text-xs font-semibold text-warm-700 mb-1.5 block">
-              Provider Name
-            </label>
-            <div className="relative">
-              <User
-                size={14}
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-cloudy"
-              />
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="e.g. John Smith"
-                className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-sand bg-cream/50 text-sm text-warm-800 placeholder:text-cloudy focus:outline-none focus:border-terra/40 focus:ring-1 focus:ring-terra/20 transition"
-              />
-            </div>
-          </div>
-
-          <div className="flex items-end">
-            <button
-              onClick={searchProviders}
-              disabled={isLoading}
-              className="w-full px-4 py-2.5 bg-terra text-white text-sm font-semibold rounded-xl hover:bg-terra-dark transition flex items-center justify-center gap-2 disabled:opacity-50"
-            >
-              {isLoading ? (
-                <Loader2 size={16} className="animate-spin" />
-              ) : (
-                <Search size={16} />
-              )}
-              Search Providers
-            </button>
-          </div>
+          <button
+            onClick={() => searchProviders()}
+            disabled={isLoading}
+            className="px-6 py-3.5 bg-terra text-white text-sm font-semibold rounded-xl hover:bg-terra-dark transition flex items-center gap-2 disabled:opacity-50 shrink-0"
+          >
+            {isLoading ? (
+              <Loader2 size={16} className="animate-spin" />
+            ) : (
+              <Search size={16} />
+            )}
+            Search
+          </button>
         </div>
 
-        {error && (
-          <p className="text-xs text-soft-red mt-3">{error}</p>
+        {/* Parsed interpretation */}
+        {parsed && hasSearched && !isLoading && (
+          <div className="flex flex-wrap gap-2 mt-3">
+            <span className="text-[10px] text-cloudy">Searched for:</span>
+            {parsed.specialty && (
+              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-terra/10 text-terra">
+                {parsed.specialty}
+              </span>
+            )}
+            {parsed.city && (
+              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-soft-blue/10 text-soft-blue">
+                {parsed.city}
+              </span>
+            )}
+            {parsed.state && (
+              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-accent/10 text-accent">
+                {parsed.state}
+              </span>
+            )}
+            {parsed.zip && (
+              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700">
+                ZIP {parsed.zip}
+              </span>
+            )}
+          </div>
         )}
+
+        {error && <p className="text-xs text-soft-red mt-3">{error}</p>}
       </div>
 
       {/* Results */}
@@ -245,11 +173,11 @@ export default function ProvidersPage() {
           <div className="flex items-center justify-between mb-3">
             <p className="text-sm text-warm-500">
               {isLoading
-                ? "Searching..."
+                ? "Searching NPI Registry..."
                 : `${count} provider${count !== 1 ? "s" : ""} found`}
             </p>
             <span className="text-[10px] text-cloudy flex items-center gap-1">
-              <BadgeCheck size={10} /> Live data from NPI Registry
+              <BadgeCheck size={10} /> Live CMS data
             </span>
           </div>
 
@@ -276,11 +204,6 @@ export default function ProvidersPage() {
                       <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-accent/10 text-accent uppercase">
                         {provider.status}
                       </span>
-                      {provider.gender && (
-                        <span className="text-[10px] text-cloudy">
-                          {provider.gender}
-                        </span>
-                      )}
                     </div>
 
                     <p className="text-xs text-terra font-semibold mt-1">
@@ -300,22 +223,15 @@ export default function ProvidersPage() {
                       )}
                     </div>
 
-                    <div className="flex items-center gap-3 mt-2">
-                      <span className="text-[10px] font-mono text-cloudy">
-                        NPI: {provider.npi}
-                      </span>
-                      {provider.taxonomyCode && (
-                        <span className="text-[10px] font-mono text-cloudy">
-                          Taxonomy: {provider.taxonomyCode}
-                        </span>
-                      )}
-                    </div>
+                    <span className="text-[10px] font-mono text-cloudy mt-1.5 block">
+                      NPI: {provider.npi}
+                    </span>
                   </div>
 
                   <AIAction
                     agentId="scheduling"
                     label="Book"
-                    prompt={`Check if ${provider.name} (NPI: ${provider.npi}, ${provider.specialty}) is in-network for our patients' insurance plans and find available appointment slots.`}
+                    prompt={`Check if ${provider.name} (NPI: ${provider.npi}, ${provider.specialty}) is in-network for our patients and find appointment slots.`}
                     context={`Provider: ${provider.name}, Specialty: ${provider.specialty}, Location: ${provider.fullAddress}, NPI: ${provider.npi}`}
                     variant="inline"
                   />
@@ -328,27 +244,42 @@ export default function ProvidersPage() {
             <div className="text-center py-12 bg-white rounded-2xl border border-sand">
               <Stethoscope size={32} className="text-sand mx-auto mb-3" />
               <p className="text-sm text-warm-500">
-                No providers found. Try adjusting your search criteria.
+                No providers found. Try a different search.
+              </p>
+              <p className="text-xs text-cloudy mt-1">
+                Tip: Include a state (e.g. &ldquo;Portland OR&rdquo;) for
+                better results
               </p>
             </div>
           )}
         </div>
       )}
 
-      {/* Pre-search state */}
+      {/* Pre-search state with examples */}
       {!hasSearched && (
-        <div className="text-center py-16 bg-white rounded-2xl border border-sand">
+        <div className="text-center py-12 bg-white rounded-2xl border border-sand">
           <div className="w-16 h-16 rounded-2xl bg-terra/5 flex items-center justify-center mx-auto mb-4">
             <Search size={28} className="text-terra" />
           </div>
           <h3 className="text-lg font-serif text-warm-800">
-            Search the NPI Registry
+            Just type what you need
           </h3>
           <p className="text-sm text-warm-500 mt-2 max-w-md mx-auto">
-            Find healthcare providers by city, ZIP code, specialty, or name.
-            Real-time data from the CMS National Plan and Provider Enumeration
-            System.
+            Search in plain English. We&apos;ll figure out the specialty,
+            location, and provider details.
           </p>
+
+          <div className="flex flex-wrap gap-2 justify-center mt-6 max-w-lg mx-auto">
+            {EXAMPLE_SEARCHES.map((ex) => (
+              <button
+                key={ex}
+                onClick={() => searchProviders(ex)}
+                className="px-3 py-1.5 text-xs font-medium text-warm-600 bg-cream rounded-lg border border-sand hover:border-terra/30 hover:text-terra transition"
+              >
+                {ex}
+              </button>
+            ))}
+          </div>
         </div>
       )}
     </div>
