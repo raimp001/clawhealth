@@ -92,7 +92,7 @@ class OpenClawClient {
         metadata: {
           patientId: params.patientId,
           channel: params.channel || "portal",
-          source: "curerx-app",
+          source: "openrx-app",
         },
       }),
     })

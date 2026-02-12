@@ -35,7 +35,7 @@ interface ChatMessage {
 }
 
 const agentMeta: Record<string, { label: string; icon: typeof Bot; color: string }> = {
-  coordinator: { label: "CureRx AI", icon: Bot, color: "text-terra" },
+  coordinator: { label: "OpenRx AI", icon: Bot, color: "text-terra" },
   triage: { label: "Triage Agent", icon: Stethoscope, color: "text-soft-red" },
   scheduling: { label: "Scheduling Agent", icon: Calendar, color: "text-soft-blue" },
   billing: { label: "Billing Agent", icon: Receipt, color: "text-accent" },
@@ -57,7 +57,7 @@ export default function ChatPage() {
       id: "welcome",
       role: "agent",
       content:
-        "Welcome to CureRx AI. I'm your healthcare coordination assistant powered by OpenClaw.\n\nI can help with:\n• 📅 Schedule appointments (insurance-aware)\n• 💳 Analyze bills & file appeals\n• 💊 Manage prescriptions & refills\n• 🛡️ Handle prior authorizations\n• 🏥 Triage symptoms\n\nHow can I help you today?",
+        "Welcome to OpenRx AI. I'm your healthcare coordination assistant powered by OpenClaw.\n\nI can help with:\n• 📅 Schedule appointments (insurance-aware)\n• 💳 Analyze bills & file appeals\n• 💊 Manage prescriptions & refills\n• 🛡️ Handle prior authorizations\n• 🏥 Triage symptoms\n\nHow can I help you today?",
       agentId: "coordinator",
       timestamp: new Date(),
     },
@@ -235,7 +235,7 @@ export default function ChatPage() {
               )}
             >
               <Icon size={12} className={activeAgent === agent.id ? meta?.color : ""} />
-              {agent.name.replace("CureRx ", "")}
+              {agent.name.replace("OpenRx ", "")}
             </button>
           )
         })}
@@ -365,7 +365,7 @@ export default function ChatPage() {
                   <p className="text-[11px] font-semibold text-warm-800">{job.description}</p>
                   <p className="text-[9px] text-cloudy mt-0.5">
                     <Clock size={8} className="inline mr-0.5" />
-                    {job.schedule} &middot; {agent?.name.replace("CureRx ", "")}
+                    {job.schedule} &middot; {agent?.name.replace("OpenRx ", "")}
                   </p>
                 </div>
               </div>
