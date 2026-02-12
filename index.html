@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>ClawHealth — AI Healthcare Agent | Powered by OpenClaw</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet"/>
+<script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}body{background:#F4F3EE}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:#D9D2C5;border-radius:10px}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+@keyframes dotP{0%,100%{opacity:.2;transform:scale(1)}50%{opacity:1;transform:scale(1.4)}}
+@keyframes su{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+button{font-family:'DM Sans',sans-serif;cursor:pointer}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const{useState,useEffect,useRef,useCallback}=React;
+const C={terra:"#C15F3C",terraLight:"#D4836A",terraDark:"#A04E30",cream:"#F4F3EE",pampas:"#EDE9E0",sand:"#D9D2C5",cloudy:"#B1ADA1",warm800:"#3D2E24",warm700:"#5C4A3D",warm600:"#7A6B5D",warm500:"#96887A",white:"#FEFDFB",accent:"#2D6A4F",softRed:"#B85042",softBlue:"#4A7C96"};
+
+const PROBLEMS=[
+{id:"scheduling",icon:"calendar",title:"Smart Scheduling",problem:"Patients wait 26 days on average for a specialist appointment. Phone trees, hold music, and manual booking waste everyone's time.",solution:"Natural language booking via WhatsApp, SMS, or iMessage. The agent checks insurance, matches urgency, and finds availability \u2014 booked in under a minute.",market:"$4.2B",savings:"26 days \u2192 34 sec",demo:[{role:"patient",msg:"I need to see an oncologist. I have Blue Cross PPO. Mornings work best."},{role:"agent",msg:"Checking Blue Cross PPO network...\n\nFound 3 in-network oncologists at OHSU with morning openings:"},{role:"agent",msg:"Dr. Silbermann \u2014 Hematology/Oncology\nNext available: Feb 14, 9:30 AM\nCopay: $40 | 4.9\u2605 (312 reviews)\n\nShall I book and send pre-visit forms?"},{role:"patient",msg:"Yes, book it."},{role:"agent",msg:"Confirmed: Feb 14 at 9:30 AM.\n\n\u2022 Pre-visit questionnaire sent\n\u2022 Directions shared to maps\n\u2022 Reminder set for Feb 13, 8 PM\n\u2022 Please bring current medication list"}]},
+{id:"billing",icon:"receipt",title:"Billing & Claims",problem:"Billing errors cost $935B annually. Patients can't decipher EOBs. Denied claims go uncontested. Surprise bills erode trust.",solution:"The agent reads bills, catches coding errors, auto-files appeals, and explains charges in plain language.",market:"$8.1B",savings:"$3,150 avg saved",demo:[{role:"patient",msg:"I got a $3,400 bill from my ER visit. I have insurance \u2014 this can't be right."},{role:"agent",msg:"Pulling your EOB from Blue Cross...\n\nFound 2 errors:\n1. CPT 99285 billed out-of-network (ER is in-network)\n2. Facility fee double-charged ($1,200 \u00d7 2)"},{role:"agent",msg:"Corrected:\n\u2022 Original: $3,400\n\u2022 After corrections: $840\n\u2022 Your copay: $250\n\u2022 Savings: $3,150\n\nFile the appeal?"},{role:"patient",msg:"Yes, please."},{role:"agent",msg:"Appeal filed \u2014 Ref #BC-2026-44821.\nDocs attached. Resolution: 7\u201314 days.\nI'll notify you on any update."}]},
+{id:"prior-auth",icon:"shield",title:"Prior Authorization",problem:"86% of physicians say prior auth delays care. Average 14 days to process. 1 in 3 doctors report patient harm from delays.",solution:"Agent pre-checks payer criteria, auto-fills PA forms with clinical evidence, submits electronically, and escalates denials.",market:"$5.7B",savings:"14 days \u2192 4 min",demo:[{role:"physician",msg:"Need prior auth for MRI brain w/ contrast for patient Johnson. Suspected CNS lymphoma."},{role:"agent",msg:"Checking Aetna criteria for CPT 70553...\n\nAll criteria met:\n\u2022 Neurological symptoms documented \u2713\n\u2022 Lab abnormalities present \u2713\n\u2022 Clinical notes support imaging \u2713"},{role:"agent",msg:"PA form auto-filled:\n\u2022 ICD-10: C85.9, R51.9\n\u2022 Labs & notes attached\n\u2022 Guidelines referenced\n\nSubmitting to Aetna ePA..."},{role:"agent",msg:"Prior Auth APPROVED \u2014 Ref #AET-8834\nTurnaround: 4 minutes\nMRI scheduled tomorrow 2 PM\nPatient notified via text."}]},
+{id:"rx",icon:"pill",title:"Prescription Management",problem:"50% of chronic disease patients don't take meds as prescribed. Refill phone tag wastes hours weekly.",solution:"Proactive refill reminders, auto pharmacy requests, adherence tracking, drug interaction alerts.",market:"$3.8B",savings:"50% \u2192 89% adherence",demo:[{role:"agent",msg:"Hi Maria \u2014 your Metformin 500mg runs out in 3 days. Refill at Walgreens on 39th?"},{role:"patient",msg:"Yes. I've been having stomach issues with it."},{role:"agent",msg:"Noted for Dr. Chen.\n\nRefill requested (ready tomorrow 2 PM).\n\nSent to Dr. Chen: \"Patient reports GI side effects. Consider extended-release at Feb 18 visit.\"\n\nLast A1C: 7.2% (Oct 2025) \u2014 may need updated labs."},{role:"patient",msg:"Can you schedule those labs?"},{role:"agent",msg:"Fasting glucose + A1C ordered.\nFeb 16, 7:30 AM at Quest on Hawthorne.\nNo food after 10 PM night before.\nResults auto-route to Dr. Chen."}]},
+{id:"coordination",icon:"link",title:"Care Coordination",problem:"Patients see avg 7 specialists. Records don't follow them. 30% of referrals never completed.",solution:"Agent tracks the full care journey, pushes records between providers, closes referral loops automatically.",market:"$6.2B",savings:"30% \u2192 4% drop-off",demo:[{role:"agent",msg:"Care update, James:\n\n\u2713 Cardiology \u2014 Dr. Park (Feb 3)\n\u23f3 Endocrinology \u2014 scheduled Feb 20\n\u26a0 Pulmonology \u2014 referral sent 3 wks ago, not scheduled\n\nFollow up on pulmonology?"},{role:"patient",msg:"Yes \u2014 I forgot about that one."},{role:"agent",msg:"Dr. Rivera's office: Feb 25, 11 AM.\n\nAlready sent:\n\u2022 Referral from Dr. Park\n\u2022 Echo results & labs\n\u2022 Current med list\n\nAll specialists now have each other's notes."},{role:"patient",msg:"Show me everything coming up."},{role:"agent",msg:"Feb 16 \u2014 Labs (Quest)\nFeb 18 \u2014 Dr. Chen, Primary Care\nFeb 20 \u2014 Endocrinology\nFeb 25 \u2014 Pulmonology\nMar 3 \u2014 Cardiology follow-up\n\nPrep sent 48hrs before each."}]},
+{id:"triage",icon:"moon",title:"After-Hours Triage",problem:"67% of ER visits are non-emergent ($32B wasted/yr). Patients can't reach doctors after 5 PM. Nurse hotlines: 45-min waits.",solution:"AI triage via validated protocols. Emergencies \u2192 911, urgent \u2192 on-call, non-emergent \u2192 guidance + same-day booking.",market:"$2.9B",savings:"67% \u2192 28% non-emergent ER",demo:[{role:"patient",msg:"It's 11 PM. My 4-year-old has 102.5\u00b0 fever and pulling at her ear. ER?"},{role:"agent",msg:"Pediatric triage: Urgent \u2014 not emergency.\n\nConsistent with otitis media (ear infection). ER likely unnecessary.\n\nManage at home tonight:\n\u2022 Children's Tylenol (weight-based)\n\u2022 Warm compress on ear\n\u2022 Elevate head slightly"},{role:"agent",msg:"Same-day sick visit booked:\nDr. Chen, tomorrow 8:15 AM (first slot)\nSymptoms sent to Dr. Chen.\n\nGo to ER if: fever >104\u00b0F, lethargy, stiff neck, or rash.\n\nI'll check in at 6 AM."}]},
+{id:"language",icon:"globe",title:"Language & Literacy",problem:"25M US patients have limited English. 36% have low health literacy. Miscommunication drives adverse events.",solution:"Real-time translation in 50+ languages. Medical jargon \u2192 plain language. Culturally sensitive communication.",market:"$1.8B",savings:"48% fewer adverse events",demo:[{role:"patient",msg:"Hola, no entiendo mi receta. \u00bfQu\u00e9 es 'Lisinopril 10mg QD'?"},{role:"agent",msg:"\u00a1Hola! Con gusto.\n\nLisinopril 10mg QD:\n\u2022 Lisinopril \u2014 medicina para presi\u00f3n alta\n\u2022 10mg \u2014 la dosis\n\u2022 QD \u2014 una vez al d\u00eda\n\nTome 1 pastilla cada ma\u00f1ana con agua."},{role:"patient",msg:"\u00bfEfectos secundarios?"},{role:"agent",msg:"Comunes: tos seca, mareo al levantarse, dolor de cabeza leve.\n\n\u26a0 Llame al doctor si: hinchaz\u00f3n de cara/lengua o dificultad para respirar.\n\n\u00bfRecordatorio diario a las 8 AM?"}]},
+{id:"screening",icon:"search",title:"Preventive Screening",problem:"40% of recommended screenings missed. Patients don't know what they're due for. Late detection = worse outcomes.",solution:"Proactive reminders based on age, sex, family history, risk factors. Auto-books appointments.",market:"$3.1B",savings:"40% \u2192 12% missed",demo:[{role:"agent",msg:"Hi Sarah \u2014 based on your profile (47, family history breast cancer):\n\n\ud83d\udd34 Mammogram \u2014 8 months overdue\n\ud83d\udfe1 Colonoscopy \u2014 due this year\n\nSchedule both?"},{role:"patient",msg:"I didn't know I needed a colonoscopy. Yes to both."},{role:"agent",msg:"Guidelines changed \u2014 screening starts at 45 now.\n\nScheduled:\n\u2022 Mammogram: Feb 22, 10 AM (OHSU)\n\u2022 Colonoscopy consult: Mar 5, 1 PM (Dr. Williams)\n\nPrep instructions sent 1 week before.\nBoth 100% covered as preventive \u2014 $0 copay."}]}
+];
+
+const METRICS=[{label:"Admin Time Saved",value:"68%",sub:"per physician/day"},{label:"Booking Time",value:"34s",sub:"down from 26-day avg"},{label:"Billing Errors Caught",value:"94%",sub:"before patient sees bill"},{label:"Prior Auth Speed",value:"4 min",sub:"down from 14 days"},{label:"No-Show Reduction",value:"52%",sub:"via proactive reminders"},{label:"Patient Satisfaction",value:"4.9\u2605",sub:"across pilot clinics"}];
+
+const Icon=({name,size=20,color=C.terra})=>{const s={fill:"none",stroke:color,strokeWidth:"1.5",strokeLinecap:"round",strokeLinejoin:"round"};const i={calendar:React.createElement("g",null,React.createElement("rect",{x:3,y:4,width:18,height:18,rx:2,...s}),React.createElement("line",{x1:16,y1:2,x2:16,y2:6,...s}),React.createElement("line",{x1:8,y1:2,x2:8,y2:6,...s}),React.createElement("line",{x1:3,y1:10,x2:21,y2:10,...s})),receipt:React.createElement("g",null,React.createElement("path",{d:"M4 2v20l3-2 3 2 3-2 3 2 3-2V2l-3 2-3-2-3 2-3-2-3 2z",...s}),React.createElement("line",{x1:8,y1:8,x2:16,y2:8,...s}),React.createElement("line",{x1:8,y1:12,x2:14,y2:12,...s})),shield:React.createElement("g",null,React.createElement("path",{d:"M12 2l8 4v5c0 5.25-3.5 10-8 11.25C7.5 21 4 16.25 4 11V6l8-4z",...s}),React.createElement("polyline",{points:"9,12 11,14 15,10",...s})),pill:React.createElement("g",null,React.createElement("path",{d:"M8.5 8.5L15.5 15.5",...s}),React.createElement("rect",{x:5,y:5,width:14,height:14,rx:7,...s})),link:React.createElement("g",null,React.createElement("path",{d:"M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71",...s}),React.createElement("path",{d:"M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71",...s})),moon:React.createElement("path",{d:"M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z",...s}),globe:React.createElement("g",null,React.createElement("circle",{cx:12,cy:12,r:10,...s}),React.createElement("line",{x1:2,y1:12,x2:22,y2:12,...s}),React.createElement("path",{d:"M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z",...s})),search:React.createElement("g",null,React.createElement("circle",{cx:11,cy:11,r:8,...s}),React.createElement("line",{x1:21,y1:21,x2:16.65,y2:16.65,...s})),arrow:React.createElement("g",null,React.createElement("line",{x1:5,y1:12,x2:19,y2:12,...s}),React.createElement("polyline",{points:"12,5 19,12 12,19",...s})),heart:React.createElement("path",{d:"M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z",...s}),plus:React.createElement("g",null,React.createElement("circle",{cx:12,cy:12,r:10,...s}),React.createElement("line",{x1:12,y1:8,x2:12,y2:16,...s}),React.createElement("line",{x1:8,y1:12,x2:16,y2:12,...s}))};return React.createElement("svg",{width:size,height:size,viewBox:"0 0 24 24"},i[name])};
+
+const Logo=({size=44})=>React.createElement("svg",{width:size,height:size,viewBox:"0 0 48 48"},React.createElement("defs",null,React.createElement("linearGradient",{id:"lg",x1:"0%",y1:"0%",x2:"100%",y2:"100%"},React.createElement("stop",{offset:"0%",stopColor:C.terra}),React.createElement("stop",{offset:"100%",stopColor:C.terraDark}))),React.createElement("rect",{x:4,y:4,width:40,height:40,rx:12,fill:"url(#lg)"}),React.createElement("path",{d:"M24 14v20M14 24h20",stroke:C.cream,strokeWidth:3.5,strokeLinecap:"round"}),React.createElement("circle",{cx:24,cy:24,r:3,fill:C.cream,opacity:.25}));
+
+const TypeWriter=({text,speed=14,onComplete})=>{const[d,setD]=useState("");const idx=useRef(0);useEffect(()=>{setD("");idx.current=0;const iv=setInterval(()=>{if(idx.current<text.length){setD(text.slice(0,idx.current+1));idx.current++}else{clearInterval(iv);onComplete&&onComplete()}},speed);return()=>clearInterval(iv)},[text]);return d};
+
+const ChatDemo=({messages})=>{const[vis,setVis]=useState(0);const ref=useRef(null);const k=messages[0]?messages[0].msg.slice(0,20):"";useEffect(()=>{setVis(0);const t=setTimeout(()=>setVis(1),300);return()=>clearTimeout(t)},[k]);const next=useCallback(()=>{if(vis<messages.length)setTimeout(()=>setVis(c=>c+1),450)},[vis,messages.length]);useEffect(()=>{if(ref.current)ref.current.scrollTo({top:ref.current.scrollHeight,behavior:"smooth"})},[vis]);
+return React.createElement("div",{ref,style:{background:C.white,borderRadius:20,padding:28,minHeight:320,maxHeight:460,overflowY:"auto",border:"1px solid "+C.sand,display:"flex",flexDirection:"column",gap:14,boxShadow:"0 1px 3px "+C.sand+"80"}},
+messages.slice(0,vis).map((m,i)=>{const isA=m.role==="agent",isD=m.role==="physician",last=i===vis-1;
+return React.createElement("div",{key:k+"-"+i,style:{display:"flex",justifyContent:isA?"flex-start":"flex-end",animation:"fadeIn .3s ease"}},
+isA&&React.createElement("div",{style:{width:28,height:28,borderRadius:8,marginRight:10,marginTop:2,flexShrink:0,background:"linear-gradient(135deg,"+C.terra+","+C.terraDark+")",display:"flex",alignItems:"center",justifyContent:"center"}},React.createElement("svg",{width:14,height:14,viewBox:"0 0 24 24"},React.createElement("path",{d:"M12 8v8M8 12h8",stroke:C.cream,strokeWidth:2.5,strokeLinecap:"round"}))),
+React.createElement("div",{style:{maxWidth:"78%",padding:"14px 18px",borderRadius:isA?"4px 18px 18px 18px":"18px 4px 18px 18px",background:isA?C.terra+"08":isD?"#EDF1F7":C.pampas,border:"1px solid "+(isA?C.terra+"18":isD?"#D4DCE6":C.sand),fontSize:13.5,lineHeight:1.7,color:C.warm800,whiteSpace:"pre-wrap",fontFamily:"'Libre Baskerville',Georgia,serif"}},
+React.createElement("div",{style:{fontSize:9.5,fontWeight:700,textTransform:"uppercase",letterSpacing:1.8,marginBottom:8,fontFamily:"'DM Sans',sans-serif",color:isA?C.terra:isD?C.softBlue:C.warm500}},isA?"\u2726 ClawHealth":isD?"Physician":"Patient"),
+last?React.createElement(TypeWriter,{text:m.msg,onComplete:next}):m.msg))}),
+vis>0&&vis<messages.length&&React.createElement("div",{style:{display:"flex",gap:5,padding:"4px 50px"}},[0,1,2].map(d=>React.createElement("div",{key:d,style:{width:5,height:5,borderRadius:"50%",background:C.terra,animation:"dotP 1.2s ease infinite "+d*.2+"s"}}))))};
+
+function App(){
+const[tab,setTab]=useState("overview");
+const[sel,setSel]=useState(0);
+const[hov,setHov]=useState(null);
+const tabs=[{id:"overview",label:"Overview"},{id:"problems",label:"What We Solve"},{id:"demo",label:"Live Demo"},{id:"business",label:"Business"}];
+
+return React.createElement("div",{style:{minHeight:"100vh",background:C.cream,color:C.warm800,fontFamily:"Georgia,'Times New Roman',Cambria,serif"}},
+React.createElement("div",{style:{maxWidth:1060,margin:"0 auto",padding:"0 24px"}},
+
+// Header
+React.createElement("header",{style:{padding:"28px 0 20px",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:16,borderBottom:"1px solid "+C.sand}},
+React.createElement("div",{style:{display:"flex",alignItems:"center",gap:14}},React.createElement(Logo),React.createElement("div",null,React.createElement("h1",{style:{fontSize:24,fontWeight:700,letterSpacing:-.3,color:C.warm800,fontFamily:"'Libre Baskerville',Georgia,serif"}},"ClawHealth"),React.createElement("p",{style:{fontSize:10.5,color:C.cloudy,fontFamily:"'DM Sans',sans-serif",fontWeight:600,letterSpacing:2,textTransform:"uppercase"}},"Powered by OpenClaw"))),
+React.createElement("div",{style:{padding:"7px 18px",borderRadius:100,background:C.terra+"0C",border:"1px solid "+C.terra+"20",fontSize:11,fontWeight:600,color:C.terra,fontFamily:"'DM Sans',sans-serif",letterSpacing:1}},"MVP Demo")),
+
+// Tabs
+React.createElement("nav",{style:{display:"flex",gap:0,margin:"20px 0 32px",borderBottom:"1px solid "+C.sand}},
+tabs.map(t=>React.createElement("button",{key:t.id,onClick:()=>setTab(t.id),style:{padding:"14px 22px",border:"none",background:"transparent",color:tab===t.id?C.terra:C.cloudy,fontSize:14,fontWeight:600,borderBottom:tab===t.id?"2px solid "+C.terra:"2px solid transparent",transition:"all .2s",marginBottom:-1}},t.label))),
+
+// OVERVIEW
+tab==="overview"&&React.createElement("div",{style:{animation:"su .5s ease"}},
+React.createElement("div",{style:{background:C.white,borderRadius:24,padding:"52px 44px",marginBottom:24,border:"1px solid "+C.sand,position:"relative",overflow:"hidden"}},
+React.createElement("div",{style:{position:"absolute",top:-80,right:-80,width:240,height:240,borderRadius:"50%",background:C.terra+"06"}}),
+React.createElement("p",{style:{fontSize:11.5,fontWeight:700,color:C.terra,letterSpacing:3,marginBottom:18,fontFamily:"'DM Sans',sans-serif",textTransform:"uppercase",position:"relative"}},"The Problem"),
+React.createElement("h2",{style:{fontSize:34,fontWeight:400,lineHeight:1.35,marginBottom:22,color:C.warm800,maxWidth:620,position:"relative",fontFamily:"'Libre Baskerville',Georgia,serif"}},"Healthcare runs on fax machines, ",React.createElement("em",{style:{color:C.terra}},"phone trees"),", and decades-old workflows."),
+React.createElement("p",{style:{fontSize:16.5,color:C.warm600,lineHeight:1.8,maxWidth:640,fontFamily:"'Libre Baskerville',Georgia,serif",position:"relative"}},"Physicians spend two hours on administration for every hour of patient care. Patients wait weeks for appointments and can't understand their bills. The $4.7 trillion US healthcare system's connective tissue is fundamentally broken.")),
+
+// Metrics
+React.createElement("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(155px,1fr))",gap:14,marginBottom:28}},
+METRICS.map((m,i)=>React.createElement("div",{key:i,onMouseEnter:()=>setHov(i),onMouseLeave:()=>setHov(null),style:{background:C.white,borderRadius:16,padding:"24px 18px",border:"1px solid "+(hov===i?C.terra+"40":C.sand),transition:"all .3s ease",cursor:"default",textAlign:"center",transform:hov===i?"translateY(-3px)":"none",boxShadow:hov===i?"0 10px 30px "+C.terra+"0C":"none"}},
+React.createElement("div",{style:{fontSize:30,fontWeight:700,color:C.terra,fontFamily:"'DM Sans',sans-serif",marginBottom:6}},m.value),
+React.createElement("div",{style:{fontSize:12,fontWeight:600,color:C.warm700,fontFamily:"'DM Sans',sans-serif",marginBottom:3}},m.label),
+React.createElement("div",{style:{fontSize:11,color:C.cloudy,fontFamily:"'DM Sans',sans-serif"}},m.sub)))),
+
+// Why OpenClaw
+React.createElement("div",{style:{background:C.white,borderRadius:20,padding:36,border:"1px solid "+C.sand,marginBottom:24}},
+React.createElement("h3",{style:{fontSize:22,fontWeight:400,marginBottom:28,fontFamily:"'Libre Baskerville',Georgia,serif"}},"Why ",React.createElement("em",{style:{color:C.terra}},"OpenClaw")," is the right foundation"),
+React.createElement("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))",gap:28}},
+[{icon:"shield",t:"Data stays local",d:"HIPAA-compliant by architecture. Patient data never leaves the clinic's hardware."},{icon:"heart",t:"Persistent memory",d:"The agent remembers patient history and care plans across every interaction."},{icon:"globe",t:"Multi-channel",d:"WhatsApp, SMS, iMessage, Telegram. No app downloads, no friction."},{icon:"plus",t:"Modular skills",d:"Each capability is a separate OpenClaw skill. Deploy exactly what you need."}].map((item,i)=>React.createElement("div",{key:i,style:{display:"flex",gap:16}},
+React.createElement("div",{style:{width:44,height:44,borderRadius:12,flexShrink:0,background:C.terra+"08",display:"flex",alignItems:"center",justifyContent:"center"}},React.createElement(Icon,{name:item.icon,size:20,color:C.terra})),
+React.createElement("div",null,React.createElement("div",{style:{fontSize:14,fontWeight:600,marginBottom:5,color:C.warm800,fontFamily:"'DM Sans',sans-serif"}},item.t),React.createElement("div",{style:{fontSize:13.5,color:C.warm500,lineHeight:1.65,fontFamily:"'Libre Baskerville',Georgia,serif"}},item.d)))))),
+
+// Founder
+React.createElement("div",{style:{background:C.white,borderRadius:20,padding:"30px 36px",border:"1px solid "+C.sand,display:"flex",alignItems:"flex-start",gap:22}},
+React.createElement("div",{style:{width:56,height:56,borderRadius:16,flexShrink:0,background:"linear-gradient(135deg,"+C.terra+","+C.terraDark+")",display:"flex",alignItems:"center",justifyContent:"center",color:C.cream,fontSize:22,fontFamily:"'Libre Baskerville',serif",fontWeight:700}},"M"),
+React.createElement("div",null,
+React.createElement("p",{style:{fontSize:10.5,fontWeight:700,color:C.terra,letterSpacing:2.5,marginBottom:8,fontFamily:"'DM Sans',sans-serif",textTransform:"uppercase"}},"Founder\u2013Market Fit"),
+React.createElement("p",{style:{fontSize:15,color:C.warm700,lineHeight:1.75,fontFamily:"'Libre Baskerville',Georgia,serif"}},
+"Physician-researcher at ",React.createElement("strong",null,"OHSU Knight Cancer Institute"),". Over 100 peer-reviewed publications in hematology-oncology. Treats cancer patients daily and watches the system fail them. Previously built ",React.createElement("em",null,"HealthDB.ai"),". Not a tech founder who consulted with doctors \u2014 a clinician who lives these problems every day.")))),
+
+// Problems Tab
+tab==="problems"&&React.createElement("div",{style:{animation:"su .5s ease"}},
+React.createElement("p",{style:{fontSize:17,color:C.warm600,lineHeight:1.75,marginBottom:32,fontFamily:"'Libre Baskerville',Georgia,serif",maxWidth:620}},"Eight critical breakdowns in healthcare delivery \u2014 each a standalone product, together a comprehensive platform."),
+React.createElement("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(235px,1fr))",gap:16}},
+PROBLEMS.map((p,i)=>React.createElement("div",{key:p.id,onClick:()=>{setSel(i);setTab("demo")},style:{background:C.white,borderRadius:18,padding:"26px 24px",border:"1px solid "+C.sand,cursor:"pointer",transition:"all .3s ease"},onMouseEnter:e=>{e.currentTarget.style.borderColor=C.terra+"45";e.currentTarget.style.transform="translateY(-3px)";e.currentTarget.style.boxShadow="0 12px 36px "+C.terra+"0A"},onMouseLeave:e=>{e.currentTarget.style.borderColor=C.sand;e.currentTarget.style.transform="none";e.currentTarget.style.boxShadow="none"}},
+React.createElement("div",{style:{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16}},
+React.createElement("div",{style:{width:42,height:42,borderRadius:12,background:C.terra+"08",display:"flex",alignItems:"center",justifyContent:"center"}},React.createElement(Icon,{name:p.icon,size:20,color:C.terra})),
+React.createElement("span",{style:{fontSize:10.5,fontWeight:700,color:C.terra,fontFamily:"'DM Sans',sans-serif",background:C.terra+"08",padding:"4px 10px",borderRadius:6}},p.market)),
+React.createElement("h4",{style:{fontSize:17,fontWeight:400,color:C.warm800,marginBottom:8,fontFamily:"'Libre Baskerville',Georgia,serif"}},p.title),
+React.createElement("p",{style:{fontSize:13,color:C.warm500,lineHeight:1.65,marginBottom:16,fontFamily:"'Libre Baskerville',Georgia,serif",display:"-webkit-box",WebkitLineClamp:3,WebkitBoxOrient:"vertical",overflow:"hidden"}},p.problem),
+React.createElement("div",{style:{display:"flex",alignItems:"center",gap:6,fontSize:12,fontWeight:600,color:C.terra,fontFamily:"'DM Sans',sans-serif"}},"View demo ",React.createElement(Icon,{name:"arrow",size:14,color:C.terra})))))),
+
+// Demo Tab
+tab==="demo"&&React.createElement("div",{style:{animation:"su .5s ease"}},
+React.createElement("div",{style:{display:"flex",gap:8,marginBottom:28,overflowX:"auto",paddingBottom:6}},
+PROBLEMS.map((p,i)=>React.createElement("button",{key:p.id,onClick:()=>setSel(i),style:{padding:"9px 18px",borderRadius:100,background:sel===i?C.terra:C.white,color:sel===i?C.cream:C.warm600,fontSize:12.5,fontWeight:600,whiteSpace:"nowrap",transition:"all .2s",border:sel===i?"none":"1px solid "+C.sand,boxShadow:sel===i?"0 3px 12px "+C.terra+"28":"none"}},p.title))),
+React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:22}},
+React.createElement("div",{style:{background:C.white,borderRadius:16,padding:"22px 26px",border:"1px solid "+C.sand}},
+React.createElement("div",{style:{display:"flex",justifyContent:"space-between",marginBottom:12}},React.createElement("span",{style:{fontSize:10,fontWeight:700,color:C.softRed,letterSpacing:2.5,fontFamily:"'DM Sans',sans-serif",textTransform:"uppercase"}},"Problem"),React.createElement("span",{style:{fontSize:11,fontWeight:700,color:C.terra,fontFamily:"'DM Sans',sans-serif"}},PROBLEMS[sel].market+" TAM")),
+React.createElement("p",{style:{fontSize:14.5,color:C.warm700,lineHeight:1.7,fontFamily:"'Libre Baskerville',Georgia,serif"}},PROBLEMS[sel].problem)),
+React.createElement("div",{style:{background:C.white,borderRadius:16,padding:"22px 26px",border:"1px solid "+C.terra+"18"}},
+React.createElement("div",{style:{display:"flex",justifyContent:"space-between",marginBottom:12}},React.createElement("span",{style:{fontSize:10,fontWeight:700,color:C.accent,letterSpacing:2.5,fontFamily:"'DM Sans',sans-serif",textTransform:"uppercase"}},"Solution"),React.createElement("span",{style:{fontSize:11,fontWeight:700,color:C.accent,fontFamily:"'DM Sans',sans-serif"}},PROBLEMS[sel].savings)),
+React.createElement("p",{style:{fontSize:14.5,color:C.warm700,lineHeight:1.7,fontFamily:"'Libre Baskerville',Georgia,serif"}},PROBLEMS[sel].solution))),
+React.createElement("p",{style:{fontSize:10,fontWeight:700,color:C.cloudy,letterSpacing:2.5,fontFamily:"'DM Sans',sans-serif",textTransform:"uppercase",marginBottom:12}},"Conversation Demo"),
+React.createElement(ChatDemo,{messages:PROBLEMS[sel].demo})),
+
+// Business Tab
+tab==="business"&&React.createElement("div",{style:{animation:"su .5s ease"}},
+// Pricing
+React.createElement("div",{style:{background:C.white,borderRadius:20,padding:36,border:"1px solid "+C.sand,marginBottom:22}},
+React.createElement("h3",{style:{fontSize:22,fontWeight:400,marginBottom:28,fontFamily:"'Libre Baskerville',Georgia,serif"}},"Per-physician SaaS pricing"),
+React.createElement("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))",gap:18}},
+[{tier:"Starter",price:"$299",features:"Scheduling & reminders\nMulti-channel messaging\n500 interactions/mo"},{tier:"Professional",price:"$599",features:"Everything in Starter, plus:\nBilling & claims agent\nPrior auth automation\n2,000 interactions/mo",pop:true},{tier:"Enterprise",price:"$999",features:"Everything in Professional, plus:\nCare coordination\nAfter-hours triage\nCustom EHR integrations\nUnlimited interactions"}].map((t,i)=>React.createElement("div",{key:i,style:{background:t.pop?C.terra+"06":C.cream,borderRadius:16,padding:"28px 24px",border:"1px solid "+(t.pop?C.terra+"28":C.sand),position:"relative"}},
+t.pop&&React.createElement("div",{style:{position:"absolute",top:-11,right:18,background:C.terra,color:C.cream,fontSize:10,fontWeight:700,padding:"4px 14px",borderRadius:8,fontFamily:"'DM Sans',sans-serif"}},"Most Popular"),
+React.createElement("div",{style:{fontSize:10.5,fontWeight:700,color:C.cloudy,letterSpacing:2,marginBottom:12,fontFamily:"'DM Sans',sans-serif",textTransform:"uppercase"}},t.tier),
+React.createElement("div",{style:{display:"flex",alignItems:"baseline",gap:4,marginBottom:18}},React.createElement("span",{style:{fontSize:38,fontWeight:700,color:C.terra,fontFamily:"'DM Sans',sans-serif"}},t.price),React.createElement("span",{style:{fontSize:13,color:C.cloudy,fontFamily:"'DM Sans',sans-serif"}},"/mo")),
+React.createElement("div",{style:{fontSize:13.5,color:C.warm600,lineHeight:1.9,whiteSpace:"pre-wrap",fontFamily:"'Libre Baskerville',Georgia,serif"}},t.features))))),
+
+// Unit Economics
+React.createElement("div",{style:{background:C.white,borderRadius:20,padding:36,border:"1px solid "+C.sand,marginBottom:22}},
+React.createElement("h3",{style:{fontSize:22,fontWeight:400,marginBottom:28,fontFamily:"'Libre Baskerville',Georgia,serif"}},"Unit economics"),
+React.createElement("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(180px,1fr))",gap:28}},
+[{label:"CAC",value:"$800",note:"Physician conferences & referrals"},{label:"LTV",value:"$28.8K",note:"24-mo retention \u00d7 $599 ARPU \u00d7 2 physicians"},{label:"LTV : CAC",value:"36 : 1",note:"Healthcare SaaS benchmark is 5:1"},{label:"Gross Margin",value:"82%",note:"OpenClaw is open-source; API costs only"}].map((m,i)=>React.createElement("div",{key:i},
+React.createElement("div",{style:{fontSize:32,fontWeight:700,color:C.terra,fontFamily:"'DM Sans',sans-serif",marginBottom:6}},m.value),
+React.createElement("div",{style:{fontSize:13.5,fontWeight:600,color:C.warm800,fontFamily:"'DM Sans',sans-serif",marginBottom:5}},m.label),
+React.createElement("div",{style:{fontSize:13,color:C.cloudy,fontFamily:"'Libre Baskerville',serif",lineHeight:1.55}},m.note))))),
+
+// Roadmap
+React.createElement("div",{style:{background:C.white,borderRadius:20,padding:36,border:"1px solid "+C.sand,marginBottom:22}},
+React.createElement("h3",{style:{fontSize:22,fontWeight:400,marginBottom:28,fontFamily:"'Libre Baskerville',Georgia,serif"}},"90-day roadmap"),
+[{wk:"Weeks 1\u20133",title:"Core Skills",desc:"Scheduling and insurance verification OpenClaw skills. FHIR API integration.",pct:25},{wk:"Weeks 4\u20136",title:"Billing Agent",desc:"EOB parser, coding error detection, auto-appeal generation.",pct:50},{wk:"Weeks 7\u20139",title:"Pilot Launch",desc:"Deploy at 2\u20133 OHSU-affiliated clinics. WhatsApp + SMS live.",pct:75},{wk:"Weeks 10\u201312",title:"Revenue & Scale",desc:"First paying customers. Prior auth skill. Seed round prep.",pct:100}].map((p,i)=>React.createElement("div",{key:i,style:{display:"flex",gap:24,alignItems:"flex-start",padding:"18px 0",borderBottom:i<3?"1px solid "+C.pampas:"none"}},
+React.createElement("div",{style:{minWidth:78,fontSize:12,fontWeight:700,color:C.terra,fontFamily:"'DM Sans',sans-serif",paddingTop:3}},p.wk),
+React.createElement("div",{style:{flex:1}},
+React.createElement("div",{style:{fontSize:16,fontWeight:600,color:C.warm800,marginBottom:5,fontFamily:"'DM Sans',sans-serif"}},p.title),
+React.createElement("div",{style:{fontSize:14,color:C.warm500,lineHeight:1.65,fontFamily:"'Libre Baskerville',Georgia,serif"}},p.desc),
+React.createElement("div",{style:{marginTop:12,height:4,borderRadius:3,background:C.pampas,overflow:"hidden"}},React.createElement("div",{style:{height:"100%",width:p.pct+"%",borderRadius:3,background:"linear-gradient(90deg,"+C.terra+","+C.terraLight+")"}})))))),
+
+// The Ask
+React.createElement("div",{style:{background:C.white,borderRadius:24,padding:"52px 40px",border:"1px solid "+C.terra+"18",textAlign:"center",position:"relative",overflow:"hidden"}},
+React.createElement("div",{style:{position:"absolute",top:-100,right:-100,width:260,height:260,borderRadius:"50%",background:C.terra+"05"}}),
+React.createElement("p",{style:{fontSize:11.5,fontWeight:700,color:C.terra,letterSpacing:3,marginBottom:14,fontFamily:"'DM Sans',sans-serif",textTransform:"uppercase",position:"relative"}},"The Ask"),
+React.createElement("div",{style:{fontSize:52,fontWeight:700,marginBottom:14,color:C.terra,fontFamily:"'DM Sans',sans-serif",position:"relative"}},"$25,000"),
+React.createElement("p",{style:{fontSize:16,color:C.warm600,maxWidth:500,margin:"0 auto",lineHeight:1.8,fontFamily:"'Libre Baskerville',Georgia,serif",position:"relative"}},"MVP build and deployment at two to three pilot clinics. First paying customers within 90 days."),
+React.createElement("div",{style:{marginTop:32,display:"inline-block",padding:"16px 40px",borderRadius:14,background:"linear-gradient(135deg,"+C.terra+","+C.terraDark+")",color:C.cream,fontSize:15,fontWeight:700,fontFamily:"'DM Sans',sans-serif",boxShadow:"0 6px 24px "+C.terra+"28",position:"relative"}},"openclaw@launch.co"))),
+
+// Footer
+React.createElement("footer",{style:{padding:"40px 0",textAlign:"center",borderTop:"1px solid "+C.sand,marginTop:36}},
+React.createElement("p",{style:{fontSize:12,color:C.cloudy,fontFamily:"'DM Sans',sans-serif"}},"ClawHealth \u2014 Built by a physician, for healthcare. Powered by OpenClaw."))))}
+
+ReactDOM.render(React.createElement(App),document.getElementById("root"));
+</script>
+</body>
+</html>
