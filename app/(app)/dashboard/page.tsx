@@ -11,6 +11,12 @@ import {
   TrendingUp,
   XCircle,
   ArrowRight,
+  Bot,
+  Zap,
+  Send,
+  Bell,
+  CheckCircle2,
+  Clock,
 } from "lucide-react"
 import Link from "next/link"
 import {
@@ -333,6 +339,124 @@ export default function DashboardPage() {
               </div>
             </div>
           )}
+        </div>
+      </div>
+
+      {/* OpenClaw Agent Activity Feed */}
+      <div className="bg-white rounded-2xl border border-sand">
+        <div className="flex items-center justify-between p-5 border-b border-sand">
+          <div className="flex items-center gap-2">
+            <Bot size={16} className="text-terra" />
+            <h2 className="text-lg font-serif text-warm-800">
+              AI Agent Activity
+            </h2>
+            <span className="text-[10px] font-bold text-terra bg-terra/10 px-2 py-0.5 rounded-full">
+              OPENCLAW
+            </span>
+          </div>
+          <Link
+            href="/chat"
+            className="text-xs font-semibold text-terra flex items-center gap-1 hover:gap-2 transition-all"
+          >
+            Open Agent <ArrowRight size={12} />
+          </Link>
+        </div>
+        <div className="divide-y divide-sand/50">
+          {[
+            {
+              icon: Send,
+              color: "text-soft-blue",
+              bg: "bg-soft-blue/5",
+              action: "Sent appointment reminder",
+              detail: "James Thompson — Tomorrow 8:30 AM diabetes review",
+              channel: "SMS",
+              time: "2 min ago",
+              agent: "Scheduling",
+            },
+            {
+              icon: AlertTriangle,
+              color: "text-soft-red",
+              bg: "bg-soft-red/5",
+              action: "Billing error detected",
+              detail: "Claim BCB-2026-41882 billed for no-show — flagged for correction",
+              channel: "Auto",
+              time: "15 min ago",
+              agent: "Billing",
+            },
+            {
+              icon: Pill,
+              color: "text-yellow-600",
+              bg: "bg-yellow-50",
+              action: "Low adherence alert",
+              detail: "Amanda Liu — Ferrous Sulfate at 65%. Tips sent via SMS.",
+              channel: "SMS",
+              time: "1 hr ago",
+              agent: "Rx Manager",
+            },
+            {
+              icon: ShieldCheck,
+              color: "text-terra",
+              bg: "bg-terra/5",
+              action: "Prior auth submitted",
+              detail: "Patricia Williams — PET/CT Scan via Aetna ePA",
+              channel: "ePA",
+              time: "2 hrs ago",
+              agent: "PA Agent",
+            },
+            {
+              icon: CheckCircle2,
+              color: "text-accent",
+              bg: "bg-accent/5",
+              action: "Claim appeal filed",
+              detail: "Elena Rodriguez — ER visit $3,400 → expected $840 after correction",
+              channel: "Auto",
+              time: "3 hrs ago",
+              agent: "Billing",
+            },
+            {
+              icon: Calendar,
+              color: "text-soft-blue",
+              bg: "bg-soft-blue/5",
+              action: "No-show rescheduled",
+              detail: "Sarah Johnson rebooked to Friday 2:00 PM with Dr. Chen",
+              channel: "SMS",
+              time: "4 hrs ago",
+              agent: "Scheduling",
+            },
+          ].map((item, i) => (
+            <div
+              key={i}
+              className="flex items-center gap-3 px-5 py-3 hover:bg-cream/30 transition"
+            >
+              <div
+                className={cn(
+                  "w-8 h-8 rounded-lg flex items-center justify-center shrink-0",
+                  item.bg
+                )}
+              >
+                <item.icon size={14} className={item.color} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-semibold text-warm-800">
+                    {item.action}
+                  </span>
+                  <span className="text-[9px] font-bold text-terra bg-terra/10 px-1.5 py-0.5 rounded">
+                    {item.agent}
+                  </span>
+                </div>
+                <p className="text-[11px] text-warm-500 mt-0.5 truncate">
+                  {item.detail}
+                </p>
+              </div>
+              <div className="text-right shrink-0">
+                <span className="text-[10px] text-cloudy">{item.time}</span>
+                <div className="text-[9px] text-warm-500 mt-0.5">
+                  via {item.channel}
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </div>

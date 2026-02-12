@@ -105,6 +105,43 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* OpenClaw Integration */}
+      <section className="max-w-6xl mx-auto px-6 pb-16">
+        <div className="bg-warm-800 rounded-3xl p-8 lg:p-12 text-cream">
+          <div className="max-w-3xl mx-auto text-center">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-white/10 rounded-full text-xs font-bold text-terra-light mb-4">
+              Powered by OpenClaw Gateway
+            </div>
+            <h2 className="text-3xl font-serif">
+              One AI. Every Channel. Zero Friction.
+            </h2>
+            <p className="text-sm text-cream/60 mt-3 leading-relaxed max-w-xl mx-auto">
+              OpenClaw connects WhatsApp, SMS, Telegram, and your patient portal
+              through a single self-hosted gateway. Six specialized AI agents handle
+              scheduling, billing, prior auth, prescriptions, triage, and coordination
+              — automatically.
+            </p>
+            <div className="grid grid-cols-3 lg:grid-cols-6 gap-3 mt-8">
+              {[
+                "Multi-Channel",
+                "6 AI Agents",
+                "Cron Automation",
+                "Webhook Events",
+                "HIPAA-Aware",
+                "Self-Hosted",
+              ].map((feature) => (
+                <div
+                  key={feature}
+                  className="bg-white/5 rounded-xl px-3 py-2.5 text-[10px] font-bold text-cream/70 uppercase tracking-wider text-center"
+                >
+                  {feature}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Features */}
       <section className="max-w-6xl mx-auto px-6 pb-20">
         <div className="text-center mb-12">

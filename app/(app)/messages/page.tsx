@@ -10,6 +10,7 @@ import {
   Bell,
   Search,
   Circle,
+  Wifi,
 } from "lucide-react"
 import { useState, useMemo } from "react"
 
@@ -104,12 +105,23 @@ export default function MessagesPage() {
 
   return (
     <div className="animate-slide-up space-y-6">
-      <div>
-        <h1 className="text-2xl font-serif text-warm-800">Messages</h1>
-        <p className="text-sm text-warm-500 mt-1">
-          {messages.filter((m) => !m.read).length} unread across{" "}
-          {conversations.length} conversations
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-serif text-warm-800">Messages</h1>
+          <p className="text-sm text-warm-500 mt-1">
+            {messages.filter((m) => !m.read).length} unread across{" "}
+            {conversations.length} conversations
+          </p>
+        </div>
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-terra/5 border border-terra/10">
+          <Bot size={12} className="text-terra" />
+          <span className="text-[10px] font-bold text-terra">
+            OpenClaw Multi-Channel
+          </span>
+          <span className="text-[9px] text-warm-500">
+            WhatsApp &middot; SMS &middot; Portal &middot; WhatsApp
+          </span>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-4 h-[calc(100vh-220px)]">
