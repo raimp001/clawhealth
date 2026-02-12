@@ -1,8 +1,8 @@
-# ClawRx
+# CureRx
 
 AI-powered healthcare clinic management platform — powered by [OpenClaw](https://openclaw.ai).
 
-**Live demo:** [clawrx-rho.vercel.app](https://clawrx-rho.vercel.app)
+**Live demo:** [curerx-rho.vercel.app](https://curerx-rho.vercel.app)
 
 ## Features
 
@@ -17,7 +17,7 @@ AI-powered healthcare clinic management platform — powered by [OpenClaw](https
 
 ## OpenClaw Integration
 
-ClawRx uses OpenClaw as its AI backbone:
+CureRx uses OpenClaw as its AI backbone:
 
 | Agent | Responsibility |
 |-------|---------------|

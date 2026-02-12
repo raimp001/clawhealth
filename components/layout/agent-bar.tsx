@@ -104,7 +104,7 @@ export default function AgentBar() {
               >
                 <div className="w-1.5 h-1.5 rounded-full bg-accent" />
                 <span className="text-[10px] font-medium text-cream/70">
-                  {agent.name.replace("ClawRx ", "")}
+                  {agent.name.replace("CureRx ", "")}
                 </span>
               </div>
             ))}

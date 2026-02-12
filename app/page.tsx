@@ -32,7 +32,7 @@ export default function LandingPage() {
               </svg>
             </div>
             <span className="text-lg font-bold text-warm-800 font-serif">
-              ClawRx
+              CureRx
             </span>
           </div>
           <Link
@@ -57,7 +57,7 @@ export default function LandingPage() {
             <span className="text-terra">Automated.</span>
           </h1>
           <p className="text-lg text-warm-500 mt-6 max-w-2xl mx-auto leading-relaxed">
-            ClawRx&apos;s AI agent handles scheduling, billing, prior
+            CureRx&apos;s AI agent handles scheduling, billing, prior
             authorizations, prescriptions, and care coordination — so your team
             can focus on patients.
           </p>
@@ -221,7 +221,7 @@ export default function LandingPage() {
           <div className="flex items-center gap-2">
             <Heart size={14} className="text-terra" />
             <span className="text-xs text-warm-500">
-              ClawRx &middot; Powered by OpenClaw
+              CureRx &middot; Powered by OpenClaw
             </span>
           </div>
           <div className="text-xs text-cloudy">

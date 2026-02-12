@@ -255,7 +255,7 @@ export default function MessagesPage() {
                           {msg.sender_type === "physician" && physician
                             ? physician.full_name
                             : msg.sender_type === "agent"
-                            ? "ClawRx AI"
+                            ? "CureRx AI"
                             : msg.sender_type === "system"
                             ? "System"
                             : activeConvo.patient.full_name}

@@ -1,10 +1,10 @@
-// ── OpenClaw Gateway Configuration for ClawRx ──────────
+// ── OpenClaw Gateway Configuration for CureRx ──────────
 // This module defines the healthcare-specific OpenClaw configuration
-// that powers the AI agent backbone of ClawRx.
+// that powers the AI agent backbone of CureRx.
 
 // ── System Prompts (declared before use) ─────────────────
 
-const COORDINATOR_SYSTEM_PROMPT = `You are the ClawRx AI Coordinator, the primary routing agent for a healthcare clinic management platform.
+const COORDINATOR_SYSTEM_PROMPT = `You are the CureRx AI Coordinator, the primary routing agent for a healthcare clinic management platform.
 
 Your role:
 1. Receive incoming patient/staff messages from any channel (WhatsApp, SMS, Telegram, portal)
@@ -19,7 +19,7 @@ Urgency escalation rules:
 - Fever >104°F in any patient → URGENT: triage agent
 - Medication reaction/allergy → URGENT: triage agent + notify prescribing physician`
 
-const TRIAGE_SYSTEM_PROMPT = `You are the ClawRx Triage Agent, handling after-hours patient concerns and symptom assessment.
+const TRIAGE_SYSTEM_PROMPT = `You are the CureRx Triage Agent, handling after-hours patient concerns and symptom assessment.
 
 Protocol:
 1. Assess symptoms using evidence-based triage protocols
@@ -31,7 +31,7 @@ Protocol:
 
 Never diagnose — assess, advise, and route appropriately.`
 
-const SCHEDULING_SYSTEM_PROMPT = `You are the ClawRx Scheduling Agent, managing appointment booking with insurance awareness.
+const SCHEDULING_SYSTEM_PROMPT = `You are the CureRx Scheduling Agent, managing appointment booking with insurance awareness.
 
 Capabilities:
 1. Check physician availability and match with patient insurance network
@@ -42,7 +42,7 @@ Capabilities:
 6. Handle no-show follow-up and rebooking
 7. Coordinate multi-provider visits`
 
-const BILLING_SYSTEM_PROMPT = `You are the ClawRx Billing Agent, an expert in medical billing, claims processing, and revenue cycle management.
+const BILLING_SYSTEM_PROMPT = `You are the CureRx Billing Agent, an expert in medical billing, claims processing, and revenue cycle management.
 
 Capabilities:
 1. Analyze claims for errors BEFORE submission
@@ -52,7 +52,7 @@ Capabilities:
 5. Calculate patient responsibility and generate clear explanations
 6. Identify billing patterns that indicate systematic issues`
 
-const RX_SYSTEM_PROMPT = `You are the ClawRx Prescription Manager Agent, handling medication management and patient adherence.
+const RX_SYSTEM_PROMPT = `You are the CureRx Prescription Manager Agent, handling medication management and patient adherence.
 
 Capabilities:
 1. Monitor prescription adherence rates and flag low compliance
@@ -63,7 +63,7 @@ Capabilities:
 6. Check for drug-drug interactions
 7. Track controlled substance prescriptions per DEA guidelines`
 
-const PA_SYSTEM_PROMPT = `You are the ClawRx Prior Authorization Agent, specializing in prior authorization workflows.
+const PA_SYSTEM_PROMPT = `You are the CureRx Prior Authorization Agent, specializing in prior authorization workflows.
 
 Capabilities:
 1. Determine if a procedure/medication requires prior authorization
@@ -88,42 +88,42 @@ export const OPENCLAW_CONFIG = {
   agents: [
     {
       id: "triage",
-      name: "ClawRx Triage",
+      name: "CureRx Triage",
       description: "After-hours patient triage and symptom assessment",
       systemPrompt: TRIAGE_SYSTEM_PROMPT,
       tools: { profile: "messaging" as const },
     },
     {
       id: "scheduling",
-      name: "ClawRx Scheduler",
+      name: "CureRx Scheduler",
       description: "Insurance-aware appointment booking and management",
       systemPrompt: SCHEDULING_SYSTEM_PROMPT,
       tools: { profile: "messaging" as const },
     },
     {
       id: "billing",
-      name: "ClawRx Billing",
+      name: "CureRx Billing",
       description: "Claims analysis, error detection, and appeal filing",
       systemPrompt: BILLING_SYSTEM_PROMPT,
       tools: { profile: "full" as const },
     },
     {
       id: "rx",
-      name: "ClawRx Rx Manager",
+      name: "CureRx Rx Manager",
       description: "Prescription refills, adherence monitoring, pharmacy coordination",
       systemPrompt: RX_SYSTEM_PROMPT,
       tools: { profile: "messaging" as const },
     },
     {
       id: "prior-auth",
-      name: "ClawRx PA Agent",
+      name: "CureRx PA Agent",
       description: "Prior authorization form filling, criteria matching, ePA submission",
       systemPrompt: PA_SYSTEM_PROMPT,
       tools: { profile: "full" as const },
     },
     {
       id: "coordinator",
-      name: "ClawRx Coordinator",
+      name: "CureRx Coordinator",
       description: "Routes patient requests to the right specialized agent",
       systemPrompt: COORDINATOR_SYSTEM_PROMPT,
       tools: { profile: "full" as const },
@@ -133,7 +133,7 @@ export const OPENCLAW_CONFIG = {
   // ── Channel Configuration ──────────────────────────────
   // OpenClaw serves all channels simultaneously through one gateway
   channels: {
-    whatsapp: { enabled: true, mentionPatterns: ["@clawrx"] },
+    whatsapp: { enabled: true, mentionPatterns: ["@curerx"] },
     telegram: { enabled: true },
     discord: { enabled: true },
     sms: { enabled: true },
