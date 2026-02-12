@@ -1,0 +1,211 @@
+"use client"
+
+import { appointments, getPatient, getPhysician, physicians } from "@/lib/seed-data"
+import { cn, formatTime, formatDate, getStatusColor } from "@/lib/utils"
+import { Calendar, Clock, User, Filter, Video, AlertTriangle } from "lucide-react"
+import Link from "next/link"
+import { useState, useMemo } from "react"
+
+type ViewMode = "today" | "upcoming" | "past"
+
+export default function SchedulingPage() {
+  const [view, setView] = useState<ViewMode>("today")
+  const [physicianFilter, setPhysicianFilter] = useState("")
+
+  const today = new Date().toDateString()
+
+  const { todayApts, upcomingApts, pastApts } = useMemo(() => {
+    const now = new Date()
+    const sorted = [...appointments].sort(
+      (a, b) => new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime()
+    )
+
+    return {
+      todayApts: sorted.filter((a) => new Date(a.scheduled_at).toDateString() === today),
+      upcomingApts: sorted.filter(
+        (a) => new Date(a.scheduled_at) > now && new Date(a.scheduled_at).toDateString() !== today
+      ),
+      pastApts: sorted
+        .filter((a) => new Date(a.scheduled_at) < now && new Date(a.scheduled_at).toDateString() !== today)
+        .reverse(),
+    }
+  }, [today])
+
+  const activeList = view === "today" ? todayApts : view === "upcoming" ? upcomingApts : pastApts
+
+  const filtered = useMemo(() => {
+    if (!physicianFilter) return activeList
+    return activeList.filter((a) => a.physician_id === physicianFilter)
+  }, [activeList, physicianFilter])
+
+  const statusCounts = useMemo(() => {
+    const counts: Record<string, number> = {}
+    todayApts.forEach((a) => {
+      counts[a.status] = (counts[a.status] || 0) + 1
+    })
+    return counts
+  }, [todayApts])
+
+  return (
+    <div className="animate-slide-up space-y-6">
+      <div>
+        <h1 className="text-2xl font-serif text-warm-800">Scheduling</h1>
+        <p className="text-sm text-warm-500 mt-1">
+          {todayApts.length} appointments today &middot; {upcomingApts.length}{" "}
+          upcoming
+        </p>
+      </div>
+
+      {/* Today Status Summary */}
+      <div className="flex gap-3 flex-wrap">
+        {Object.entries(statusCounts).map(([status, count]) => (
+          <div
+            key={status}
+            className={cn(
+              "text-xs font-bold px-3 py-1.5 rounded-full uppercase tracking-wide",
+              getStatusColor(status)
+            )}
+          >
+            {count} {status}
+          </div>
+        ))}
+      </div>
+
+      {/* Tabs + Filter */}
+      <div className="flex items-center justify-between">
+        <div className="flex bg-white border border-sand rounded-xl overflow-hidden">
+          {(["today", "upcoming", "past"] as ViewMode[]).map((v) => (
+            <button
+              key={v}
+              onClick={() => setView(v)}
+              className={cn(
+                "px-4 py-2 text-sm font-semibold transition-all capitalize",
+                view === v
+                  ? "bg-terra text-white"
+                  : "text-warm-600 hover:text-warm-800 hover:bg-cream"
+              )}
+            >
+              {v}
+            </button>
+          ))}
+        </div>
+
+        <select
+          value={physicianFilter}
+          onChange={(e) => setPhysicianFilter(e.target.value)}
+          className="pl-3 pr-8 py-2 rounded-xl border border-sand bg-white text-sm text-warm-800 focus:outline-none focus:border-terra/40 appearance-none cursor-pointer"
+        >
+          <option value="">All Physicians</option>
+          {physicians.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.full_name}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* Appointment List */}
+      <div className="bg-white rounded-2xl border border-sand divide-y divide-sand/50">
+        {filtered.length === 0 && (
+          <div className="text-center py-12 text-sm text-warm-500">
+            No appointments to display.
+          </div>
+        )}
+        {filtered.map((apt) => {
+          const patient = getPatient(apt.patient_id)
+          const physician = getPhysician(apt.physician_id)
+          return (
+            <div
+              key={apt.id}
+              className="flex items-center gap-4 px-5 py-4 hover:bg-cream/30 transition"
+            >
+              {/* Time */}
+              <div className="w-20 shrink-0 text-center">
+                <div className="text-sm font-bold text-warm-800">
+                  {formatTime(apt.scheduled_at)}
+                </div>
+                <div className="text-[10px] text-cloudy">
+                  {apt.duration_minutes}min
+                </div>
+              </div>
+
+              {/* Status bar */}
+              <div
+                className={cn(
+                  "w-1.5 h-10 rounded-full shrink-0",
+                  apt.status === "completed"
+                    ? "bg-accent"
+                    : apt.status === "in-progress"
+                    ? "bg-terra"
+                    : apt.status === "checked-in"
+                    ? "bg-yellow-400"
+                    : apt.status === "no-show"
+                    ? "bg-soft-red"
+                    : "bg-sand"
+                )}
+              />
+
+              {/* Main info */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <Link
+                    href={`/patients/${apt.patient_id}`}
+                    className="text-sm font-bold text-warm-800 hover:text-terra transition"
+                  >
+                    {patient?.full_name}
+                  </Link>
+                  <span
+                    className={cn(
+                      "text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide",
+                      getStatusColor(apt.status)
+                    )}
+                  >
+                    {apt.status}
+                  </span>
+                  {apt.type === "urgent" && (
+                    <span className="flex items-center gap-0.5 text-[10px] font-bold text-soft-red">
+                      <AlertTriangle size={10} />
+                      URGENT
+                    </span>
+                  )}
+                  {apt.type === "telehealth" && (
+                    <span className="flex items-center gap-0.5 text-[10px] font-bold text-soft-blue">
+                      <Video size={10} />
+                      TELEHEALTH
+                    </span>
+                  )}
+                  {apt.type === "new-patient" && (
+                    <span className="text-[10px] font-bold text-accent">NEW</span>
+                  )}
+                </div>
+                <p className="text-xs text-warm-500 mt-0.5 truncate">
+                  {apt.reason}
+                </p>
+                {apt.notes && (
+                  <p className="text-[10px] text-cloudy mt-0.5 truncate italic">
+                    {apt.notes}
+                  </p>
+                )}
+              </div>
+
+              {/* Physician */}
+              <div className="text-right shrink-0">
+                <p className="text-xs font-medium text-warm-700">
+                  {physician?.full_name}
+                </p>
+                <p className="text-[10px] text-cloudy">{physician?.specialty}</p>
+              </div>
+
+              {/* Date (for non-today) */}
+              {view !== "today" && (
+                <div className="text-xs text-warm-500 shrink-0 w-24 text-right">
+                  {formatDate(apt.scheduled_at)}
+                </div>
+              )}
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
