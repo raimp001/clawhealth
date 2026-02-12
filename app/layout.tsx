@@ -18,12 +18,12 @@ const libreBaskerville = Libre_Baskerville({
 })
 
 export const metadata: Metadata = {
-  title: "ClawHealth — AI Healthcare Agent | Powered by OpenClaw",
+  title: "ClawRx — AI Healthcare Agent | Powered by OpenClaw",
   description:
     "AI-powered healthcare clinic management platform. Smart scheduling, billing, prior auth, prescriptions, care coordination, and more.",
-  metadataBase: new URL("https://clawhealth.io"),
+  metadataBase: new URL("https://clawrx.ai"),
   openGraph: {
-    title: "ClawHealth — AI Healthcare Agent",
+    title: "ClawRx — AI Healthcare Agent",
     description: "Smart scheduling, billing, prior auth, prescriptions & care coordination.",
     type: "website",
   },

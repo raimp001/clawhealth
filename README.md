@@ -1,8 +1,8 @@
-# ClawHealth
+# ClawRx
 
 AI-powered healthcare clinic management platform — powered by [OpenClaw](https://openclaw.ai).
 
-**Live demo:** [clawhealth-rho.vercel.app](https://clawhealth-rho.vercel.app)
+**Live demo:** [clawrx-rho.vercel.app](https://clawrx-rho.vercel.app)
 
 ## Features
 
@@ -17,7 +17,7 @@ AI-powered healthcare clinic management platform — powered by [OpenClaw](https
 
 ## OpenClaw Integration
 
-ClawHealth uses OpenClaw as its AI backbone:
+ClawRx uses OpenClaw as its AI backbone:
 
 | Agent | Responsibility |
 |-------|---------------|

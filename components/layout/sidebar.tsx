@@ -63,7 +63,7 @@ export default function Sidebar() {
         </div>
         <div>
           <h1 className="text-lg font-bold text-warm-800 font-serif">
-            ClawHealth
+            ClawRx
           </h1>
           <p className="text-[9px] font-semibold text-cloudy uppercase tracking-[2px]">
             Powered by OpenClaw

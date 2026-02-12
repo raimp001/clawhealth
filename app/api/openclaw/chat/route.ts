@@ -66,7 +66,7 @@ function getDemoResponse(agentId: AgentId, message: string): string {
         return "Connecting you with our Prior Authorization Agent...\n\nI'll check if your procedure requires PA and start the submission process automatically."
       if (lowerMsg.includes("pain") || lowerMsg.includes("fever") || lowerMsg.includes("symptom") || lowerMsg.includes("sick") || lowerMsg.includes("hurt"))
         return "I'm routing this to our Triage Agent for clinical assessment...\n\nPlease describe your symptoms, including when they started and their severity on a 1-10 scale."
-      return "I'm the ClawHealth AI Coordinator. I can help with:\n\n• 📅 Scheduling appointments\n• 💳 Billing & claims questions\n• 💊 Prescription management\n• 🛡️ Prior authorizations\n• 🏥 Symptom triage\n\nWhat can I help you with today?"
+      return "I'm the ClawRx AI Coordinator. I can help with:\n\n• 📅 Scheduling appointments\n• 💳 Billing & claims questions\n• 💊 Prescription management\n• 🛡️ Prior authorizations\n• 🏥 Symptom triage\n\nWhat can I help you with today?"
 
     case "scheduling":
       return "I've checked your insurance network and physician availability.\n\nAvailable slots this week:\n• Dr. Rai — Thu 9:30 AM (est. copay $40)\n• Dr. Chen — Fri 2:00 PM (est. copay $35)\n• Dr. Rivera — Mon 10:00 AM (est. copay $40)\n\nWould you like to book one of these? I'll send pre-visit forms and set a reminder automatically."
