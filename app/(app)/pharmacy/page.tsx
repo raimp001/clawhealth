@@ -9,7 +9,6 @@ import {
   Loader2,
   BadgeCheck,
   Building2,
-  Send,
 } from "lucide-react"
 import { useState, useCallback } from "react"
 import AIAction from "@/components/ai-action"

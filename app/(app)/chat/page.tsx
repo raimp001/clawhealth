@@ -19,8 +19,6 @@ import {
   WifiOff,
   Zap,
   Clock,
-  MessageSquare,
-  ArrowRight,
 } from "lucide-react"
 import { useState, useEffect, useRef, useCallback } from "react"
 

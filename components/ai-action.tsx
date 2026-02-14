@@ -55,6 +55,7 @@ export default function AIAction({
         <button
           onClick={runAction}
           disabled={isLoading}
+          aria-label={label}
           className={cn(
             "flex items-center gap-1 text-[10px] font-bold text-terra hover:text-terra-dark transition disabled:opacity-50",
             className
@@ -86,6 +87,7 @@ export default function AIAction({
         <button
           onClick={runAction}
           disabled={isLoading}
+          aria-label={label}
           className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-terra/5 border border-terra/10 text-[10px] font-bold text-terra hover:bg-terra/10 transition disabled:opacity-50"
         >
           {isLoading ? (
@@ -130,6 +132,7 @@ export default function AIAction({
       <button
         onClick={runAction}
         disabled={isLoading}
+        aria-label={label}
         className={cn(
           "flex items-center gap-2 px-3 py-2 rounded-xl bg-terra/5 border border-terra/10 text-xs font-semibold text-terra hover:bg-terra/10 transition disabled:opacity-50",
           className

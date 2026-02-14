@@ -48,9 +48,6 @@ interface CronJobStatus {
 class OpenClawClient {
   private gatewayUrl: string
   private token: string
-  private ws: WebSocket | null = null
-  private messageHandlers: Map<string, (msg: GatewayMessage) => void> = new Map()
-
   constructor() {
     this.gatewayUrl = OPENCLAW_CONFIG.gateway.url
     this.token = OPENCLAW_CONFIG.gateway.token

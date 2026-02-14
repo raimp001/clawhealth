@@ -27,10 +27,6 @@ export function formatTime(date: string | Date): string {
   })
 }
 
-export function formatDateTime(date: string | Date): string {
-  return `${formatDate(date)} at ${formatTime(date)}`
-}
-
 export function getInitials(name: string): string {
   return name
     .split(" ")

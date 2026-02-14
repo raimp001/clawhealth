@@ -13,9 +13,25 @@ export async function POST(req: NextRequest) {
       channel?: string
     }
 
-    if (!message || !agentId) {
+    const validAgents = ["coordinator", "triage", "scheduling", "billing", "rx", "prior-auth"]
+
+    if (!message || typeof message !== "string" || !message.trim()) {
       return NextResponse.json(
-        { error: "message and agentId are required" },
+        { error: "message is required and must be a non-empty string" },
+        { status: 400 }
+      )
+    }
+
+    if (!agentId || !validAgents.includes(agentId)) {
+      return NextResponse.json(
+        { error: `agentId must be one of: ${validAgents.join(", ")}` },
+        { status: 400 }
+      )
+    }
+
+    if (message.length > 5000) {
+      return NextResponse.json(
+        { error: "message must be under 5000 characters" },
         { status: 400 }
       )
     }

@@ -126,7 +126,7 @@ function todayAt(hour: number, min: number = 0): string {
 export const physicians: Physician[] = [
   {
     id: "ph-001",
-    email: "silbermann@ohsu.edu",
+    email: "rai@ohsu.edu",
     full_name: "Dr. Manoj Rai",
     specialty: "Internal Medicine",
     credentials: "MD, MBA",

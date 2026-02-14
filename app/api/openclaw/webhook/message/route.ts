@@ -6,12 +6,18 @@ import { openclawClient } from "@/lib/openclaw/client"
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const { channel, sender, message, patientId, metadata } = body as {
+    const { channel, sender, message, patientId } = body as {
       channel: string
       sender: string
       message: string
       patientId?: string
-      metadata?: Record<string, unknown>
+    }
+
+    if (!channel || !sender || !message) {
+      return NextResponse.json(
+        { error: "channel, sender, and message are required" },
+        { status: 400 }
+      )
     }
 
     // Log incoming message for audit trail

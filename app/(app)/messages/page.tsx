@@ -10,7 +10,6 @@ import {
   Bell,
   Search,
   Circle,
-  Wifi,
 } from "lucide-react"
 import { useState, useMemo } from "react"
 import AIAction from "@/components/ai-action"
@@ -122,7 +121,7 @@ export default function MessagesPage() {
             OpenClaw Multi-Channel
           </span>
           <span className="text-[9px] text-warm-500">
-            WhatsApp &middot; SMS &middot; Portal &middot; WhatsApp
+            WhatsApp &middot; SMS &middot; Telegram &middot; Portal
           </span>
         </div>
       </div>

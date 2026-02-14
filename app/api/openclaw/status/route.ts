@@ -3,7 +3,12 @@ import { openclawClient } from "@/lib/openclaw/client"
 import { OPENCLAW_CONFIG } from "@/lib/openclaw/config"
 
 export async function GET() {
-  const connected = await openclawClient.isConnected()
+  let connected = false
+  try {
+    connected = await openclawClient.isConnected()
+  } catch (error) {
+    console.error("Gateway health check failed:", error)
+  }
 
   return NextResponse.json({
     connected,
