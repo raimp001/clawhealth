@@ -24,12 +24,12 @@ export default function AgentBar() {
   useEffect(() => {
     if (status !== "demo") return
     const actions = [
-      "Sent appointment reminder to James Thompson via SMS",
-      "Detected billing error in claim BCB-2026-41882",
-      "Adherence alert: Amanda Liu at 65% for Ferrous Sulfate",
-      "PA status check: AET-PA-9102 still pending",
-      "Refill reminder sent to Robert Kim for Apixaban",
-      "No-show follow-up: Sarah Johnson rescheduled to Friday 2 PM",
+      "Your appointment reminder sent for tomorrow",
+      "Checked your latest bill — looks correct",
+      "Refill for Metformin ready at Walgreens",
+      "Cholesterol screening due — want me to book it?",
+      "Your prior auth for lab work was approved",
+      "Dr. Chen responded to your message",
     ]
     let idx = 0
     const interval = setInterval(() => {

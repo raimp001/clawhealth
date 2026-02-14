@@ -1,6 +1,6 @@
 "use client"
 
-import { Bell, Search, X } from "lucide-react"
+import { Bell, Search, X, User } from "lucide-react"
 import { messages, patients, appointments, claims } from "@/lib/seed-data"
 import { cn, formatDate, getInitials } from "@/lib/utils"
 import Link from "next/link"
@@ -182,12 +182,12 @@ export default function Topbar() {
         <div className="flex items-center gap-3 pl-4 border-l border-sand">
           <div className="text-right hidden sm:block">
             <p className="text-sm font-semibold text-warm-800">
-              Dr. Rai
+              My Account
             </p>
-            <p className="text-[10px] text-cloudy">Internal Medicine</p>
+            <p className="text-[10px] text-cloudy">Patient Portal</p>
           </div>
           <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-terra to-terra-dark flex items-center justify-center text-cream text-sm font-bold font-serif">
-            MR
+            <User size={16} />
           </div>
         </div>
       </div>

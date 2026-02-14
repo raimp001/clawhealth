@@ -22,16 +22,14 @@ import { cn } from "@/lib/utils"
 import { useState, useEffect } from "react"
 
 const navItems = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/dashboard", label: "Home", icon: LayoutDashboard },
   { href: "/onboarding", label: "Get Started", icon: Heart },
-  { href: "/patients", label: "Patients", icon: Users },
-  { href: "/scheduling", label: "Schedule", icon: Calendar },
-  { href: "/billing", label: "Billing", icon: Receipt },
-  { href: "/prescriptions", label: "Rx & Pharmacy", icon: Pill, matchAlso: ["/pharmacy"] },
-  { href: "/prior-auth", label: "Authorizations", icon: ShieldCheck },
-  { href: "/providers", label: "Find Providers", icon: Stethoscope },
+  { href: "/scheduling", label: "My Appointments", icon: Calendar },
+  { href: "/prescriptions", label: "My Medications", icon: Pill, matchAlso: ["/pharmacy"] },
+  { href: "/billing", label: "My Bills", icon: Receipt },
+  { href: "/providers", label: "Find a Doctor", icon: Stethoscope },
   { href: "/messages", label: "Messages", icon: MessageSquare },
-  { href: "/chat", label: "AI Agent", icon: Bot },
+  { href: "/chat", label: "Ask AI", icon: Bot },
 ]
 
 export default function Sidebar() {

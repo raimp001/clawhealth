@@ -52,14 +52,14 @@ export default function LandingPage() {
             Powered by OpenClaw AI
           </div>
           <h1 className="text-5xl lg:text-6xl font-serif text-warm-800 leading-tight">
-            Healthcare Admin,
+            Your Health,
             <br />
-            <span className="text-terra">Automated.</span>
+            <span className="text-terra">Simplified.</span>
           </h1>
           <p className="text-lg text-warm-500 mt-6 max-w-2xl mx-auto leading-relaxed">
-            OpenRx&apos;s AI agent handles scheduling, billing, prior
-            authorizations, prescriptions, and care coordination — so your team
-            can focus on patients.
+            OpenRx gives you an AI care team that books appointments, manages
+            medications, fights billing errors, and handles insurance — so you
+            can focus on feeling better.
           </p>
           <div className="flex items-center justify-center gap-4 mt-8">
             <Link
@@ -84,10 +84,10 @@ export default function LandingPage() {
       <section className="max-w-6xl mx-auto px-6 pb-16">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[
-            { value: "94%", label: "Claims accuracy", icon: CheckCircle2 },
-            { value: "4min", label: "Avg PA turnaround", icon: TrendingUp },
-            { value: "$3.2M", label: "Revenue recovered", icon: Receipt },
-            { value: "10K+", label: "Patients managed", icon: Users },
+            { value: "$2,400", label: "Avg savings per patient", icon: CheckCircle2 },
+            { value: "4min", label: "Prior auth turnaround", icon: TrendingUp },
+            { value: "34sec", label: "Avg time to book", icon: Receipt },
+            { value: "10K+", label: "Patients using OpenRx", icon: Users },
           ].map((s) => (
             <div
               key={s.label}
@@ -113,13 +113,12 @@ export default function LandingPage() {
               Powered by OpenClaw Gateway
             </div>
             <h2 className="text-3xl font-serif">
-              One AI. Every Channel. Zero Friction.
+              Meet Your Care Team
             </h2>
             <p className="text-sm text-cream/60 mt-3 leading-relaxed max-w-xl mx-auto">
-              OpenClaw connects WhatsApp, SMS, Telegram, and your patient portal
-              through a single self-hosted gateway. Six specialized AI agents handle
-              scheduling, billing, prior auth, prescriptions, triage, and coordination
-              — automatically.
+              9 AI specialists work together behind the scenes — booking appointments,
+              managing your meds, fighting billing errors, and keeping you on track
+              with preventive care. You just chat naturally.
             </p>
             <div className="grid grid-cols-3 lg:grid-cols-3 gap-3 mt-8">
               {[
@@ -151,10 +150,10 @@ export default function LandingPage() {
       <section className="max-w-6xl mx-auto px-6 pb-20">
         <div className="text-center mb-12">
           <h2 className="text-3xl font-serif text-warm-800">
-            Everything your clinic needs
+            Everything you need in one place
           </h2>
           <p className="text-sm text-warm-500 mt-2">
-            One AI platform replacing dozens of manual workflows
+            Your AI care team handles the hard stuff
           </p>
         </div>
 
@@ -162,38 +161,38 @@ export default function LandingPage() {
           {[
             {
               icon: Calendar,
-              title: "Smart Scheduling",
-              desc: "Insurance-aware booking, copay estimates, automated reminders, no-show follow-up.",
+              title: "Book Appointments",
+              desc: "Find in-network doctors, see copay estimates upfront, get reminders. No phone calls.",
               href: "/scheduling",
             },
             {
               icon: Receipt,
-              title: "Billing & Claims",
-              desc: "Error detection before submission, automated appeals, revenue cycle optimization.",
+              title: "Understand Your Bills",
+              desc: "AI reviews every bill for errors, explains charges in plain English, and fights overcharges for you.",
               href: "/billing",
             },
             {
-              icon: ShieldCheck,
-              title: "Prior Authorization",
-              desc: "Auto-fill PA forms, match clinical criteria, submit electronically, track status.",
-              href: "/prior-auth",
-            },
-            {
               icon: Pill,
-              title: "Prescriptions",
-              desc: "Refill coordination, adherence monitoring, pharmacy communication, drug interactions.",
+              title: "Manage Medications",
+              desc: "Track refills, get adherence reminders, check interactions, and coordinate with your pharmacy.",
               href: "/prescriptions",
             },
             {
+              icon: ShieldCheck,
+              title: "Insurance & Prior Auth",
+              desc: "We handle prior authorizations automatically. If something's denied, we appeal it.",
+              href: "/prior-auth",
+            },
+            {
               icon: MessageSquare,
-              title: "Patient Communication",
-              desc: "Multi-channel messaging (SMS, portal, WhatsApp), AI triage, automated follow-ups.",
+              title: "Message Your Care Team",
+              desc: "Text, portal, or WhatsApp — reach your doctors anytime. AI triages urgent concerns instantly.",
               href: "/messages",
             },
             {
               icon: Bot,
-              title: "AI Agent",
-              desc: "24/7 intelligent automation. Handles routine tasks, escalates complex cases to staff.",
+              title: "Your AI Care Team",
+              desc: "9 AI specialists working behind the scenes — scheduling, billing, meds, wellness, and more.",
               href: "/chat",
             },
           ].map((f) => (
