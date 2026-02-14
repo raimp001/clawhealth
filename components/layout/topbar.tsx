@@ -1,6 +1,14 @@
 "use client"
 
-import { Bell, Search, X, User } from "lucide-react"
+import { Bell, Search, X } from "lucide-react"
+import {
+  ConnectWallet,
+  Wallet,
+  WalletDropdown,
+  WalletDropdownDisconnect,
+  WalletDropdownLink,
+} from "@coinbase/onchainkit/wallet"
+import { Address, Avatar, Name, Identity } from "@coinbase/onchainkit/identity"
 import { getMyClaims, getMyMessages } from "@/lib/current-user"
 import { cn } from "@/lib/utils"
 import Link from "next/link"
@@ -141,17 +149,29 @@ export default function Topbar() {
           )}
         </Link>
 
-        {/* User */}
-        <div className="flex items-center gap-3 pl-4 border-l border-sand">
-          <div className="text-right hidden sm:block">
-            <p className="text-sm font-semibold text-warm-800">
-              My Account
-            </p>
-            <p className="text-[10px] text-cloudy">Patient Portal</p>
-          </div>
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-terra to-terra-dark flex items-center justify-center text-white text-sm font-bold font-serif">
-            <User size={16} />
-          </div>
+        {/* Wallet */}
+        <div className="pl-4 border-l border-sand">
+          <Wallet>
+            <ConnectWallet className="!bg-terra !text-white !rounded-xl !text-xs !font-semibold !py-2 !px-3 hover:!bg-terra-dark !transition">
+              <Avatar className="h-5 w-5" />
+              <Name className="text-xs" />
+            </ConnectWallet>
+            <WalletDropdown className="!bg-pampas !border-sand !rounded-xl">
+              <Identity className="px-4 pt-3 pb-2" hasCopyAddressOnClick>
+                <Avatar />
+                <Name className="text-warm-800 font-semibold" />
+                <Address className="text-cloudy text-[10px]" />
+              </Identity>
+              <WalletDropdownLink
+                icon="wallet"
+                href="/wallet"
+                className="!text-warm-700 hover:!bg-sand/50"
+              >
+                My Wallet
+              </WalletDropdownLink>
+              <WalletDropdownDisconnect className="!text-soft-red" />
+            </WalletDropdown>
+          </Wallet>
         </div>
       </div>
     </header>

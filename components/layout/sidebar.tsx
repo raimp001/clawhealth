@@ -8,6 +8,7 @@ import {
   Receipt,
   Pill,
   DollarSign,
+  Wallet as WalletIcon,
   MessageSquare,
   Bot,
   ExternalLink,
@@ -27,6 +28,7 @@ const navItems = [
   { href: "/drug-prices", label: "Drug Prices", icon: DollarSign },
   { href: "/billing", label: "My Bills", icon: Receipt },
   { href: "/providers", label: "Find a Doctor", icon: Stethoscope },
+  { href: "/wallet", label: "Wallet", icon: WalletIcon },
   { href: "/messages", label: "Messages", icon: MessageSquare },
   { href: "/chat", label: "Ask AI", icon: Bot },
 ]

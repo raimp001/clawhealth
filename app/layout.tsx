@@ -1,6 +1,9 @@
 import type { Metadata, Viewport } from "next"
 import { Inter, Playfair_Display } from "next/font/google"
+// OnchainKit styles omitted — v1.x uses Tailwind v4 which conflicts with our v3
+// Components use internal styling instead
 import "./globals.css"
+import { Providers } from "./providers"
 
 const inter = Inter({
   subsets: ["latin"],
@@ -40,7 +43,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={`${inter.variable} ${playfair.variable}`}>
-      <body>{children}</body>
+      <body>
+        <Providers>{children}</Providers>
+      </body>
     </html>
   )
 }
