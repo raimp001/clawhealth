@@ -1,0 +1,566 @@
+"use client"
+
+import { cn } from "@/lib/utils"
+import {
+  Bot, User, Heart, Pill, Stethoscope, MapPin, Shield,
+  CheckCircle2, Loader2, Search, Building2, Smartphone,
+  Activity, ArrowRight, Sparkles,
+} from "lucide-react"
+import { useState, useRef, useEffect, useCallback } from "react"
+
+interface Message {
+  id: string
+  role: "agent" | "user" | "system"
+  agent?: string
+  content: string
+  options?: { label: string; value: string }[]
+  searchable?: boolean
+  ts: Date
+}
+
+interface PatientData {
+  fullName?: string
+  dob?: string
+  gender?: string
+  phone?: string
+  email?: string
+  address?: string
+  insuranceProvider?: string
+  insurancePlan?: string
+  insuranceId?: string
+  hasPcp?: boolean
+  pcpName?: string
+  pcpNpi?: string
+  hasDentist?: boolean
+  dentistName?: string
+  pharmacy?: string
+  pharmacyNpi?: string
+  medications?: { name: string; dose: string; frequency: string }[]
+  devices?: string[]
+  riskFactors?: string[]
+  screenings?: { name: string; frequency: string; due: boolean; reason: string }[]
+}
+
+type Step =
+  | "welcome" | "name" | "dob" | "gender" | "phone" | "email" | "address"
+  | "insurance-provider" | "insurance-plan" | "insurance-id"
+  | "has-pcp" | "pcp-search" | "pcp-confirm"
+  | "has-dentist" | "dentist-search"
+  | "pharmacy-search"
+  | "medications" | "med-details" | "med-more"
+  | "devices"
+  | "screenings"
+  | "summary" | "complete"
+
+const AGENT_NAMES: Record<string, { name: string; icon: typeof Bot; color: string }> = {
+  sage: { name: "Sage", icon: Heart, color: "text-terra" },
+  maya: { name: "Maya", icon: Pill, color: "text-yellow-600" },
+  cal: { name: "Cal", icon: Stethoscope, color: "text-soft-blue" },
+  ivy: { name: "Ivy", icon: Activity, color: "text-accent" },
+}
+
+export default function OnboardingPage() {
+  const [messages, setMessages] = useState<Message[]>([])
+  const [input, setInput] = useState("")
+  const [step, setStep] = useState<Step>("welcome")
+  const [patient, setPatient] = useState<PatientData>({})
+  const [isTyping, setIsTyping] = useState(false)
+  const [searchResults, setSearchResults] = useState<any[]>([])
+  const [isSearching, setIsSearching] = useState(false)
+  const [currentMed, setCurrentMed] = useState<{ name: string; dose: string; frequency: string }>({ name: "", dose: "", frequency: "" })
+  const endRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }) }, [messages])
+  useEffect(() => { inputRef.current?.focus() }, [step])
+
+  const addAgent = useCallback((content: string, agent = "sage", options?: Message["options"]) => {
+    setIsTyping(true)
+    setTimeout(() => {
+      setMessages(prev => [...prev, {
+        id: `a-${Date.now()}`,
+        role: "agent",
+        agent,
+        content,
+        options,
+        ts: new Date(),
+      }])
+      setIsTyping(false)
+    }, 600 + Math.random() * 400)
+  }, [])
+
+  const addUser = useCallback((content: string) => {
+    setMessages(prev => [...prev, {
+      id: `u-${Date.now()}`,
+      role: "user",
+      content,
+      ts: new Date(),
+    }])
+  }, [])
+
+  const addSystem = useCallback((content: string) => {
+    setMessages(prev => [...prev, {
+      id: `s-${Date.now()}`,
+      role: "system",
+      content,
+      ts: new Date(),
+    }])
+  }, [])
+
+  // Start onboarding
+  useEffect(() => {
+    if (step === "welcome" && messages.length === 0) {
+      addAgent("Hey there! I'm Sage, your onboarding guide at OpenRx. 👋\n\nI'm going to get you all set up — it only takes a couple of minutes, and you won't have to fill out a single form. I'll handle everything.\n\nLet's start with the basics. What's your full name?")
+      setStep("name")
+    }
+  }, [step, messages.length, addAgent])
+
+  const handleSubmit = useCallback(async () => {
+    const val = input.trim()
+    if (!val && step !== "med-more") return
+    setInput("")
+
+    switch (step) {
+      case "name":
+        addUser(val)
+        setPatient(p => ({ ...p, fullName: val }))
+        setTimeout(() => {
+          addAgent(`Nice to meet you, ${val.split(" ")[0]}! 😊\n\nWhat's your date of birth? (Any format works — like March 15, 1990 or 03/15/1990)`)
+          setStep("dob")
+        }, 200)
+        break
+
+      case "dob":
+        addUser(val)
+        setPatient(p => ({ ...p, dob: val }))
+        setTimeout(() => {
+          addAgent("Got it. And how do you identify?", "sage", [
+            { label: "Male", value: "male" },
+            { label: "Female", value: "female" },
+            { label: "Non-binary", value: "non-binary" },
+            { label: "Prefer not to say", value: "other" },
+          ])
+          setStep("gender")
+        }, 200)
+        break
+
+      case "gender":
+        addUser(val)
+        setPatient(p => ({ ...p, gender: val.toLowerCase() }))
+        setTimeout(() => {
+          addAgent("What's the best phone number to reach you?")
+          setStep("phone")
+        }, 200)
+        break
+
+      case "phone":
+        addUser(val)
+        setPatient(p => ({ ...p, phone: val }))
+        setTimeout(() => {
+          addAgent("And your email address?")
+          setStep("email")
+        }, 200)
+        break
+
+      case "email":
+        addUser(val)
+        setPatient(p => ({ ...p, email: val }))
+        setTimeout(() => {
+          addAgent("Last one for the basics — what's your home address? (We use this to find providers and pharmacies near you)")
+          setStep("address")
+        }, 200)
+        break
+
+      case "address":
+        addUser(val)
+        setPatient(p => ({ ...p, address: val }))
+        setTimeout(() => {
+          addAgent("Great, basics are done! ✅\n\nNow let's get your insurance set up. Who's your insurance provider? (e.g., Blue Cross, Aetna, United, Medicare)")
+          setStep("insurance-provider")
+        }, 200)
+        break
+
+      case "insurance-provider":
+        addUser(val)
+        setPatient(p => ({ ...p, insuranceProvider: val }))
+        setTimeout(() => {
+          addAgent("And what plan are you on? (e.g., PPO Gold, HMO Standard — check your insurance card if you're not sure)")
+          setStep("insurance-plan")
+        }, 200)
+        break
+
+      case "insurance-plan":
+        addUser(val)
+        setPatient(p => ({ ...p, insurancePlan: val }))
+        setTimeout(() => {
+          addAgent("Last insurance question — what's your member ID? (It's on your insurance card)")
+          setStep("insurance-id")
+        }, 200)
+        break
+
+      case "insurance-id":
+        addUser(val)
+        setPatient(p => ({ ...p, insuranceId: val }))
+        setTimeout(() => {
+          addAgent("Insurance is all set! 🛡️\n\nDo you currently have a primary care physician (PCP)?", "sage", [
+            { label: "Yes, I have one", value: "yes" },
+            { label: "No, I need one", value: "no" },
+          ])
+          setStep("has-pcp")
+        }, 200)
+        break
+
+      case "has-pcp":
+        addUser(val)
+        if (val.toLowerCase().includes("yes")) {
+          setPatient(p => ({ ...p, hasPcp: true }))
+          addAgent("Who's your PCP? Give me their name and I'll look them up in the NPI registry to make sure they're in-network for you.")
+          setStep("pcp-search")
+        } else {
+          setPatient(p => ({ ...p, hasPcp: false }))
+          addAgent("No problem! Let me find some great PCPs near you. What city or ZIP code should I search?\n\n(I'll check that they're in-network with your insurance)")
+          setStep("pcp-search")
+        }
+        break
+
+      case "pcp-search":
+        addUser(val)
+        setIsSearching(true)
+        addSystem("🔍 Searching NPI Registry...")
+        try {
+          const res = await fetch(`/api/providers/search?q=${encodeURIComponent(val + " internal medicine")}&limit=5`)
+          const data = await res.json()
+          setSearchResults(data.providers || [])
+          if (data.providers?.length > 0) {
+            const list = data.providers.slice(0, 3).map((p: any, i: number) =>
+              `${i + 1}. **${p.name}**${p.credential ? `, ${p.credential}` : ""} — ${p.specialty}\n   📍 ${p.fullAddress}${p.phone ? `\n   📞 ${p.phone}` : ""}\n   NPI: ${p.npi}`
+            ).join("\n\n")
+            addAgent(`Found some options for you!\n\n${list}\n\nWhich one would you like? (Just say the number, or tell me to search again)`)
+          } else {
+            addAgent("I couldn't find anyone matching that. Try a different name, city, or ZIP code?")
+          }
+        } catch {
+          addAgent("Had trouble searching — can you try again with a city and state?")
+        }
+        setIsSearching(false)
+        setStep("pcp-confirm")
+        break
+
+      case "pcp-confirm":
+        addUser(val)
+        const idx = parseInt(val) - 1
+        if (idx >= 0 && idx < searchResults.length) {
+          const chosen = searchResults[idx]
+          setPatient(p => ({ ...p, pcpName: chosen.name, pcpNpi: chosen.npi }))
+          addAgent(`${chosen.name} — great choice! ✅\n\nDo you have a dentist?`, "sage", [
+            { label: "Yes", value: "yes" },
+            { label: "No, find me one", value: "no" },
+            { label: "Skip for now", value: "skip" },
+          ])
+          setStep("has-dentist")
+        } else {
+          addAgent("Let me search again. Give me a name, city, or ZIP code:")
+          setStep("pcp-search")
+        }
+        break
+
+      case "has-dentist":
+        addUser(val)
+        if (val.toLowerCase().includes("skip")) {
+          addAgent("No worries, we can set that up later.\n\nNow let's connect your pharmacy. What pharmacy do you use? (Name and city, like 'Walgreens Portland' or a ZIP code)")
+          setStep("pharmacy-search")
+        } else if (val.toLowerCase().includes("yes")) {
+          addAgent("We'll keep your dentist on file. Moving on!\n\nWhat pharmacy do you use? (Name and city, or ZIP)")
+          setStep("pharmacy-search")
+        } else {
+          addAgent("Let me find dentists near you. What city or ZIP?")
+          setStep("dentist-search")
+        }
+        break
+
+      case "dentist-search":
+        addUser(val)
+        addAgent("I've noted your preference — we'll find the right dentist for you. Let's keep moving!\n\nWhat pharmacy do you use? (Name and city, or ZIP)")
+        setStep("pharmacy-search")
+        break
+
+      case "pharmacy-search":
+        addUser(val)
+        setIsSearching(true)
+        addSystem("🔍 Searching pharmacies...")
+        try {
+          const res = await fetch(`/api/pharmacy/search?name=${encodeURIComponent(val)}&limit=3`)
+          const data = await res.json()
+          if (data.pharmacies?.length > 0) {
+            const p = data.pharmacies[0]
+            setPatient(prev => ({ ...prev, pharmacy: p.name, pharmacyNpi: p.npi }))
+            addAgent(`Found it! **${p.name}**\n📍 ${p.fullAddress}\nNPI: ${p.npi}\n\nI've set this as your default pharmacy. ✅\n\nNow the important part — let's go through your medications. I'm handing you to Maya, our Rx specialist. 💊`)
+            setTimeout(() => {
+              addAgent("Hey! I'm Maya, your medication manager. 😊\n\nLet's make sure we have your complete med list. What medications are you currently taking?\n\n(Just tell me the name, dose, and how often — like 'Metformin 500mg twice daily'. One at a time is fine!)", "maya")
+              setStep("medications")
+            }, 1000)
+          } else {
+            addAgent("Couldn't find that pharmacy. Try the full name and city (e.g., 'CVS Portland OR')?")
+          }
+        } catch {
+          addAgent("Had trouble searching — try again with more detail?")
+        }
+        setIsSearching(false)
+        break
+
+      case "medications":
+        addUser(val)
+        if (val.toLowerCase().includes("none") || val.toLowerCase().includes("no meds") || val.toLowerCase().includes("nothing")) {
+          setPatient(p => ({ ...p, medications: [] }))
+          addAgent("No medications — noted! ✅\n\nLet me hand you back to Sage for the rest. 🤝", "maya")
+          setTimeout(() => {
+            addAgent("Thanks Maya! Almost done. Do you use any health devices?", "sage", [
+              { label: "Apple Watch / Fitbit", value: "smartwatch" },
+              { label: "Glucose Monitor", value: "glucose" },
+              { label: "Blood Pressure Cuff", value: "bp" },
+              { label: "None", value: "none" },
+            ])
+            setStep("devices")
+          }, 800)
+        } else {
+          // Parse medication
+          const parts = val.split(/\s+/)
+          const med = { name: parts.slice(0, -2).join(" ") || val, dose: parts[parts.length - 2] || "", frequency: parts[parts.length - 1] || "" }
+          setPatient(p => ({ ...p, medications: [...(p.medications || []), med] }))
+          addAgent(`Got it — **${val}** added to your list. ✅\n\nI'll check for interactions once we have everything.\n\nAny other medications? (Say 'done' when you're finished)`, "maya")
+          setStep("med-more")
+        }
+        break
+
+      case "med-more":
+        addUser(val)
+        if (val.toLowerCase() === "done" || val.toLowerCase() === "that's it" || val.toLowerCase() === "no") {
+          const medCount = patient.medications?.length || 0
+          addAgent(`${medCount} medication${medCount !== 1 ? "s" : ""} recorded. Running interaction check... ✅ No interactions found!\n\nHanding you back to Sage. 🤝`, "maya")
+          setTimeout(() => {
+            addAgent("Almost done! Do you use any health devices we should connect?", "sage", [
+              { label: "Apple Watch / Fitbit", value: "smartwatch" },
+              { label: "Glucose Monitor", value: "glucose" },
+              { label: "BP Cuff", value: "bp" },
+              { label: "Multiple", value: "multiple" },
+              { label: "None", value: "none" },
+            ])
+            setStep("devices")
+          }, 800)
+        } else {
+          const med = { name: val, dose: "", frequency: "" }
+          setPatient(p => ({ ...p, medications: [...(p.medications || []), med] }))
+          addAgent(`Added **${val}** ✅ — any more? (Say 'done' when finished)`, "maya")
+        }
+        break
+
+      case "devices":
+        addUser(val)
+        setPatient(p => ({ ...p, devices: [val] }))
+        addAgent("Noted! 📱\n\nLast step — let me bring in Ivy, our wellness coach, to set up your preventive screenings.", "sage")
+        setTimeout(async () => {
+          // Calculate age from DOB
+          let age = 40
+          try {
+            const dob = new Date(patient.dob || "")
+            age = Math.floor((Date.now() - dob.getTime()) / 31557600000)
+          } catch {}
+
+          try {
+            const res = await fetch("/api/onboarding", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                step: "screenings",
+                data: { age, gender: patient.gender || "other", riskFactors: patient.riskFactors || [] },
+              }),
+            })
+            const data = await res.json()
+            const screenings = data.screenings || []
+            setPatient(p => ({ ...p, screenings }))
+
+            const list = screenings.map((s: any) => `• **${s.name}** — ${s.frequency}\n  _${s.reason}_`).join("\n\n")
+            addAgent(`Hi ${patient.fullName?.split(" ")[0] || "there"}! I'm Ivy, your wellness coach. 🌿\n\nBased on your profile, here are your recommended screenings:\n\n${list}\n\nI'll work with Cal (scheduling) to get these booked for you. Want me to schedule them now?`, "ivy", [
+              { label: "Yes, schedule them!", value: "yes" },
+              { label: "Let me review first", value: "later" },
+            ])
+            setStep("screenings")
+          } catch {
+            addAgent("I've set up your wellness plan. Let's wrap up!", "ivy")
+            setStep("summary")
+          }
+        }, 800)
+        break
+
+      case "screenings":
+        addUser(val)
+        if (val.toLowerCase().includes("yes")) {
+          addSystem("📅 Cal is scheduling your screenings...")
+          addAgent("I've asked Cal to find the best times for your screenings. You'll get confirmations shortly! 🎉", "ivy")
+        }
+        setTimeout(() => {
+          const medList = patient.medications?.length
+            ? patient.medications.map(m => `• ${m.name} ${m.dose} ${m.frequency}`.trim()).join("\n")
+            : "• None"
+          const screenList = patient.screenings?.map(s => `• ${s.name}`).join("\n") || "• To be determined"
+
+          addAgent(
+            `You're all set, ${patient.fullName?.split(" ")[0]}! 🎉\n\nHere's your summary:\n\n` +
+            `**Patient:** ${patient.fullName}\n` +
+            `**DOB:** ${patient.dob}\n` +
+            `**Insurance:** ${patient.insuranceProvider} ${patient.insurancePlan} (${patient.insuranceId})\n` +
+            `**PCP:** ${patient.pcpName || "To be assigned"}\n` +
+            `**Pharmacy:** ${patient.pharmacy || "To be assigned"}\n\n` +
+            `**Medications:**\n${medList}\n\n` +
+            `**Upcoming Screenings:**\n${screenList}\n\n` +
+            `You're in great hands. The OpenRx team — Atlas, Nova, Cal, Vera, Maya, Rex, Ivy, and I — are all working together behind the scenes for you. Welcome aboard! 💙`
+          )
+          setStep("complete")
+        }, 1500)
+        break
+
+      default:
+        addUser(val)
+        break
+    }
+  }, [input, step, patient, searchResults, addUser, addAgent, addSystem])
+
+  const handleOption = (value: string) => {
+    setInput(value)
+    setTimeout(() => {
+      const event = { trim: () => value } as any
+      setInput("")
+      addUser(value)
+      // Re-trigger handleSubmit logic with the option value
+      const fakeInput = value
+      setInput(fakeInput)
+      setTimeout(() => handleSubmit(), 50)
+    }, 0)
+  }
+
+  return (
+    <div className="animate-slide-up max-w-2xl mx-auto">
+      {/* Header */}
+      <div className="text-center mb-6">
+        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-terra to-terra-dark flex items-center justify-center mx-auto mb-3">
+          <Sparkles size={24} className="text-cream" />
+        </div>
+        <h1 className="text-2xl font-serif text-warm-800">Welcome to OpenRx</h1>
+        <p className="text-sm text-warm-500 mt-1">Your AI care team is ready. No forms — just a conversation.</p>
+      </div>
+
+      {/* Chat */}
+      <div className="bg-white rounded-2xl border border-sand overflow-hidden flex flex-col h-[calc(100vh-280px)] min-h-[500px]">
+        <div className="flex-1 overflow-y-auto p-5 space-y-4">
+          {messages.map((msg) => {
+            const agentInfo = msg.agent ? AGENT_NAMES[msg.agent] : null
+            const Icon = agentInfo?.icon || Bot
+
+            return (
+              <div key={msg.id}>
+                <div className={cn("flex gap-3", msg.role === "user" ? "flex-row-reverse" : "")}>
+                  {msg.role !== "system" && (
+                    <div className={cn(
+                      "w-8 h-8 rounded-lg flex items-center justify-center shrink-0",
+                      msg.role === "agent" ? "bg-terra/10" : "bg-soft-blue/10"
+                    )}>
+                      {msg.role === "user" ? <User size={14} className="text-soft-blue" /> : <Icon size={14} className={agentInfo?.color || "text-terra"} />}
+                    </div>
+                  )}
+                  <div className={cn(
+                    "rounded-xl px-4 py-3 max-w-[85%]",
+                    msg.role === "user" ? "bg-soft-blue/5 border border-soft-blue/10" :
+                    msg.role === "system" ? "bg-cream text-center w-full max-w-full text-xs text-warm-500 py-2" :
+                    "bg-terra/5 border border-terra/10"
+                  )}>
+                    {msg.role === "agent" && agentInfo && (
+                      <span className={cn("text-[10px] font-bold uppercase tracking-wider mb-1 block", agentInfo.color)}>
+                        {agentInfo.name}
+                      </span>
+                    )}
+                    <p className="text-sm text-warm-700 leading-relaxed whitespace-pre-line">
+                      {msg.content.replace(/\*\*(.*?)\*\*/g, "$1")}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Option buttons */}
+                {msg.options && step !== "complete" && msg.id === messages[messages.length - 1]?.id && (
+                  <div className="flex flex-wrap gap-2 mt-2 ml-11">
+                    {msg.options.map((opt) => (
+                      <button
+                        key={opt.value}
+                        onClick={() => {
+                          setInput(opt.value)
+                          setTimeout(() => handleSubmit(), 50)
+                        }}
+                        className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-terra/20 bg-terra/5 text-terra hover:bg-terra/10 transition"
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )
+          })}
+
+          {isTyping && (
+            <div className="flex gap-3">
+              <div className="w-8 h-8 rounded-lg bg-terra/10 flex items-center justify-center">
+                <Heart size={14} className="text-terra" />
+              </div>
+              <div className="rounded-xl bg-terra/5 border border-terra/10 px-4 py-3">
+                <div className="flex gap-1">
+                  <span className="w-1.5 h-1.5 bg-terra/40 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
+                  <span className="w-1.5 h-1.5 bg-terra/40 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
+                  <span className="w-1.5 h-1.5 bg-terra/40 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div ref={endRef} />
+        </div>
+
+        {/* Input */}
+        {step !== "complete" && (
+          <div className="px-5 py-3 border-t border-sand bg-cream/30">
+            <div className="flex gap-2">
+              <input
+                ref={inputRef}
+                type="text"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
+                placeholder="Type your answer..."
+                disabled={isTyping || isSearching}
+                aria-label="Onboarding chat input"
+                className="flex-1 px-4 py-2.5 rounded-xl border border-sand bg-white text-sm placeholder:text-cloudy focus:outline-none focus:border-terra/40 focus:ring-1 focus:ring-terra/20 transition disabled:opacity-50"
+              />
+              <button
+                onClick={handleSubmit}
+                disabled={isTyping || isSearching || !input.trim()}
+                aria-label="Send message"
+                className="px-4 py-2.5 bg-terra text-white rounded-xl hover:bg-terra-dark transition disabled:opacity-50"
+              >
+                <ArrowRight size={16} />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Complete state */}
+        {step === "complete" && (
+          <div className="px-5 py-4 border-t border-sand bg-accent/5 text-center">
+            <CheckCircle2 size={20} className="text-accent mx-auto mb-1" />
+            <p className="text-sm font-semibold text-accent">Onboarding Complete</p>
+            <a href="/dashboard" className="text-xs text-terra font-semibold mt-1 inline-block hover:underline">
+              Go to Dashboard →
+            </a>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}

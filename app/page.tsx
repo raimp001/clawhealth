@@ -63,10 +63,10 @@ export default function LandingPage() {
           </p>
           <div className="flex items-center justify-center gap-4 mt-8">
             <Link
-              href="/dashboard"
+              href="/onboarding"
               className="px-6 py-3 bg-terra text-white text-sm font-bold rounded-xl hover:bg-terra-dark transition shadow-xl shadow-terra/25 flex items-center gap-2"
             >
-              Try the Demo
+              Get Started
               <ArrowRight size={16} />
             </Link>
             <Link
@@ -121,20 +121,25 @@ export default function LandingPage() {
               scheduling, billing, prior auth, prescriptions, triage, and coordination
               — automatically.
             </p>
-            <div className="grid grid-cols-3 lg:grid-cols-6 gap-3 mt-8">
+            <div className="grid grid-cols-3 lg:grid-cols-3 gap-3 mt-8">
               {[
-                "Multi-Channel",
-                "6 AI Agents",
-                "Cron Automation",
-                "Webhook Events",
-                "HIPAA-Aware",
-                "Self-Hosted",
-              ].map((feature) => (
+                { name: "Sage", role: "Onboarding Guide", desc: "Walks you through setup" },
+                { name: "Atlas", role: "Coordinator", desc: "Routes everything" },
+                { name: "Nova", role: "Triage Nurse", desc: "Symptom assessment" },
+                { name: "Cal", role: "Scheduler", desc: "Books appointments" },
+                { name: "Vera", role: "Billing", desc: "Protects your wallet" },
+                { name: "Maya", role: "Rx Manager", desc: "Manages medications" },
+                { name: "Rex", role: "Prior Auth", desc: "Fights denials" },
+                { name: "Ivy", role: "Wellness Coach", desc: "Preventive care" },
+                { name: "Bolt", role: "DevOps", desc: "Keeps it running" },
+              ].map((agent) => (
                 <div
-                  key={feature}
-                  className="bg-white/5 rounded-xl px-3 py-2.5 text-[10px] font-bold text-cream/70 uppercase tracking-wider text-center"
+                  key={agent.name}
+                  className="bg-white/5 rounded-xl px-3 py-3 text-left"
                 >
-                  {feature}
+                  <div className="text-xs font-bold text-cream">{agent.name}</div>
+                  <div className="text-[10px] text-terra-light font-semibold">{agent.role}</div>
+                  <div className="text-[9px] text-cream/50 mt-0.5">{agent.desc}</div>
                 </div>
               ))}
             </div>

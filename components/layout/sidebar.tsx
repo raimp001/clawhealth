@@ -30,7 +30,8 @@ const navItems = [
   { href: "/providers", label: "Providers", icon: Stethoscope },
   { href: "/pharmacy", label: "Pharmacy", icon: Building2 },
   { href: "/messages", label: "Messages", icon: MessageSquare },
-  { href: "/chat", label: "AI Agent", icon: Bot },
+  { href: "/chat", label: "AI Agents", icon: Bot },
+  { href: "/onboarding", label: "Onboarding", icon: Users },
 ]
 
 export default function Sidebar() {

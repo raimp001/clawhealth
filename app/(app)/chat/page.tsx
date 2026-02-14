@@ -33,12 +33,15 @@ interface ChatMessage {
 }
 
 const agentMeta: Record<string, { label: string; icon: typeof Bot; color: string }> = {
-  coordinator: { label: "OpenRx AI", icon: Bot, color: "text-terra" },
-  triage: { label: "Triage Agent", icon: Stethoscope, color: "text-soft-red" },
-  scheduling: { label: "Scheduling Agent", icon: Calendar, color: "text-soft-blue" },
-  billing: { label: "Billing Agent", icon: Receipt, color: "text-accent" },
-  rx: { label: "Rx Manager", icon: Pill, color: "text-yellow-600" },
-  "prior-auth": { label: "PA Agent", icon: ShieldCheck, color: "text-terra" },
+  onboarding: { label: "Sage (Onboarding)", icon: Bot, color: "text-terra" },
+  coordinator: { label: "Atlas (Coordinator)", icon: Bot, color: "text-terra" },
+  triage: { label: "Nova (Triage)", icon: Stethoscope, color: "text-soft-red" },
+  scheduling: { label: "Cal (Scheduler)", icon: Calendar, color: "text-soft-blue" },
+  billing: { label: "Vera (Billing)", icon: Receipt, color: "text-accent" },
+  rx: { label: "Maya (Rx)", icon: Pill, color: "text-yellow-600" },
+  "prior-auth": { label: "Rex (PA)", icon: ShieldCheck, color: "text-terra" },
+  wellness: { label: "Ivy (Wellness)", icon: Stethoscope, color: "text-accent" },
+  devops: { label: "Bolt (DevOps)", icon: Bot, color: "text-warm-600" },
 }
 
 const iconMap: Record<string, typeof Calendar> = {

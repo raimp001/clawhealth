@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
       channel?: string
     }
 
-    const validAgents = ["coordinator", "triage", "scheduling", "billing", "rx", "prior-auth"]
+    const validAgents = ["coordinator", "triage", "scheduling", "billing", "rx", "prior-auth", "onboarding", "wellness", "devops"]
 
     if (!message || typeof message !== "string" || !message.trim()) {
       return NextResponse.json(
@@ -97,7 +97,16 @@ function getDemoResponse(agentId: AgentId, message: string): string {
       return "PA Analysis for your request:\n\n✅ Clinical criteria: All requirements met\n✅ Supporting documentation: Labs and notes attached\n✅ Insurance policy: Matches Aetna ePA requirements\n\nForm auto-filled with:\n• ICD-10: C50.911, Z12.31\n• CPT: 77066\n• Clinical justification: attached\n\nReady to submit electronically. Estimated turnaround: 2-4 hours for ePA. Shall I proceed?"
 
     case "triage":
-      return "I understand you're not feeling well. Let me help assess this.\n\nBased on your medical history, I need to ask:\n1. When did symptoms start?\n2. Severity on a 1-10 scale?\n3. Any new medications or changes recently?\n4. Any fever, chest pain, or difficulty breathing?\n\nThis helps me determine if you need immediate care or if we can manage this with a scheduled visit.\n\n⚠️ If you're experiencing chest pain, severe difficulty breathing, or signs of stroke — please call 911 immediately."
+      return "Hey, I'm Nova. I understand you're not feeling well — let me help.\n\nHere's what I need from you:\n1. When did this start?\n2. Severity on 1-10?\n3. Any new medications or changes?\n4. Fever, chest pain, or difficulty breathing?\n\nThis helps me classify urgency and get you the right care fast.\n\n⚠️ If you're having chest pain, can't breathe, or show stroke signs — call 911 now. I'm not messing around with those."
+
+    case "onboarding":
+      return "Hey there! I'm Sage, your onboarding guide. 👋\n\nI'm going to get you completely set up — PCP, dentist, pharmacy, medications, screenings, the works. No forms, just a conversation.\n\nLet's start with the basics. What's your full name?"
+
+    case "wellness":
+      return "Hi! I'm Ivy, your wellness coach. 🌿\n\nBased on your profile, I'd love to set up your preventive care plan. This includes:\n\n• Age-appropriate screenings (USPSTF guidelines)\n• Vaccination updates\n• Health goals and tracking\n• Device integration for real-time monitoring\n\nWant me to run your screening recommendations?"
+
+    case "devops":
+      return "Bolt here. Systems status:\n\n✅ All 20 routes: healthy\n✅ API latency: <200ms average\n✅ Last deploy: today 02:00 UTC\n✅ Dependencies: up to date\n✅ Zero errors in last 24h\n\nNext scheduled deploy: tomorrow 02:00 UTC. No pending changes from other agents.\n\nAnything you need me to check?"
 
     default:
       return "I'm processing your request. How can I help you today?"
