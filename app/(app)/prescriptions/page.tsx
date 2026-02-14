@@ -1,6 +1,7 @@
 "use client"
 
-import { prescriptions, getPatient, getPhysician } from "@/lib/seed-data"
+import { getMyPrescriptions } from "@/lib/current-user"
+import { getPhysician } from "@/lib/seed-data"
 import { cn, formatDate, getStatusColor } from "@/lib/utils"
 import { Pill, Search, AlertTriangle, RefreshCw, CheckCircle2 } from "lucide-react"
 import { useState, useMemo } from "react"
@@ -11,27 +12,27 @@ export default function PrescriptionsPage() {
   const [search, setSearch] = useState("")
   const [statusFilter, setStatusFilter] = useState("")
 
+  const myPrescriptions = getMyPrescriptions()
+
   const statuses = useMemo(
-    () => Array.from(new Set(prescriptions.map((p) => p.status))),
-    []
+    () => Array.from(new Set(myPrescriptions.map((p) => p.status))),
+    [myPrescriptions]
   )
 
   const filtered = useMemo(() => {
-    return prescriptions.filter((rx) => {
-      const patient = getPatient(rx.patient_id)
+    return myPrescriptions.filter((rx) => {
       const matchesSearch =
         !search ||
-        rx.medication_name.toLowerCase().includes(search.toLowerCase()) ||
-        patient?.full_name.toLowerCase().includes(search.toLowerCase())
+        rx.medication_name.toLowerCase().includes(search.toLowerCase())
       const matchesStatus = !statusFilter || rx.status === statusFilter
       return matchesSearch && matchesStatus
     })
-  }, [search, statusFilter])
+  }, [search, statusFilter, myPrescriptions])
 
-  const lowAdherenceCount = prescriptions.filter(
+  const lowAdherenceCount = myPrescriptions.filter(
     (p) => p.status === "active" && p.adherence_pct < 80
   ).length
-  const pendingRefills = prescriptions.filter(
+  const pendingRefills = myPrescriptions.filter(
     (p) => p.status === "pending-refill"
   ).length
 
@@ -39,9 +40,9 @@ export default function PrescriptionsPage() {
     <div className="animate-slide-up space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-serif text-warm-800">Prescriptions</h1>
+          <h1 className="text-2xl font-serif text-warm-800">My Medications</h1>
           <p className="text-sm text-warm-500 mt-1">
-            {prescriptions.length} prescriptions &middot;{" "}
+            {myPrescriptions.length} prescriptions &middot;{" "}
             <span className="text-soft-red font-medium">
               {lowAdherenceCount} low adherence
             </span>{" "}
@@ -60,14 +61,14 @@ export default function PrescriptionsPage() {
           </Link>
           <AIAction
             agentId="rx"
-            label="Check Adherence"
-            prompt="Run a full adherence check on all active prescriptions. For patients below 80%, suggest interventions and draft outreach messages."
-            context={`Low adherence: ${lowAdherenceCount} patients, Pending refills: ${pendingRefills}`}
+            label="Check My Adherence"
+            prompt="Review my medication adherence for all active prescriptions. For any below 80%, give me tips to stay on track."
+            context={`Low adherence: ${lowAdherenceCount} medications, Pending refills: ${pendingRefills}`}
           />
           <AIAction
             agentId="rx"
-            label="Send Refill Alerts"
-            prompt="Identify all prescriptions that need refills within the next 7 days and send automated reminders to patients via their preferred channel."
+            label="Refill Reminders"
+            prompt="Check which of my prescriptions need refills within the next 7 days and remind me."
             variant="inline"
           />
         </div>
@@ -82,7 +83,7 @@ export default function PrescriptionsPage() {
           />
           <input
             type="text"
-            placeholder="Search medication or patient..."
+            placeholder="Search medication..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-sand bg-white text-sm text-warm-800 placeholder:text-cloudy focus:outline-none focus:border-terra/40 focus:ring-1 focus:ring-terra/20 transition"
@@ -120,7 +121,6 @@ export default function PrescriptionsPage() {
       {/* Prescriptions List */}
       <div className="bg-white rounded-2xl border border-sand divide-y divide-sand/50">
         {filtered.map((rx) => {
-          const patient = getPatient(rx.patient_id)
           const physician = getPhysician(rx.physician_id)
           const isLowAdherence = rx.status === "active" && rx.adherence_pct < 80
 
@@ -176,7 +176,7 @@ export default function PrescriptionsPage() {
                   </span>
                 </div>
                 <p className="text-xs text-warm-500 mt-0.5">
-                  {patient?.full_name} &middot; {rx.frequency} &middot; Rx by{" "}
+                  {rx.frequency} &middot; Prescribed by{" "}
                   {physician?.full_name}
                 </p>
                 {rx.notes && (
@@ -228,11 +228,11 @@ export default function PrescriptionsPage() {
                 {(isLowAdherence || rx.status === "pending-refill") && (
                   <AIAction
                     agentId="rx"
-                    label={isLowAdherence ? "AI Outreach" : "AI Refill"}
+                    label={isLowAdherence ? "Get Tips" : "Request Refill"}
                     prompt={isLowAdherence
-                      ? `Patient has ${rx.adherence_pct}% adherence for ${rx.medication_name}. Draft a personalized outreach message with tips to improve compliance.`
-                      : `Process refill request for ${rx.medication_name} ${rx.dosage} at ${rx.pharmacy}.`}
-                    context={`Patient: ${getPatient(rx.patient_id)?.full_name}, Medication: ${rx.medication_name} ${rx.dosage}, Adherence: ${rx.adherence_pct}%`}
+                      ? `I have ${rx.adherence_pct}% adherence for ${rx.medication_name}. Give me tips and reminders to help me stay on track.`
+                      : `Help me request a refill for ${rx.medication_name} ${rx.dosage} at ${rx.pharmacy}.`}
+                    context={`Medication: ${rx.medication_name} ${rx.dosage}, Adherence: ${rx.adherence_pct}%`}
                     variant="compact"
                     className="mt-1.5 justify-end"
                   />

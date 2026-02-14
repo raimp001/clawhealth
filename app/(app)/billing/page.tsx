@@ -1,6 +1,6 @@
 "use client"
 
-import { claims, getPatient } from "@/lib/seed-data"
+import { getMyClaims } from "@/lib/current-user"
 import { cn, formatCurrency, formatDate, getStatusColor } from "@/lib/utils"
 import {
   Receipt,
@@ -16,20 +16,22 @@ import AIAction from "@/components/ai-action"
 export default function BillingPage() {
   const [statusFilter, setStatusFilter] = useState("")
 
+  const myClaims = getMyClaims()
+
   const stats = useMemo(() => {
-    const totalBilled = claims.reduce((s, c) => s + c.total_amount, 0)
-    const totalPaid = claims
+    const totalBilled = myClaims.reduce((s, c) => s + c.total_amount, 0)
+    const totalPaid = myClaims
       .filter((c) => c.status === "paid" || c.status === "approved")
       .reduce((s, c) => s + c.insurance_paid + c.patient_responsibility, 0)
-    const totalDenied = claims
+    const totalDenied = myClaims
       .filter((c) => c.status === "denied")
       .reduce((s, c) => s + c.total_amount, 0)
-    const totalPending = claims
+    const totalPending = myClaims
       .filter((c) => ["submitted", "processing"].includes(c.status))
       .reduce((s, c) => s + c.total_amount, 0)
 
     return { totalBilled, totalPaid, totalDenied, totalPending }
-  }, [])
+  }, [myClaims])
 
   const statCards = [
     {
@@ -40,7 +42,7 @@ export default function BillingPage() {
       bg: "bg-sand/30",
     },
     {
-      label: "Collected",
+      label: "Paid",
       value: formatCurrency(stats.totalPaid),
       icon: CheckCircle2,
       color: "text-accent",
@@ -63,37 +65,37 @@ export default function BillingPage() {
   ]
 
   const filtered = useMemo(() => {
-    if (!statusFilter) return claims
-    return claims.filter((c) => c.status === statusFilter)
-  }, [statusFilter])
+    if (!statusFilter) return myClaims
+    return myClaims.filter((c) => c.status === statusFilter)
+  }, [statusFilter, myClaims])
 
   const statuses = useMemo(
-    () => Array.from(new Set(claims.map((c) => c.status))),
-    []
+    () => Array.from(new Set(myClaims.map((c) => c.status))),
+    [myClaims]
   )
 
   return (
     <div className="animate-slide-up space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-serif text-warm-800">Billing & Claims</h1>
+          <h1 className="text-2xl font-serif text-warm-800">My Bills</h1>
           <p className="text-sm text-warm-500 mt-1">
-            {claims.length} total claims &middot;{" "}
-            {claims.filter((c) => c.errors_detected.length > 0).length} with
-            errors
+            {myClaims.length} total claims &middot;{" "}
+            {myClaims.filter((c) => c.errors_detected.length > 0).length} with
+            issues
           </p>
         </div>
         <div className="flex gap-2">
           <AIAction
             agentId="billing"
-            label="Scan All Claims"
-            prompt="Analyze all current claims for billing errors, missing modifiers, CPT/ICD mismatches, and denial risks. Prioritize by potential revenue impact."
-            context={`Total claims: ${claims.length}, Denied: ${claims.filter(c => c.status === "denied").length}, With errors: ${claims.filter(c => c.errors_detected.length > 0).length}`}
+            label="Analyze My Claims"
+            prompt="Review all my claims for billing errors, incorrect charges, and denial risks. Help me understand what I owe and flag anything that looks wrong."
+            context={`Total claims: ${myClaims.length}, Denied: ${myClaims.filter(c => c.status === "denied").length}, With issues: ${myClaims.filter(c => c.errors_detected.length > 0).length}`}
           />
           <AIAction
             agentId="billing"
-            label="Draft Appeals"
-            prompt="For all denied claims, draft appeal letters with supporting clinical documentation references, LCD/NCD criteria citations, and corrective actions."
+            label="Help With Appeals"
+            prompt="For any denied claims, help me understand why they were denied and draft appeal letters on my behalf."
             variant="inline"
           />
         </div>
@@ -157,16 +159,15 @@ export default function BillingPage() {
       {/* Claims Table */}
       <div className="bg-white rounded-2xl border border-sand overflow-hidden">
         <div className="hidden lg:grid grid-cols-[1fr_auto_auto_auto_auto_auto] gap-4 px-5 py-3 bg-cream/50 border-b border-sand text-[10px] font-bold text-warm-500 uppercase tracking-wider">
-          <span>Patient / Claim</span>
+          <span>Claim Details</span>
           <span className="w-20 text-right">Amount</span>
           <span className="w-20 text-right">Ins. Paid</span>
-          <span className="w-20 text-right">Patient</span>
+          <span className="w-20 text-right">My Cost</span>
           <span className="w-24 text-center">Status</span>
           <span className="w-24 text-right">Date</span>
         </div>
         <div className="divide-y divide-sand/50">
           {filtered.map((claim) => {
-            const patient = getPatient(claim.patient_id)
             return (
               <div
                 key={claim.id}
@@ -175,18 +176,17 @@ export default function BillingPage() {
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-semibold text-warm-800 truncate">
-                      {patient?.full_name}
+                      {claim.claim_number}
                     </span>
                     {claim.errors_detected.length > 0 && (
                       <span className="flex items-center gap-0.5 text-[10px] font-bold text-soft-red">
                         <AlertTriangle size={10} />
-                        {claim.errors_detected.length}
+                        {claim.errors_detected.length} issue{claim.errors_detected.length > 1 ? "s" : ""}
                       </span>
                     )}
                   </div>
                   <div className="text-[10px] text-cloudy mt-0.5 truncate">
-                    {claim.claim_number} &middot; CPT:{" "}
-                    {claim.cpt_codes.join(", ")} &middot; ICD:{" "}
+                    CPT: {claim.cpt_codes.join(", ")} &middot; ICD:{" "}
                     {claim.icd_codes.join(", ")}
                   </div>
                   {claim.denial_reason && (
@@ -197,11 +197,11 @@ export default function BillingPage() {
                   {(claim.status === "denied" || claim.errors_detected.length > 0) && (
                     <AIAction
                       agentId="billing"
-                      label={claim.status === "denied" ? "AI Appeal" : "AI Analyze"}
+                      label={claim.status === "denied" ? "Help Me Appeal" : "Explain Issue"}
                       prompt={claim.status === "denied"
-                        ? `Draft an appeal for denied claim ${claim.claim_number}. Denial reason: "${claim.denial_reason}". Include clinical justification.`
-                        : `Analyze claim ${claim.claim_number} for errors and suggest corrections.`}
-                      context={`Patient: ${getPatient(claim.patient_id)?.full_name}, CPT: ${claim.cpt_codes.join(",")}, ICD: ${claim.icd_codes.join(",")}, Amount: $${claim.total_amount}`}
+                        ? `Help me appeal denied claim ${claim.claim_number}. Denial reason: "${claim.denial_reason}". Explain what happened and draft an appeal.`
+                        : `Explain the issues with claim ${claim.claim_number} in plain language and suggest what I should do.`}
+                      context={`Claim: ${claim.claim_number}, CPT: ${claim.cpt_codes.join(",")}, ICD: ${claim.icd_codes.join(",")}, Amount: $${claim.total_amount}`}
                       variant="compact"
                       className="mt-1.5"
                     />

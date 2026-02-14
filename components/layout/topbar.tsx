@@ -1,16 +1,19 @@
 "use client"
 
 import { Bell, Search, X, User } from "lucide-react"
-import { messages, patients, appointments, claims } from "@/lib/seed-data"
-import { cn, formatDate, getInitials } from "@/lib/utils"
+import { getMyClaims, getMyMessages } from "@/lib/current-user"
+import { cn } from "@/lib/utils"
 import Link from "next/link"
 import { useState, useMemo, useRef, useEffect } from "react"
 
 export default function Topbar() {
-  const unread = messages.filter((m) => !m.read).length
+  const myMessages = getMyMessages()
+  const unread = myMessages.filter((m) => !m.read).length
   const [query, setQuery] = useState("")
   const [isOpen, setIsOpen] = useState(false)
   const searchRef = useRef<HTMLDivElement>(null)
+
+  const myClaims = getMyClaims()
 
   // Close on click outside
   useEffect(() => {
@@ -27,29 +30,19 @@ export default function Topbar() {
     if (!query || query.length < 2) return null
     const q = query.toLowerCase()
 
-    const matchedPatients = patients
-      .filter(
-        (p) =>
-          p.full_name.toLowerCase().includes(q) ||
-          p.email.toLowerCase().includes(q) ||
-          p.insurance_id.toLowerCase().includes(q) ||
-          p.phone.includes(q)
-      )
-      .slice(0, 4)
-
-    const matchedClaims = claims
+    const matchedClaims = myClaims
       .filter(
         (c) =>
           c.claim_number.toLowerCase().includes(q) ||
           c.cpt_codes.some((code) => code.includes(q)) ||
           c.icd_codes.some((code) => code.toLowerCase().includes(q))
       )
-      .slice(0, 3)
+      .slice(0, 5)
 
-    const total = matchedPatients.length + matchedClaims.length
-    if (total === 0) return { patients: [], claims: [], total: 0 }
-    return { patients: matchedPatients, claims: matchedClaims, total }
-  }, [query])
+    const total = matchedClaims.length
+    if (total === 0) return { claims: [], total: 0 }
+    return { claims: matchedClaims, total }
+  }, [query, myClaims])
 
   return (
     <header className="sticky top-0 z-30 h-16 border-b border-sand bg-white/80 backdrop-blur-sm flex items-center justify-between px-4 lg:px-6">
@@ -67,7 +60,7 @@ export default function Topbar() {
             setIsOpen(true)
           }}
           onFocus={() => query.length >= 2 && setIsOpen(true)}
-          placeholder="Search patients, claims, codes..."
+          placeholder="Search claims, codes..."
           className="w-full pl-10 pr-8 py-2 rounded-xl border border-sand bg-cream/50 text-sm text-warm-800 placeholder:text-cloudy focus:outline-none focus:border-terra/40 focus:ring-1 focus:ring-terra/20 transition"
         />
         {query && (
@@ -91,40 +84,10 @@ export default function Topbar() {
               </div>
             ) : (
               <>
-                {results.patients.length > 0 && (
-                  <>
-                    <div className="px-4 py-1.5 bg-cream/50 text-[10px] font-bold text-warm-500 uppercase tracking-wider">
-                      Patients
-                    </div>
-                    {results.patients.map((p) => (
-                      <Link
-                        key={p.id}
-                        href={`/patients/${p.id}`}
-                        onClick={() => {
-                          setIsOpen(false)
-                          setQuery("")
-                        }}
-                        className="flex items-center gap-3 px-4 py-2.5 hover:bg-cream/50 transition"
-                      >
-                        <div className="w-7 h-7 rounded-lg bg-terra/5 flex items-center justify-center text-terra text-[9px] font-bold font-serif">
-                          {getInitials(p.full_name)}
-                        </div>
-                        <div>
-                          <p className="text-xs font-semibold text-warm-800">
-                            {p.full_name}
-                          </p>
-                          <p className="text-[10px] text-cloudy">
-                            {p.insurance_provider} &middot; {p.insurance_id}
-                          </p>
-                        </div>
-                      </Link>
-                    ))}
-                  </>
-                )}
                 {results.claims.length > 0 && (
                   <>
                     <div className="px-4 py-1.5 bg-cream/50 text-[10px] font-bold text-warm-500 uppercase tracking-wider">
-                      Claims
+                      My Claims
                     </div>
                     {results.claims.map((c) => (
                       <Link

@@ -1,9 +1,9 @@
 "use client"
 
-import { appointments, getPatient, getPhysician, physicians } from "@/lib/seed-data"
+import { getMyAppointments } from "@/lib/current-user"
+import { getPhysician } from "@/lib/seed-data"
 import { cn, formatTime, formatDate, getStatusColor } from "@/lib/utils"
 import { Video, AlertTriangle } from "lucide-react"
-import Link from "next/link"
 import { useState, useMemo } from "react"
 import AIAction from "@/components/ai-action"
 
@@ -11,13 +11,13 @@ type ViewMode = "today" | "upcoming" | "past"
 
 export default function SchedulingPage() {
   const [view, setView] = useState<ViewMode>("today")
-  const [physicianFilter, setPhysicianFilter] = useState("")
 
+  const myAppointments = getMyAppointments()
   const today = new Date().toDateString()
 
   const { todayApts, upcomingApts, pastApts } = useMemo(() => {
     const now = new Date()
-    const sorted = [...appointments].sort(
+    const sorted = [...myAppointments].sort(
       (a, b) => new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime()
     )
 
@@ -30,14 +30,9 @@ export default function SchedulingPage() {
         .filter((a) => new Date(a.scheduled_at) < now && new Date(a.scheduled_at).toDateString() !== today)
         .reverse(),
     }
-  }, [today])
+  }, [today, myAppointments])
 
   const activeList = view === "today" ? todayApts : view === "upcoming" ? upcomingApts : pastApts
-
-  const filtered = useMemo(() => {
-    if (!physicianFilter) return activeList
-    return activeList.filter((a) => a.physician_id === physicianFilter)
-  }, [activeList, physicianFilter])
 
   const statusCounts = useMemo(() => {
     const counts: Record<string, number> = {}
@@ -51,7 +46,7 @@ export default function SchedulingPage() {
     <div className="animate-slide-up space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-serif text-warm-800">Scheduling</h1>
+          <h1 className="text-2xl font-serif text-warm-800">My Appointments</h1>
           <p className="text-sm text-warm-500 mt-1">
             {todayApts.length} appointments today &middot; {upcomingApts.length}{" "}
             upcoming
@@ -61,13 +56,13 @@ export default function SchedulingPage() {
           <AIAction
             agentId="scheduling"
             label="Find Open Slots"
-            prompt="Check all physician availability for the next 7 days and suggest optimal appointment slots. Consider insurance networks, copay estimates, and existing schedule density."
+            prompt="Check physician availability for the next 7 days and suggest appointment slots that work for me. Consider my insurance network and copay estimates."
             context={`Today's appointments: ${todayApts.length}, Upcoming: ${upcomingApts.length}`}
           />
           <AIAction
             agentId="scheduling"
-            label="Send Reminders"
-            prompt="Generate and send appointment reminders for all scheduled appointments tomorrow. Include time, physician name, location, and copay estimate."
+            label="Send Me Reminders"
+            prompt="Send me reminders for my upcoming appointments. Include time, physician name, location, and copay estimate."
             variant="inline"
           />
         </div>
@@ -88,7 +83,7 @@ export default function SchedulingPage() {
         ))}
       </div>
 
-      {/* Tabs + Filter */}
+      {/* Tabs */}
       <div className="flex items-center justify-between">
         <div className="flex bg-white border border-sand rounded-xl overflow-hidden">
           {(["today", "upcoming", "past"] as ViewMode[]).map((v) => (
@@ -106,30 +101,16 @@ export default function SchedulingPage() {
             </button>
           ))}
         </div>
-
-        <select
-          value={physicianFilter}
-          onChange={(e) => setPhysicianFilter(e.target.value)}
-          className="pl-3 pr-8 py-2 rounded-xl border border-sand bg-white text-sm text-warm-800 focus:outline-none focus:border-terra/40 appearance-none cursor-pointer"
-        >
-          <option value="">All Physicians</option>
-          {physicians.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.full_name}
-            </option>
-          ))}
-        </select>
       </div>
 
       {/* Appointment List */}
       <div className="bg-white rounded-2xl border border-sand divide-y divide-sand/50">
-        {filtered.length === 0 && (
+        {activeList.length === 0 && (
           <div className="text-center py-12 text-sm text-warm-500">
             No appointments to display.
           </div>
         )}
-        {filtered.map((apt) => {
-          const patient = getPatient(apt.patient_id)
+        {activeList.map((apt) => {
           const physician = getPhysician(apt.physician_id)
           return (
             <div
@@ -165,12 +146,6 @@ export default function SchedulingPage() {
               {/* Main info */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <Link
-                    href={`/patients/${apt.patient_id}`}
-                    className="text-sm font-bold text-warm-800 hover:text-terra transition"
-                  >
-                    {patient?.full_name}
-                  </Link>
                   <span
                     className={cn(
                       "text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide",

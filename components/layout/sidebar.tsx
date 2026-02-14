@@ -4,18 +4,15 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
   LayoutDashboard,
-  Users,
   Calendar,
   Receipt,
   Pill,
-  ShieldCheck,
   MessageSquare,
   Bot,
   ExternalLink,
   Menu,
   X,
   Stethoscope,
-  Building2,
   Heart,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -119,10 +116,7 @@ export default function Sidebar() {
         </Link>
         <div className="mt-2 mx-3 px-3 py-1.5 rounded-lg bg-terra/5 border border-terra/10">
           <p className="text-[9px] font-bold text-terra uppercase tracking-wider">
-            Demo Mode
-          </p>
-          <p className="text-[9px] text-warm-500 mt-0.5">
-            Sample clinic data
+            Demo Account
           </p>
         </div>
       </div>

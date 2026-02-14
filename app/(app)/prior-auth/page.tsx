@@ -1,6 +1,7 @@
 "use client"
 
-import { priorAuths, getPatient, getPhysician } from "@/lib/seed-data"
+import { currentUser } from "@/lib/current-user"
+import { priorAuths, getPhysician } from "@/lib/seed-data"
 import { cn, formatDate, getStatusColor } from "@/lib/utils"
 import {
   ShieldCheck,
@@ -13,11 +14,13 @@ import {
 import AIAction from "@/components/ai-action"
 
 export default function PriorAuthPage() {
-  const pending = priorAuths.filter(
+  const myAuths = priorAuths.filter((pa) => pa.patient_id === currentUser.id)
+
+  const pending = myAuths.filter(
     (p) => p.status === "pending" || p.status === "submitted"
   )
-  const approved = priorAuths.filter((p) => p.status === "approved")
-  const denied = priorAuths.filter((p) => p.status === "denied")
+  const approved = myAuths.filter((p) => p.status === "approved")
+  const denied = myAuths.filter((p) => p.status === "denied")
 
   const getIcon = (status: string) => {
     switch (status) {
@@ -37,10 +40,10 @@ export default function PriorAuthPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-serif text-warm-800">
-            Prior Authorizations
+            My Authorizations
           </h1>
           <p className="text-sm text-warm-500 mt-1">
-            {priorAuths.length} total &middot;{" "}
+            {myAuths.length} total &middot;{" "}
             <span className="text-yellow-600 font-medium">
               {pending.length} pending
             </span>{" "}
@@ -56,8 +59,8 @@ export default function PriorAuthPage() {
         </div>
         <AIAction
           agentId="prior-auth"
-          label="Check All PA Status"
-          prompt="Check the status of all pending and submitted prior authorizations. For any that are past expected turnaround time, escalate. For denied PAs, prepare peer-to-peer review materials."
+          label="Check My PA Status"
+          prompt="Check the status of all my pending and submitted prior authorizations. Let me know if any are overdue or need attention."
           context={`Pending: ${pending.length}, Denied: ${denied.length}`}
         />
       </div>
@@ -96,7 +99,7 @@ export default function PriorAuthPage() {
           <div className="text-3xl font-bold text-soft-red">
             {denied.length}
           </div>
-          <div className="text-xs text-soft-red/70 mt-1">Needs appeal</div>
+          <div className="text-xs text-soft-red/70 mt-1">May need appeal</div>
         </div>
       </div>
 
@@ -104,11 +107,10 @@ export default function PriorAuthPage() {
       <div className="bg-white rounded-2xl border border-sand divide-y divide-sand/50">
         <div className="px-5 py-3 bg-cream/50 border-b border-sand">
           <h2 className="text-sm font-bold text-warm-700">
-            All Authorizations
+            All My Authorizations
           </h2>
         </div>
-        {priorAuths.map((pa) => {
-          const patient = getPatient(pa.patient_id)
+        {myAuths.map((pa) => {
           const physician = getPhysician(pa.physician_id)
 
           return (
@@ -147,7 +149,7 @@ export default function PriorAuthPage() {
                     )}
                   </div>
                   <p className="text-xs text-warm-500 mt-1">
-                    {patient?.full_name} &middot; {physician?.full_name} &middot;{" "}
+                    {physician?.full_name} &middot;{" "}
                     {pa.insurance_provider}
                   </p>
                   <p className="text-xs text-warm-500 mt-0.5">
@@ -166,9 +168,9 @@ export default function PriorAuthPage() {
                       </p>
                       <AIAction
                         agentId="prior-auth"
-                        label="Prepare Appeal"
-                        prompt={`Prepare a peer-to-peer review appeal for denied PA ${pa.reference_number}. Denial: "${pa.denial_reason}". Gather additional clinical evidence to support medical necessity.`}
-                        context={`Patient: ${getPatient(pa.patient_id)?.full_name}, Procedure: ${pa.procedure_name} (${pa.procedure_code}), ICD: ${pa.icd_codes.join(",")}, Insurer: ${pa.insurance_provider}`}
+                        label="Help Me Appeal"
+                        prompt={`Help me understand and appeal the denial for my prior authorization ${pa.reference_number}. Denial reason: "${pa.denial_reason}". What are my options?`}
+                        context={`Procedure: ${pa.procedure_name} (${pa.procedure_code}), ICD: ${pa.icd_codes.join(",")}, Insurer: ${pa.insurance_provider}`}
                         variant="compact"
                         className="mt-2"
                       />
@@ -177,11 +179,11 @@ export default function PriorAuthPage() {
                   {(pa.status === "pending" || pa.status === "submitted") && (
                     <AIAction
                       agentId="prior-auth"
-                      label={pa.status === "pending" ? "AI Submit" : "Check Status"}
+                      label={pa.status === "pending" ? "Submit for Me" : "Check Status"}
                       prompt={pa.status === "pending"
-                        ? `Auto-fill and submit prior authorization for ${pa.procedure_name}. Match clinical criteria to ${pa.insurance_provider} requirements and submit via ePA.`
-                        : `Check the current status of PA ${pa.reference_number} with ${pa.insurance_provider}. If past expected turnaround, escalate.`}
-                      context={`Patient: ${getPatient(pa.patient_id)?.full_name}, CPT: ${pa.procedure_code}, Insurer: ${pa.insurance_provider}`}
+                        ? `Submit my prior authorization for ${pa.procedure_name} to ${pa.insurance_provider}. Make sure all required clinical documentation is included.`
+                        : `Check the current status of my PA ${pa.reference_number} with ${pa.insurance_provider}. Let me know if there are any updates.`}
+                      context={`CPT: ${pa.procedure_code}, Insurer: ${pa.insurance_provider}`}
                       variant="compact"
                       className="mt-2"
                     />
