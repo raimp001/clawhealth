@@ -42,12 +42,11 @@ interface PatientData {
 }
 
 type Step =
-  | "welcome" | "name" | "dob" | "gender" | "phone" | "email" | "address"
-  | "insurance-provider" | "insurance-plan" | "insurance-id"
+  | "welcome"
   | "has-pcp" | "pcp-search" | "pcp-confirm"
   | "has-dentist" | "dentist-search"
   | "pharmacy-search"
-  | "medications" | "med-details" | "med-more"
+  | "medications" | "med-more"
   | "devices"
   | "screenings"
   | "summary" | "complete"
@@ -107,11 +106,14 @@ export default function OnboardingPage() {
     }])
   }, [])
 
-  // Start onboarding
+  // Start onboarding — skip personal identifiers, jump to care setup
   useEffect(() => {
     if (step === "welcome" && messages.length === 0) {
-      addAgent("Hey there! I'm Sage, your onboarding guide at OpenRx. 👋\n\nI'm going to get you all set up — it only takes a couple of minutes, and you won't have to fill out a single form. I'll handle everything.\n\nLet's start with the basics. What's your full name?")
-      setStep("name")
+      addAgent("Hey there! I'm Sage, your onboarding guide at OpenRx. 👋\n\nLet's get your care team set up. This takes about 2 minutes — no forms, just a quick chat.\n\nDo you currently have a primary care physician (PCP)?", "sage", [
+        { label: "Yes, I have one", value: "yes" },
+        { label: "No, I need one", value: "no" },
+      ])
+      setStep("has-pcp")
     }
   }, [step, messages.length, addAgent])
 
@@ -121,95 +123,6 @@ export default function OnboardingPage() {
     setInput("")
 
     switch (step) {
-      case "name":
-        addUser(val)
-        setPatient(p => ({ ...p, fullName: val }))
-        setTimeout(() => {
-          addAgent(`Nice to meet you, ${val.split(" ")[0]}! 😊\n\nWhat's your date of birth? (Any format works — like March 15, 1990 or 03/15/1990)`)
-          setStep("dob")
-        }, 200)
-        break
-
-      case "dob":
-        addUser(val)
-        setPatient(p => ({ ...p, dob: val }))
-        setTimeout(() => {
-          addAgent("Got it. And how do you identify?", "sage", [
-            { label: "Male", value: "male" },
-            { label: "Female", value: "female" },
-            { label: "Non-binary", value: "non-binary" },
-            { label: "Prefer not to say", value: "other" },
-          ])
-          setStep("gender")
-        }, 200)
-        break
-
-      case "gender":
-        addUser(val)
-        setPatient(p => ({ ...p, gender: val.toLowerCase() }))
-        setTimeout(() => {
-          addAgent("What's the best phone number to reach you?")
-          setStep("phone")
-        }, 200)
-        break
-
-      case "phone":
-        addUser(val)
-        setPatient(p => ({ ...p, phone: val }))
-        setTimeout(() => {
-          addAgent("And your email address?")
-          setStep("email")
-        }, 200)
-        break
-
-      case "email":
-        addUser(val)
-        setPatient(p => ({ ...p, email: val }))
-        setTimeout(() => {
-          addAgent("Last one for the basics — what's your home address? (We use this to find providers and pharmacies near you)")
-          setStep("address")
-        }, 200)
-        break
-
-      case "address":
-        addUser(val)
-        setPatient(p => ({ ...p, address: val }))
-        setTimeout(() => {
-          addAgent("Great, basics are done! ✅\n\nNow let's get your insurance set up. Who's your insurance provider? (e.g., Blue Cross, Aetna, United, Medicare)")
-          setStep("insurance-provider")
-        }, 200)
-        break
-
-      case "insurance-provider":
-        addUser(val)
-        setPatient(p => ({ ...p, insuranceProvider: val }))
-        setTimeout(() => {
-          addAgent("And what plan are you on? (e.g., PPO Gold, HMO Standard — check your insurance card if you're not sure)")
-          setStep("insurance-plan")
-        }, 200)
-        break
-
-      case "insurance-plan":
-        addUser(val)
-        setPatient(p => ({ ...p, insurancePlan: val }))
-        setTimeout(() => {
-          addAgent("Last insurance question — what's your member ID? (It's on your insurance card)")
-          setStep("insurance-id")
-        }, 200)
-        break
-
-      case "insurance-id":
-        addUser(val)
-        setPatient(p => ({ ...p, insuranceId: val }))
-        setTimeout(() => {
-          addAgent("Insurance is all set! 🛡️\n\nDo you currently have a primary care physician (PCP)?", "sage", [
-            { label: "Yes, I have one", value: "yes" },
-            { label: "No, I need one", value: "no" },
-          ])
-          setStep("has-pcp")
-        }, 200)
-        break
-
       case "has-pcp":
         addUser(val)
         if (val.toLowerCase().includes("yes")) {
@@ -405,15 +318,12 @@ export default function OnboardingPage() {
           const screenList = patient.screenings?.map(s => `• ${s.name}`).join("\n") || "• To be determined"
 
           addAgent(
-            `You're all set, ${patient.fullName?.split(" ")[0]}! 🎉\n\nHere's your summary:\n\n` +
-            `**Patient:** ${patient.fullName}\n` +
-            `**DOB:** ${patient.dob}\n` +
-            `**Insurance:** ${patient.insuranceProvider} ${patient.insurancePlan} (${patient.insuranceId})\n` +
+            `You're all set! 🎉\n\nHere's your care team summary:\n\n` +
             `**PCP:** ${patient.pcpName || "To be assigned"}\n` +
             `**Pharmacy:** ${patient.pharmacy || "To be assigned"}\n\n` +
             `**Medications:**\n${medList}\n\n` +
             `**Upcoming Screenings:**\n${screenList}\n\n` +
-            `You're in great hands. The OpenRx team — Atlas, Nova, Cal, Vera, Maya, Rex, Ivy, and I — are all working together behind the scenes for you. Welcome aboard! 💙`
+            `Your OpenRx care team — Atlas, Nova, Cal, Vera, Maya, Rex, Ivy, and I — are all working together behind the scenes for you. Welcome aboard! 💙`
           )
           setStep("complete")
         }, 1500)
