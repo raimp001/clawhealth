@@ -157,7 +157,7 @@ export default function ChatPage() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-terra to-terra-dark flex items-center justify-center">
-            <Bot size={20} className="text-cream" />
+            <Bot size={20} className="text-white" />
           </div>
           <div>
             <h1 className="text-2xl font-serif text-warm-800">AI Agent</h1>

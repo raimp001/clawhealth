@@ -37,7 +37,7 @@ export default function LandingPage() {
           </div>
           <Link
             href="/dashboard"
-            className="px-5 py-2.5 bg-terra text-cream text-sm font-semibold rounded-xl hover:bg-terra-dark transition shadow-lg shadow-terra/20"
+            className="px-5 py-2.5 bg-terra text-white text-sm font-semibold rounded-xl hover:bg-terra-dark transition shadow-lg shadow-terra/20"
           >
             Open Dashboard
           </Link>
@@ -64,7 +64,7 @@ export default function LandingPage() {
           <div className="flex items-center justify-center gap-4 mt-8">
             <Link
               href="/onboarding"
-              className="px-6 py-3 bg-terra text-cream text-sm font-bold rounded-xl hover:bg-terra-dark transition shadow-xl shadow-terra/25 flex items-center gap-2"
+              className="px-6 py-3 bg-terra text-white text-sm font-bold rounded-xl hover:bg-terra-dark transition shadow-xl shadow-terra/25 flex items-center gap-2"
             >
               Get Started
               <ArrowRight size={16} />
@@ -107,15 +107,15 @@ export default function LandingPage() {
 
       {/* OpenClaw Integration */}
       <section className="max-w-6xl mx-auto px-6 pb-16">
-        <div className="bg-sand rounded-3xl p-8 lg:p-12 text-cream">
+        <div className="bg-pampas rounded-3xl p-8 lg:p-12 border border-sand">
           <div className="max-w-3xl mx-auto text-center">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-white/10 rounded-full text-xs font-bold text-terra-light mb-4">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-terra/15 rounded-full text-xs font-bold text-terra mb-4">
               Powered by OpenClaw Gateway
             </div>
-            <h2 className="text-3xl font-serif">
+            <h2 className="text-3xl font-serif text-white">
               Meet Your Care Team
             </h2>
-            <p className="text-sm text-cream/60 mt-3 leading-relaxed max-w-xl mx-auto">
+            <p className="text-sm text-warm-600 mt-3 leading-relaxed max-w-xl mx-auto">
               9 AI specialists work together behind the scenes — booking appointments,
               managing your meds, fighting billing errors, and keeping you on track
               with preventive care. You just chat naturally.
@@ -134,11 +134,11 @@ export default function LandingPage() {
               ].map((agent) => (
                 <div
                   key={agent.name}
-                  className="bg-white/5 rounded-xl px-3 py-3 text-left"
+                  className="bg-sand/50 rounded-xl px-3 py-3 text-left border border-sand"
                 >
-                  <div className="text-xs font-bold text-cream">{agent.name}</div>
-                  <div className="text-[10px] text-terra-light font-semibold">{agent.role}</div>
-                  <div className="text-[9px] text-cream/50 mt-0.5">{agent.desc}</div>
+                  <div className="text-xs font-bold text-white">{agent.name}</div>
+                  <div className="text-[10px] text-terra font-semibold">{agent.role}</div>
+                  <div className="text-[10px] text-warm-600 mt-0.5">{agent.desc}</div>
                 </div>
               ))}
             </div>

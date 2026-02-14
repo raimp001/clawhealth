@@ -353,7 +353,7 @@ export default function OnboardingPage() {
       {/* Header */}
       <div className="text-center mb-6">
         <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-terra to-terra-dark flex items-center justify-center mx-auto mb-3">
-          <Sparkles size={24} className="text-cream" />
+          <Sparkles size={24} className="text-white" />
         </div>
         <h1 className="text-2xl font-serif text-warm-800">Welcome to OpenRx</h1>
         <p className="text-sm text-warm-500 mt-1">Your AI care team is ready. No forms — just a conversation.</p>

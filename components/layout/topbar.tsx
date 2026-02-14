@@ -149,7 +149,7 @@ export default function Topbar() {
             </p>
             <p className="text-[10px] text-cloudy">Patient Portal</p>
           </div>
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-terra to-terra-dark flex items-center justify-center text-cream text-sm font-bold font-serif">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-terra to-terra-dark flex items-center justify-center text-white text-sm font-bold font-serif">
             <User size={16} />
           </div>
         </div>

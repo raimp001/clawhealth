@@ -15,7 +15,7 @@ export default function NotFound() {
         <div className="flex items-center justify-center gap-3 mt-6">
           <Link
             href="/dashboard"
-            className="px-5 py-2.5 bg-terra text-cream text-sm font-semibold rounded-xl hover:bg-terra-dark transition flex items-center gap-2"
+            className="px-5 py-2.5 bg-terra text-white text-sm font-semibold rounded-xl hover:bg-terra-dark transition flex items-center gap-2"
           >
             <Home size={14} />
             Dashboard

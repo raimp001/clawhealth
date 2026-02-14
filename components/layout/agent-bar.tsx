@@ -58,14 +58,14 @@ export default function AgentBar() {
             ) : (
               <div className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse" />
             )}
-            <span className="text-[10px] text-cream/50">
+            <span className="text-[10px] text-white/50">
               {status === "online" ? "Live" : status === "demo" ? "Demo" : "..."}
             </span>
           </div>
           {recentAction && (
             <div className="hidden lg:flex items-center gap-1.5 ml-2 animate-fade-in">
               <Zap size={9} className="text-yellow-400" />
-              <span className="text-[10px] text-cream/60 truncate max-w-md">
+              <span className="text-[10px] text-white/60 truncate max-w-md">
                 {recentAction}
               </span>
             </div>
@@ -85,9 +85,9 @@ export default function AgentBar() {
             className="p-0.5 hover:bg-white/10 rounded transition"
           >
             {expanded ? (
-              <ChevronUp size={12} className="text-cream/50" />
+              <ChevronUp size={12} className="text-white/50" />
             ) : (
-              <ChevronDown size={12} className="text-cream/50" />
+              <ChevronDown size={12} className="text-white/50" />
             )}
           </button>
         </div>
@@ -103,13 +103,13 @@ export default function AgentBar() {
                 className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-white/5"
               >
                 <div className="w-1.5 h-1.5 rounded-full bg-accent" />
-                <span className="text-[10px] font-medium text-cream/70">
+                <span className="text-[10px] font-medium text-white/70">
                   {agent.name.replace("OpenRx ", "")}
                 </span>
               </div>
             ))}
           </div>
-          <div className="flex items-center gap-4 mt-2 text-[9px] text-cream/40">
+          <div className="flex items-center gap-4 mt-2 text-[9px] text-white/40">
             <span>{OPENCLAW_CONFIG.cronJobs.length} automations active</span>
             <span>
               {Object.values(OPENCLAW_CONFIG.channels).filter((c) => c.enabled).length} channels
