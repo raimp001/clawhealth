@@ -28,23 +28,24 @@ export default function RevenueChart() {
       <div className="h-48">
         <ResponsiveContainer width="100%" height="100%" minHeight={180}>
           <BarChart data={data} barGap={2}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#1E2D4A" vertical={false} />
+            <CartesianGrid strokeDasharray="3 3" stroke="#162040" vertical={false} />
             <XAxis
               dataKey="month"
-              tick={{ fontSize: 10, fill: "#6B7A94" }}
+              tick={{ fontSize: 10, fill: "#5A6B84" }}
               axisLine={false}
               tickLine={false}
             />
             <YAxis
-              tick={{ fontSize: 10, fill: "#6B7A94" }}
+              tick={{ fontSize: 10, fill: "#5A6B84" }}
               axisLine={false}
               tickLine={false}
               tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`}
             />
             <Tooltip
               contentStyle={{
-                background: "#111D35",
-                border: "1px solid #1E2D4A",
+                background: "#0C1628",
+                border: "1px solid #162040",
+                color: "#E2E7EF",
                 borderRadius: 12,
                 fontSize: 11,
                 boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
@@ -56,7 +57,7 @@ export default function RevenueChart() {
             <Bar
               dataKey="billed"
               name="Billed"
-              fill="#1E2D4A"
+              fill="#162040"
               radius={[4, 4, 0, 0]}
               maxBarSize={28}
             />

@@ -9,31 +9,31 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // TrumpRx-inspired dark navy + gold palette
+        // TrumpRx-matched palette — very dark navy + gold
         terra: {
-          DEFAULT: "#C5A04E",
-          light: "#D4B76A",
-          dark: "#A88A3D",
-          50: "#FCF9F0",
-          100: "#F5EDD3",
-          200: "#EBDAA8",
+          DEFAULT: "#C5A04E",  // Gold accent
+          light: "#D9B96B",
+          dark: "#A8883B",
+          50: "#1A1610",
+          100: "#2A2315",
+          200: "#3D321D",
           500: "#C5A04E",
-          600: "#A88A3D",
+          600: "#A8883B",
           700: "#8A702F",
         },
-        cream: "#0B1426",
-        pampas: "#111D35",
-        sand: "#1E2D4A",
-        cloudy: "#6B7A94",
+        cream: "#060D1B",      // Main background — near black navy
+        pampas: "#0C1628",     // Card/surface background
+        sand: "#162040",       // Borders
+        cloudy: "#5A6B84",     // Muted text
         warm: {
-          800: "#F1F3F7",
-          700: "#D4D9E3",
-          600: "#A3AEBF",
-          500: "#7E8CA0",
+          800: "#FFFFFF",      // Primary text — pure white
+          700: "#E2E7EF",      // Secondary text
+          600: "#B0BAC9",      // Tertiary text
+          500: "#7E8CA2",      // Quaternary text
         },
-        accent: "#4CAF7D",
-        "soft-red": "#E05A4F",
-        "soft-blue": "#5B9BD5",
+        accent: "#4CAF7D",     // Green for success
+        "soft-red": "#E05A4F", // Red for errors/alerts
+        "soft-blue": "#5B9BD5",// Blue for info
       },
       fontFamily: {
         serif: ["var(--font-serif)", "Georgia", "serif"],

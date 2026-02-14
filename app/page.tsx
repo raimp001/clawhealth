@@ -25,7 +25,7 @@ export default function LandingPage() {
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
                 <path
                   d="M12 4v16M4 12h16"
-                  stroke="#0B1426"
+                  stroke="#060D1B"
                   strokeWidth="3"
                   strokeLinecap="round"
                 />
