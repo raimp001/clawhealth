@@ -39,7 +39,7 @@ const EXAMPLE_SEARCHES = [
   "Pediatrician 97201",
   "Dermatologist New York",
   "Family medicine Chicago IL",
-  "Oncologist 10001",
+  "Therapist 10001",
   "Orthopedic surgeon Dallas Texas",
 ]
 

@@ -122,14 +122,14 @@ function todayAt(hour: number, min: number = 0): string {
   return d.toISOString()
 }
 
-// ── Physicians ─────────────────────────────────────────
+// ── Physicians (Primary Care Focused) ─────────────────
 export const physicians: Physician[] = [
   {
     id: "ph-001",
-    email: "rai@ohsu.edu",
-    full_name: "Dr. Manoj Rai",
-    specialty: "Internal Medicine",
-    credentials: "MD, MBA",
+    email: "patel@providence.org",
+    full_name: "Dr. Priya Patel",
+    specialty: "Family Medicine",
+    credentials: "MD, FAAFP",
     phone: "(503) 494-8311",
     available_days: ["Mon", "Tue", "Wed", "Thu", "Fri"],
     available_start: "08:00",
@@ -148,10 +148,10 @@ export const physicians: Physician[] = [
   },
   {
     id: "ph-003",
-    email: "rivera.m@ohsu.edu",
-    full_name: "Dr. Maria Rivera",
-    specialty: "Pulmonology",
-    credentials: "MD, FCCP",
+    email: "nguyen.l@ohsu.edu",
+    full_name: "Dr. Lisa Nguyen",
+    specialty: "OB/GYN",
+    credentials: "MD, FACOG",
     phone: "(503) 494-6230",
     available_days: ["Mon", "Wed", "Fri"],
     available_start: "08:30",
@@ -208,8 +208,8 @@ export const patients: Patient[] = [
     emergency_contact_name: "Carlos Santos",
     emergency_contact_phone: "(503) 555-0188",
     medical_history: [
-      { condition: "Breast Cancer (Stage II)", diagnosed: "2025-08", status: "in-treatment" },
       { condition: "Anxiety Disorder", diagnosed: "2022-03", status: "managed" },
+      { condition: "Vitamin D Deficiency", diagnosed: "2024-01", status: "active" },
     ],
     allergies: ["Latex"],
     primary_physician_id: "ph-001",
@@ -292,7 +292,7 @@ export const patients: Patient[] = [
     emergency_contact_name: "Tom Williams",
     emergency_contact_phone: "(503) 555-0600",
     medical_history: [
-      { condition: "Non-Hodgkin Lymphoma", diagnosed: "2025-03", status: "in-treatment" },
+      { condition: "Osteoarthritis (knee)", diagnosed: "2023-03", status: "active" },
       { condition: "Type 2 Diabetes", diagnosed: "2016-09", status: "managed" },
       { condition: "Osteoporosis", diagnosed: "2022-08", status: "managed" },
     ],
@@ -379,7 +379,7 @@ export const patients: Patient[] = [
     emergency_contact_name: "Kevin Liu",
     emergency_contact_phone: "(503) 555-1043",
     medical_history: [
-      { condition: "Iron Deficiency Anemia", diagnosed: "2025-06", status: "in-treatment" },
+      { condition: "Iron Deficiency Anemia", diagnosed: "2025-06", status: "active" },
     ],
     allergies: [],
     primary_physician_id: "ph-001",
@@ -389,29 +389,29 @@ export const patients: Patient[] = [
 
 // ── Appointments ───────────────────────────────────────
 export const appointments: Appointment[] = [
-  // Today's appointments
-  { id: "apt-001", patient_id: "pt-001", physician_id: "ph-002", scheduled_at: todayAt(8, 30), duration_minutes: 30, type: "follow-up", status: "completed", reason: "Diabetes management review", notes: "A1C improved to 6.8%. Continue current regimen.", copay: 40 },
-  { id: "apt-002", patient_id: "pt-002", physician_id: "ph-001", scheduled_at: todayAt(9, 0), duration_minutes: 45, type: "follow-up", status: "in-progress", reason: "Chemotherapy cycle 4 review", notes: "", copay: 60 },
-  { id: "apt-003", patient_id: "pt-005", physician_id: "ph-002", scheduled_at: todayAt(9, 30), duration_minutes: 30, type: "follow-up", status: "checked-in", reason: "Asthma follow-up", notes: "", copay: 35 },
-  { id: "apt-004", patient_id: "pt-003", physician_id: "ph-003", scheduled_at: todayAt(10, 0), duration_minutes: 45, type: "follow-up", status: "scheduled", reason: "COPD exacerbation assessment", notes: "", copay: 0 },
-  { id: "apt-005", patient_id: "pt-008", physician_id: "ph-004", scheduled_at: todayAt(10, 30), duration_minutes: 30, type: "follow-up", status: "scheduled", reason: "Cardiac stress test review", notes: "", copay: 50 },
+  // Today's appointments — primary care focused
+  { id: "apt-001", patient_id: "pt-001", physician_id: "ph-002", scheduled_at: todayAt(8, 30), duration_minutes: 30, type: "follow-up", status: "completed", reason: "Annual wellness visit + A1C check", notes: "A1C improved to 6.8%. Continue current regimen.", copay: 0 },
+  { id: "apt-002", patient_id: "pt-002", physician_id: "ph-001", scheduled_at: todayAt(9, 0), duration_minutes: 30, type: "follow-up", status: "in-progress", reason: "Anxiety follow-up + Pap smear", notes: "", copay: 30 },
+  { id: "apt-003", patient_id: "pt-005", physician_id: "ph-002", scheduled_at: todayAt(9, 30), duration_minutes: 20, type: "follow-up", status: "checked-in", reason: "Asthma check + flu vaccine", notes: "", copay: 0 },
+  { id: "apt-004", patient_id: "pt-003", physician_id: "ph-001", scheduled_at: todayAt(10, 0), duration_minutes: 45, type: "follow-up", status: "scheduled", reason: "Colonoscopy prep consult", notes: "", copay: 0 },
+  { id: "apt-005", patient_id: "pt-008", physician_id: "ph-004", scheduled_at: todayAt(10, 30), duration_minutes: 30, type: "follow-up", status: "scheduled", reason: "EKG + blood pressure review", notes: "", copay: 40 },
   { id: "apt-006", patient_id: "pt-004", physician_id: "ph-002", scheduled_at: todayAt(11, 0), duration_minutes: 30, type: "urgent", status: "scheduled", reason: "Severe migraine episode", notes: "", copay: 40 },
-  { id: "apt-007", patient_id: "pt-009", physician_id: "ph-004", scheduled_at: todayAt(13, 0), duration_minutes: 45, type: "follow-up", status: "scheduled", reason: "CHF management + labs review", notes: "", copay: 0 },
-  { id: "apt-008", patient_id: "pt-006", physician_id: "ph-001", scheduled_at: todayAt(14, 0), duration_minutes: 60, type: "follow-up", status: "scheduled", reason: "Lymphoma treatment planning", notes: "", copay: 60 },
-  { id: "apt-009", patient_id: "pt-010", physician_id: "ph-001", scheduled_at: todayAt(15, 0), duration_minutes: 30, type: "new-patient", status: "scheduled", reason: "Anemia workup consultation", notes: "", copay: 80 },
+  { id: "apt-007", patient_id: "pt-009", physician_id: "ph-004", scheduled_at: todayAt(13, 0), duration_minutes: 30, type: "follow-up", status: "scheduled", reason: "Echocardiogram results review", notes: "", copay: 0 },
+  { id: "apt-008", patient_id: "pt-006", physician_id: "ph-001", scheduled_at: todayAt(14, 0), duration_minutes: 45, type: "follow-up", status: "scheduled", reason: "Knee pain — ultrasound review + PT referral", notes: "", copay: 40 },
+  { id: "apt-009", patient_id: "pt-010", physician_id: "ph-003", scheduled_at: todayAt(15, 0), duration_minutes: 30, type: "new-patient", status: "scheduled", reason: "Well-woman visit + mammogram order", notes: "", copay: 0 },
   // Past appointments
-  { id: "apt-010", patient_id: "pt-001", physician_id: "ph-002", scheduled_at: daysAgo(14), duration_minutes: 30, type: "follow-up", status: "completed", reason: "Diabetes check", notes: "A1C 7.2%. Increased metformin.", copay: 40 },
-  { id: "apt-011", patient_id: "pt-002", physician_id: "ph-001", scheduled_at: daysAgo(21), duration_minutes: 60, type: "follow-up", status: "completed", reason: "Chemo cycle 3", notes: "Tolerated well. Continue protocol.", copay: 60 },
-  { id: "apt-012", patient_id: "pt-003", physician_id: "ph-003", scheduled_at: daysAgo(7), duration_minutes: 30, type: "follow-up", status: "completed", reason: "Pulmonary function test", notes: "FEV1 declined. Adding tiotropium.", copay: 0 },
+  { id: "apt-010", patient_id: "pt-001", physician_id: "ph-002", scheduled_at: daysAgo(14), duration_minutes: 30, type: "follow-up", status: "completed", reason: "Diabetes management + cholesterol check", notes: "A1C 7.2%. Increased metformin. Lipids normal.", copay: 40 },
+  { id: "apt-011", patient_id: "pt-002", physician_id: "ph-001", scheduled_at: daysAgo(21), duration_minutes: 30, type: "follow-up", status: "completed", reason: "Psychotherapy session", notes: "CBT session 8. Good progress with anxiety management.", copay: 30 },
+  { id: "apt-012", patient_id: "pt-003", physician_id: "ph-001", scheduled_at: daysAgo(7), duration_minutes: 30, type: "follow-up", status: "completed", reason: "Spirometry + COPD management", notes: "FEV1 stable. Continue tiotropium.", copay: 0 },
   { id: "apt-013", patient_id: "pt-004", physician_id: "ph-002", scheduled_at: daysAgo(30), duration_minutes: 30, type: "follow-up", status: "no-show", reason: "Migraine follow-up", notes: "", copay: 40 },
-  { id: "apt-014", patient_id: "pt-007", physician_id: "ph-002", scheduled_at: daysAgo(3), duration_minutes: 30, type: "follow-up", status: "completed", reason: "Anxiety management", notes: "Stable on sertraline. Continue.", copay: 35 },
-  { id: "apt-015", patient_id: "pt-009", physician_id: "ph-004", scheduled_at: daysAgo(10), duration_minutes: 45, type: "follow-up", status: "completed", reason: "Heart failure check", notes: "Stable. Echo unchanged.", copay: 0 },
+  { id: "apt-014", patient_id: "pt-007", physician_id: "ph-002", scheduled_at: daysAgo(3), duration_minutes: 50, type: "follow-up", status: "completed", reason: "Therapy session — anxiety management", notes: "Stable on sertraline. Continue therapy.", copay: 35 },
+  { id: "apt-015", patient_id: "pt-009", physician_id: "ph-004", scheduled_at: daysAgo(10), duration_minutes: 45, type: "follow-up", status: "completed", reason: "BP monitoring + EKG", notes: "BP well controlled. EKG normal sinus.", copay: 0 },
   // Future appointments
-  { id: "apt-016", patient_id: "pt-002", physician_id: "ph-001", scheduled_at: daysFromNow(7), duration_minutes: 45, type: "follow-up", status: "scheduled", reason: "Chemo cycle 5", notes: "", copay: 60 },
-  { id: "apt-017", patient_id: "pt-003", physician_id: "ph-004", scheduled_at: daysFromNow(3), duration_minutes: 30, type: "follow-up", status: "scheduled", reason: "Cardiology consult for AFib", notes: "", copay: 0 },
-  { id: "apt-018", patient_id: "pt-006", physician_id: "ph-001", scheduled_at: daysFromNow(14), duration_minutes: 60, type: "follow-up", status: "scheduled", reason: "Treatment response imaging", notes: "", copay: 60 },
-  { id: "apt-019", patient_id: "pt-007", physician_id: "ph-002", scheduled_at: daysFromNow(28), duration_minutes: 30, type: "follow-up", status: "scheduled", reason: "3-month follow-up", notes: "", copay: 35 },
-  { id: "apt-020", patient_id: "pt-005", physician_id: "ph-002", scheduled_at: daysFromNow(5), duration_minutes: 20, type: "telehealth", status: "scheduled", reason: "Inhaler technique check", notes: "", copay: 25 },
+  { id: "apt-016", patient_id: "pt-002", physician_id: "ph-003", scheduled_at: daysFromNow(7), duration_minutes: 30, type: "follow-up", status: "scheduled", reason: "Mammogram + breast exam", notes: "", copay: 0 },
+  { id: "apt-017", patient_id: "pt-003", physician_id: "ph-002", scheduled_at: daysFromNow(3), duration_minutes: 60, type: "follow-up", status: "scheduled", reason: "Colonoscopy (screening)", notes: "", copay: 0 },
+  { id: "apt-018", patient_id: "pt-006", physician_id: "ph-001", scheduled_at: daysFromNow(14), duration_minutes: 45, type: "follow-up", status: "scheduled", reason: "Physical therapy session — knee rehab", notes: "", copay: 30 },
+  { id: "apt-019", patient_id: "pt-007", physician_id: "ph-002", scheduled_at: daysFromNow(28), duration_minutes: 30, type: "telehealth", status: "scheduled", reason: "Acupuncture consult", notes: "", copay: 25 },
+  { id: "apt-020", patient_id: "pt-005", physician_id: "ph-002", scheduled_at: daysFromNow(5), duration_minutes: 20, type: "telehealth", status: "scheduled", reason: "Flu vaccine + COVID booster", notes: "", copay: 0 },
 ]
 
 // ── Claims ─────────────────────────────────────────────
@@ -425,10 +425,10 @@ export const claims: Claim[] = [
   },
   {
     id: "clm-002", patient_id: "pt-002", appointment_id: "apt-011", claim_number: "AET-2026-33105",
-    status: "processing", total_amount: 4850, insurance_paid: 0, patient_responsibility: 0,
-    cpt_codes: ["96413", "96415", "99215"], icd_codes: ["C50.911", "Z51.11"],
+    status: "processing", total_amount: 350, insurance_paid: 0, patient_responsibility: 0,
+    cpt_codes: ["99395", "90686", "96372"], icd_codes: ["Z00.00", "Z23"],
     date_of_service: daysAgo(21), submitted_at: daysAgo(20), resolved_at: null,
-    denial_reason: null, errors_detected: [], notes: "Chemotherapy administration",
+    denial_reason: null, errors_detected: [], notes: "Preventive visit + flu vaccine",
   },
   {
     id: "clm-003", patient_id: "pt-003", appointment_id: "apt-012", claim_number: "MCR-2026-28744",
@@ -466,10 +466,10 @@ export const claims: Claim[] = [
   },
   {
     id: "clm-006", patient_id: "pt-006", appointment_id: "", claim_number: "AET-2026-39200",
-    status: "approved", total_amount: 8200, insurance_paid: 7400, patient_responsibility: 800,
-    cpt_codes: ["96413", "96415", "96417", "99215"], icd_codes: ["C83.30", "Z51.11"],
+    status: "approved", total_amount: 450, insurance_paid: 410, patient_responsibility: 40,
+    cpt_codes: ["45378", "99214"], icd_codes: ["Z12.11", "K63.5"],
     date_of_service: daysAgo(35), submitted_at: daysAgo(34), resolved_at: daysAgo(15),
-    denial_reason: null, errors_detected: [], notes: "R-CHOP cycle 2 — approved",
+    denial_reason: null, errors_detected: [], notes: "Screening colonoscopy — polyp removed",
   },
   {
     id: "clm-007", patient_id: "pt-009", appointment_id: "apt-015", claim_number: "MCR-2026-31055",
@@ -506,28 +506,28 @@ export const prescriptions: Prescription[] = [
   { id: "rx-001", patient_id: "pt-001", physician_id: "ph-002", medication_name: "Metformin", dosage: "1000mg", frequency: "Twice daily", start_date: daysAgo(365), end_date: null, refills_remaining: 3, pharmacy: "Walgreens on 39th", status: "active", adherence_pct: 92, last_filled: daysAgo(25), notes: "Take with meals" },
   { id: "rx-002", patient_id: "pt-001", physician_id: "ph-002", medication_name: "Lisinopril", dosage: "20mg", frequency: "Once daily", start_date: daysAgo(400), end_date: null, refills_remaining: 5, pharmacy: "Walgreens on 39th", status: "active", adherence_pct: 88, last_filled: daysAgo(20), notes: "Morning" },
   { id: "rx-003", patient_id: "pt-001", physician_id: "ph-002", medication_name: "Atorvastatin", dosage: "40mg", frequency: "Once daily at bedtime", start_date: daysAgo(300), end_date: null, refills_remaining: 2, pharmacy: "Walgreens on 39th", status: "active", adherence_pct: 78, last_filled: daysAgo(45), notes: "Refill needed soon" },
-  { id: "rx-004", patient_id: "pt-002", physician_id: "ph-001", medication_name: "Ondansetron", dosage: "8mg", frequency: "Every 8 hours as needed", start_date: daysAgo(90), end_date: null, refills_remaining: 6, pharmacy: "OHSU Pharmacy", status: "active", adherence_pct: 100, last_filled: daysAgo(18), notes: "For chemo-induced nausea" },
+  { id: "rx-004", patient_id: "pt-002", physician_id: "ph-001", medication_name: "Vitamin D3", dosage: "2000 IU", frequency: "Once daily", start_date: daysAgo(90), end_date: null, refills_remaining: 6, pharmacy: "OHSU Pharmacy", status: "active", adherence_pct: 100, last_filled: daysAgo(18), notes: "For vitamin D deficiency" },
   { id: "rx-005", patient_id: "pt-002", physician_id: "ph-002", medication_name: "Sertraline", dosage: "50mg", frequency: "Once daily", start_date: daysAgo(200), end_date: null, refills_remaining: 4, pharmacy: "OHSU Pharmacy", status: "active", adherence_pct: 95, last_filled: daysAgo(10), notes: "For anxiety" },
   { id: "rx-006", patient_id: "pt-003", physician_id: "ph-003", medication_name: "Tiotropium", dosage: "18mcg", frequency: "Once daily (inhaler)", start_date: daysAgo(7), end_date: null, refills_remaining: 5, pharmacy: "Fred Meyer Pharmacy", status: "active", adherence_pct: 100, last_filled: daysAgo(7), notes: "New — added for COPD" },
   { id: "rx-007", patient_id: "pt-003", physician_id: "ph-004", medication_name: "Apixaban", dosage: "5mg", frequency: "Twice daily", start_date: daysAgo(300), end_date: null, refills_remaining: 1, pharmacy: "Fred Meyer Pharmacy", status: "pending-refill", adherence_pct: 85, last_filled: daysAgo(60), notes: "For AFib — refill needed" },
   { id: "rx-008", patient_id: "pt-004", physician_id: "ph-002", medication_name: "Sumatriptan", dosage: "50mg", frequency: "As needed for migraine", start_date: daysAgo(180), end_date: null, refills_remaining: 4, pharmacy: "CVS on Alberta", status: "active", adherence_pct: 70, last_filled: daysAgo(40), notes: "" },
   { id: "rx-009", patient_id: "pt-004", physician_id: "ph-002", medication_name: "Levothyroxine", dosage: "75mcg", frequency: "Once daily on empty stomach", start_date: daysAgo(365), end_date: null, refills_remaining: 6, pharmacy: "CVS on Alberta", status: "active", adherence_pct: 94, last_filled: daysAgo(15), notes: "30 min before breakfast" },
   { id: "rx-010", patient_id: "pt-005", physician_id: "ph-002", medication_name: "Albuterol", dosage: "90mcg", frequency: "2 puffs every 4-6 hours as needed", start_date: daysAgo(90), end_date: null, refills_remaining: 3, pharmacy: "Rite Aid on Williams", status: "active", adherence_pct: 82, last_filled: daysAgo(30), notes: "Rescue inhaler" },
-  { id: "rx-011", patient_id: "pt-006", physician_id: "ph-001", medication_name: "Prednisone", dosage: "20mg", frequency: "Per R-CHOP protocol", start_date: daysAgo(35), end_date: daysAgo(30), refills_remaining: 0, pharmacy: "OHSU Pharmacy", status: "completed", adherence_pct: 100, last_filled: daysAgo(35), notes: "Cycle 2 — 5-day course" },
+  { id: "rx-011", patient_id: "pt-006", physician_id: "ph-001", medication_name: "Meloxicam", dosage: "15mg", frequency: "Once daily", start_date: daysAgo(35), end_date: null, refills_remaining: 4, pharmacy: "OHSU Pharmacy", status: "active", adherence_pct: 85, last_filled: daysAgo(35), notes: "For knee osteoarthritis pain" },
   { id: "rx-012", patient_id: "pt-009", physician_id: "ph-004", medication_name: "Furosemide", dosage: "40mg", frequency: "Twice daily", start_date: daysAgo(200), end_date: null, refills_remaining: 2, pharmacy: "Walgreens Downtown", status: "active", adherence_pct: 90, last_filled: daysAgo(28), notes: "Monitor weight daily" },
   { id: "rx-013", patient_id: "pt-009", physician_id: "ph-004", medication_name: "Carvedilol", dosage: "25mg", frequency: "Twice daily", start_date: daysAgo(300), end_date: null, refills_remaining: 3, pharmacy: "Walgreens Downtown", status: "active", adherence_pct: 88, last_filled: daysAgo(22), notes: "Take with food" },
-  { id: "rx-014", patient_id: "pt-008", physician_id: "ph-002", medication_name: "Methotrexate", dosage: "15mg", frequency: "Once weekly", start_date: daysAgo(150), end_date: null, refills_remaining: 4, pharmacy: "OHSU Pharmacy", status: "active", adherence_pct: 96, last_filled: daysAgo(12), notes: "Every Saturday. Folic acid daily." },
+  { id: "rx-014", patient_id: "pt-008", physician_id: "ph-002", medication_name: "Amlodipine", dosage: "5mg", frequency: "Once daily", start_date: daysAgo(150), end_date: null, refills_remaining: 4, pharmacy: "OHSU Pharmacy", status: "active", adherence_pct: 96, last_filled: daysAgo(12), notes: "For hypertension" },
   { id: "rx-015", patient_id: "pt-010", physician_id: "ph-001", medication_name: "Ferrous Sulfate", dosage: "325mg", frequency: "Three times daily", start_date: daysAgo(30), end_date: null, refills_remaining: 5, pharmacy: "CVS on Fremont", status: "active", adherence_pct: 65, last_filled: daysAgo(30), notes: "Take with vitamin C. Low adherence flagged." },
 ]
 
 // ── Prior Authorizations ───────────────────────────────
 export const priorAuths: PriorAuth[] = [
   {
-    id: "pa-001", patient_id: "pt-002", physician_id: "ph-001",
-    insurance_provider: "Aetna", procedure_code: "77066", procedure_name: "Bilateral Diagnostic Mammogram",
-    icd_codes: ["C50.911", "Z12.31"], status: "approved", urgency: "standard",
+    id: "pa-001", patient_id: "pt-002", physician_id: "ph-003",
+    insurance_provider: "Aetna", procedure_code: "77067", procedure_name: "Screening Mammogram",
+    icd_codes: ["Z12.31"], status: "approved", urgency: "standard",
     reference_number: "AET-PA-8834", submitted_at: daysAgo(10), resolved_at: daysAgo(8),
-    denial_reason: null, clinical_notes: "Surveillance imaging for Stage II breast cancer patient on active treatment.",
+    denial_reason: null, clinical_notes: "Routine screening mammogram for woman over 40. USPSTF recommendation.",
   },
   {
     id: "pa-002", patient_id: "pt-003", physician_id: "ph-003",
@@ -538,10 +538,10 @@ export const priorAuths: PriorAuth[] = [
   },
   {
     id: "pa-003", patient_id: "pt-006", physician_id: "ph-001",
-    insurance_provider: "Aetna", procedure_code: "78816", procedure_name: "PET/CT Scan",
-    icd_codes: ["C83.30", "Z51.11"], status: "submitted", urgency: "standard",
+    insurance_provider: "Aetna", procedure_code: "73721", procedure_name: "MRI Knee (without contrast)",
+    icd_codes: ["M17.11", "M25.561"], status: "submitted", urgency: "standard",
     reference_number: "AET-PA-9102", submitted_at: daysAgo(3), resolved_at: null,
-    denial_reason: null, clinical_notes: "Mid-treatment response assessment for Non-Hodgkin Lymphoma after R-CHOP cycle 3.",
+    denial_reason: null, clinical_notes: "Knee MRI for persistent osteoarthritis pain not responding to conservative treatment. PT referral pending imaging.",
   },
   {
     id: "pa-004", patient_id: "pt-009", physician_id: "ph-004",
@@ -553,10 +553,10 @@ export const priorAuths: PriorAuth[] = [
   },
   {
     id: "pa-005", patient_id: "pt-008", physician_id: "ph-002",
-    insurance_provider: "Blue Cross Blue Shield", procedure_code: "20610", procedure_name: "Joint Injection (knee)",
-    icd_codes: ["M06.061"], status: "approved", urgency: "standard",
+    insurance_provider: "Blue Cross Blue Shield", procedure_code: "97110", procedure_name: "Physical Therapy (therapeutic exercises)",
+    icd_codes: ["M17.11", "M79.3"], status: "approved", urgency: "standard",
     reference_number: "BCB-PA-7213", submitted_at: daysAgo(20), resolved_at: daysAgo(16),
-    denial_reason: null, clinical_notes: "RA with active knee synovitis despite methotrexate. Corticosteroid injection for symptomatic relief.",
+    denial_reason: null, clinical_notes: "12-session PT plan for knee osteoarthritis and chronic pain. Conservative management before surgical consideration.",
   },
 ]
 
@@ -566,8 +566,8 @@ export const messages: Message[] = [
   { id: "msg-002", patient_id: "pt-001", physician_id: "ph-002", sender_type: "physician", content: "James, please send me your readings for the past 7 days. Don't adjust the dose yet. We'll review at your next visit.", channel: "portal", read: true, created_at: daysAgo(2) },
   { id: "msg-003", patient_id: "pt-001", physician_id: "ph-002", sender_type: "patient", content: "Here are my readings: Mon 185, Tue 192, Wed 178, Thu 201, Fri 188, Sat 195, Sun 183. All fasting.", channel: "portal", read: true, created_at: daysAgo(1) },
   { id: "msg-004", patient_id: "pt-001", physician_id: "ph-002", sender_type: "agent", content: "Automated analysis: Average fasting glucose 189 mg/dL (target <130). Trending up from last month's average of 162. Flagged for physician review.", channel: "portal", read: true, created_at: daysAgo(1) },
-  { id: "msg-005", patient_id: "pt-002", physician_id: "ph-001", sender_type: "patient", content: "Dr. Rai, I've been having more nausea after my last chemo session. The ondansetron helps but wears off.", channel: "sms", read: true, created_at: daysAgo(3) },
-  { id: "msg-006", patient_id: "pt-002", physician_id: "ph-001", sender_type: "physician", content: "Maria, I'm adding a prescription for prochlorperazine as a backup. Take it if ondansetron isn't enough. Stay hydrated.", channel: "sms", read: true, created_at: daysAgo(3) },
+  { id: "msg-005", patient_id: "pt-002", physician_id: "ph-001", sender_type: "patient", content: "Hi Dr. Patel, my anxiety has been worse this week. The sertraline helps but I'm still having trouble sleeping.", channel: "sms", read: true, created_at: daysAgo(3) },
+  { id: "msg-006", patient_id: "pt-002", physician_id: "ph-001", sender_type: "physician", content: "Maria, let's discuss adjusting your dose at your next visit. In the meantime, try the breathing exercises we discussed. Avoid caffeine after 2 PM.", channel: "sms", read: true, created_at: daysAgo(3) },
   { id: "msg-007", patient_id: "pt-003", physician_id: "ph-003", sender_type: "system", content: "Reminder: Your appointment with Dr. Rivera is tomorrow at 10:00 AM. Please arrive 15 minutes early.", channel: "sms", read: false, created_at: daysAgo(0) },
   { id: "msg-008", patient_id: "pt-004", physician_id: null, sender_type: "agent", content: "Sarah, you missed your migraine follow-up on Jan 12. Would you like to reschedule? Dr. Chen has availability this Thursday at 11 AM or Friday at 2 PM.", channel: "sms", read: false, created_at: daysAgo(5) },
   { id: "msg-009", patient_id: "pt-004", physician_id: null, sender_type: "patient", content: "Friday at 2 PM works. Thank you!", channel: "sms", read: true, created_at: daysAgo(5) },
@@ -575,7 +575,7 @@ export const messages: Message[] = [
   { id: "msg-011", patient_id: "pt-009", physician_id: "ph-004", sender_type: "agent", content: "ALERT: Patient Foster reports 4lb weight gain in 2 days with peripheral edema. Heart failure exacerbation risk. Flagged as URGENT for Dr. Park.", channel: "portal", read: false, created_at: daysAgo(0) },
   { id: "msg-012", patient_id: "pt-010", physician_id: "ph-001", sender_type: "agent", content: "Amanda, your iron supplement adherence has been 65% this month. Taking ferrous sulfate consistently is important for treating your anemia. Would you like tips on managing side effects?", channel: "sms", read: false, created_at: daysAgo(1) },
   { id: "msg-013", patient_id: "pt-010", physician_id: "ph-001", sender_type: "patient", content: "Yes please. It upsets my stomach and I keep forgetting the third dose.", channel: "sms", read: true, created_at: daysAgo(1) },
-  { id: "msg-014", patient_id: "pt-010", physician_id: "ph-001", sender_type: "agent", content: "Tips: 1) Take with vitamin C (orange juice helps). 2) If stomach upset persists, try taking with a small snack. 3) I'll set reminders at 8 AM, 2 PM, and 8 PM. Dr. Rai may also consider switching to every-other-day dosing at your visit.", channel: "sms", read: false, created_at: daysAgo(1) },
+  { id: "msg-014", patient_id: "pt-010", physician_id: "ph-001", sender_type: "agent", content: "Tips: 1) Take with vitamin C (orange juice helps). 2) If stomach upset persists, try taking with a small snack. 3) I'll set reminders at 8 AM, 2 PM, and 8 PM. Dr. Patel may also consider switching to every-other-day dosing at your visit.", channel: "sms", read: false, created_at: daysAgo(1) },
 ]
 
 // ── Conversation Demos (from pitch) ────────────────────
@@ -585,9 +585,9 @@ export const CHAT_DEMOS = [
     title: "Smart Scheduling",
     icon: "Calendar",
     messages: [
-      { role: "patient" as const, content: "I need to see an oncologist. I have Blue Cross PPO. Mornings work best." },
-      { role: "agent" as const, content: "Checking Blue Cross PPO network...\n\nFound 3 in-network oncologists at OHSU with morning openings:" },
-      { role: "agent" as const, content: "Dr. Rai — Internal Medicine\nNext available: Feb 14, 9:30 AM\nCopay: $40 | 4.9★ (312 reviews)\n\nShall I book and send pre-visit forms?" },
+      { role: "patient" as const, content: "I need to see a doctor for a checkup. I have Blue Cross PPO. Mornings work best." },
+      { role: "agent" as const, content: "Checking Blue Cross PPO network...\n\nFound 3 in-network primary care doctors near you with morning openings:" },
+      { role: "agent" as const, content: "Dr. Patel — Family Medicine\nNext available: Feb 14, 9:30 AM\nCopay: $0 (preventive) | 4.9★ (312 reviews)\n\nShall I book and send pre-visit forms?" },
       { role: "patient" as const, content: "Yes, book it." },
       { role: "agent" as const, content: "Confirmed: Feb 14 at 9:30 AM.\n\n• Pre-visit questionnaire sent\n• Directions shared to maps\n• Reminder set for Feb 13, 8 PM\n• Please bring current medication list" },
     ],
@@ -609,10 +609,10 @@ export const CHAT_DEMOS = [
     title: "Prior Authorization",
     icon: "Shield",
     messages: [
-      { role: "physician" as const, content: "Need prior auth for MRI brain w/ contrast for patient Johnson. Suspected CNS lymphoma." },
-      { role: "agent" as const, content: "Checking Aetna criteria for CPT 70553...\n\nAll criteria met:\n• Neurological symptoms documented ✓\n• Lab abnormalities present ✓\n• Clinical notes support imaging ✓" },
-      { role: "agent" as const, content: "PA form auto-filled:\n• ICD-10: C85.9, R51.9\n• Labs & notes attached\n• Guidelines referenced\n\nSubmitting to Aetna ePA..." },
-      { role: "agent" as const, content: "Prior Auth APPROVED — Ref #AET-8834\nTurnaround: 4 minutes\nMRI scheduled tomorrow 2 PM\nPatient notified via text." },
+      { role: "physician" as const, content: "Need prior auth for knee MRI for patient Johnson. Persistent pain, not responding to PT." },
+      { role: "agent" as const, content: "Checking Aetna criteria for CPT 73721 (MRI knee)...\n\nAll criteria met:\n• 6 weeks conservative treatment ✓\n• PT documentation attached ✓\n• Clinical notes support imaging ✓" },
+      { role: "agent" as const, content: "PA form auto-filled:\n• ICD-10: M17.11, M25.561\n• PT notes & imaging request attached\n• LCD criteria referenced\n\nSubmitting to Aetna ePA..." },
+      { role: "agent" as const, content: "Prior Auth APPROVED — Ref #AET-8834\nTurnaround: 4 minutes\nMRI scheduled for Friday 2 PM\nPatient notified via text." },
     ],
   },
   {

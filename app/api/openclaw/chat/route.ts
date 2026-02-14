@@ -85,7 +85,7 @@ function getDemoResponse(agentId: AgentId, message: string): string {
       return "I'm the OpenRx AI Coordinator. I can help with:\n\n• 📅 Scheduling appointments\n• 💳 Billing & claims questions\n• 💊 Prescription management\n• 🛡️ Prior authorizations\n• 🏥 Symptom triage\n\nWhat can I help you with today?"
 
     case "scheduling":
-      return "I've checked your insurance network and physician availability.\n\nAvailable slots this week:\n• Dr. Rai — Thu 9:30 AM (est. copay $40)\n• Dr. Chen — Fri 2:00 PM (est. copay $35)\n• Dr. Rivera — Mon 10:00 AM (est. copay $40)\n\nWould you like to book one of these? I'll send pre-visit forms and set a reminder automatically."
+      return "I've checked your insurance network and physician availability.\n\nAvailable slots this week:\n• Dr. Patel — Thu 9:30 AM (est. copay $0 preventive)\n• Dr. Chen — Fri 2:00 PM (est. copay $35)\n• Dr. Nguyen — Mon 10:00 AM (est. copay $30)\n\nWould you like to book one of these? I'll send pre-visit forms and set a reminder automatically."
 
     case "billing":
       return "I've analyzed your recent claims and found potential issues:\n\n✅ Claim BCB-2026-44201: Paid correctly ($285)\n⚠️ Claim MCR-2026-28744: Denied — missing prior auth for CPT 94060\n   → I can file a retroactive PA and appeal. Potential recovery: $1,200\n🔴 Claim BCB-2026-41882: Billed for no-show in error\n   → I'll flag this for correction\n\nShall I proceed with the appeal and correction?"
@@ -94,7 +94,7 @@ function getDemoResponse(agentId: AgentId, message: string): string {
       return "Here's your medication status:\n\n💊 Metformin 1000mg — 92% adherence ✅ Next refill in 5 days\n💊 Lisinopril 20mg — 88% adherence ✅\n⚠️ Atorvastatin 40mg — 78% adherence — Refill overdue!\n   Last filled 45 days ago. I've sent a refill request to Walgreens on 39th.\n\nTip: Taking Atorvastatin at bedtime with a glass of water can reduce stomach upset. Shall I set a daily reminder at 9 PM?"
 
     case "prior-auth":
-      return "PA Analysis for your request:\n\n✅ Clinical criteria: All requirements met\n✅ Supporting documentation: Labs and notes attached\n✅ Insurance policy: Matches Aetna ePA requirements\n\nForm auto-filled with:\n• ICD-10: C50.911, Z12.31\n• CPT: 77066\n• Clinical justification: attached\n\nReady to submit electronically. Estimated turnaround: 2-4 hours for ePA. Shall I proceed?"
+      return "PA Analysis for your request:\n\n✅ Clinical criteria: All requirements met\n✅ Supporting documentation: Labs and notes attached\n✅ Insurance policy: Matches requirements\n\nForm auto-filled with:\n• ICD-10: M17.11, M25.561\n• CPT: 73721 (Knee MRI)\n• Clinical justification: attached\n\nReady to submit electronically. Estimated turnaround: 2-4 hours for ePA. Shall I proceed?"
 
     case "triage":
       return "Hey, I'm Nova. I understand you're not feeling well — let me help.\n\nHere's what I need from you:\n1. When did this start?\n2. Severity on 1-10?\n3. Any new medications or changes?\n4. Fever, chest pain, or difficulty breathing?\n\nThis helps me classify urgency and get you the right care fast.\n\n⚠️ If you're having chest pain, can't breathe, or show stroke signs — call 911 now. I'm not messing around with those."
