@@ -4,6 +4,7 @@ import { prescriptions, getPatient, getPhysician } from "@/lib/seed-data"
 import { cn, formatDate, getStatusColor } from "@/lib/utils"
 import { Pill, Search, AlertTriangle, RefreshCw, CheckCircle2 } from "lucide-react"
 import { useState, useMemo } from "react"
+import Link from "next/link"
 import AIAction from "@/components/ai-action"
 
 export default function PrescriptionsPage() {
@@ -51,6 +52,12 @@ export default function PrescriptionsPage() {
           </p>
         </div>
         <div className="flex gap-2">
+          <Link
+            href="/pharmacy"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-warm-600 border border-sand hover:border-terra/30 hover:text-terra transition"
+          >
+            Find Pharmacy
+          </Link>
           <AIAction
             agentId="rx"
             label="Check Adherence"
