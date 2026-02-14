@@ -21,30 +21,30 @@ const data = [
 
 export default function RevenueChart() {
   return (
-    <div className="bg-white rounded-2xl border border-sand p-5">
+    <div className="bg-pampas rounded-2xl border border-sand p-5">
       <h3 className="text-sm font-bold text-warm-800 mb-4">
         Revenue (6-Month)
       </h3>
       <div className="h-48">
         <ResponsiveContainer width="100%" height="100%" minHeight={180}>
           <BarChart data={data} barGap={2}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#EDE9E0" vertical={false} />
+            <CartesianGrid strokeDasharray="3 3" stroke="#1E2D4A" vertical={false} />
             <XAxis
               dataKey="month"
-              tick={{ fontSize: 10, fill: "#96887A" }}
+              tick={{ fontSize: 10, fill: "#6B7A94" }}
               axisLine={false}
               tickLine={false}
             />
             <YAxis
-              tick={{ fontSize: 10, fill: "#96887A" }}
+              tick={{ fontSize: 10, fill: "#6B7A94" }}
               axisLine={false}
               tickLine={false}
               tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`}
             />
             <Tooltip
               contentStyle={{
-                background: "#fff",
-                border: "1px solid #D9D2C5",
+                background: "#111D35",
+                border: "1px solid #1E2D4A",
                 borderRadius: 12,
                 fontSize: 11,
                 boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
@@ -56,14 +56,14 @@ export default function RevenueChart() {
             <Bar
               dataKey="billed"
               name="Billed"
-              fill="#D9D2C5"
+              fill="#1E2D4A"
               radius={[4, 4, 0, 0]}
               maxBarSize={28}
             />
             <Bar
               dataKey="collected"
               name="Collected"
-              fill="#C15F3C"
+              fill="#C5A04E"
               radius={[4, 4, 0, 0]}
               maxBarSize={28}
             />

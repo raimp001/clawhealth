@@ -1,18 +1,16 @@
 import type { Metadata, Viewport } from "next"
-import { DM_Sans, Libre_Baskerville } from "next/font/google"
+import { Inter, Playfair_Display } from "next/font/google"
 import "./globals.css"
 
-const dmSans = DM_Sans({
+const inter = Inter({
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
   variable: "--font-sans",
   display: "swap",
 })
 
-const libreBaskerville = Libre_Baskerville({
+const playfair = Playfair_Display({
   subsets: ["latin"],
-  weight: ["400", "700"],
-  style: ["normal", "italic"],
+  weight: ["400", "500", "600", "700"],
   variable: "--font-serif",
   display: "swap",
 })
@@ -32,7 +30,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#C15F3C",
+  themeColor: "#0B1426",
 }
 
 export default function RootLayout({
@@ -41,7 +39,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className={`${dmSans.variable} ${libreBaskerville.variable}`}>
+    <html lang="en" className={`${inter.variable} ${playfair.variable}`}>
       <body>{children}</body>
     </html>
   )

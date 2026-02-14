@@ -40,7 +40,7 @@ export default function AgentBar() {
   }, [status])
 
   return (
-    <div className="bg-warm-800 text-cream/90">
+    <div className="bg-sand text-cream/90">
       {/* Compact bar */}
       <div className="flex items-center justify-between px-4 lg:px-6 h-9">
         <div className="flex items-center gap-3">

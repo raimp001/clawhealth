@@ -45,7 +45,7 @@ export default function Topbar() {
   }, [query, myClaims])
 
   return (
-    <header className="sticky top-0 z-30 h-16 border-b border-sand bg-white/80 backdrop-blur-sm flex items-center justify-between px-4 lg:px-6">
+    <header className="sticky top-0 z-30 h-16 border-b border-sand bg-pampas/80 backdrop-blur-sm flex items-center justify-between px-4 lg:px-6">
       {/* Search */}
       <div ref={searchRef} className="relative w-full max-w-xs lg:max-w-sm ml-10 lg:ml-0">
         <Search
@@ -77,7 +77,7 @@ export default function Topbar() {
 
         {/* Search Results Dropdown */}
         {isOpen && results && (
-          <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-xl border border-sand shadow-lg overflow-hidden z-50 animate-fade-in">
+          <div className="absolute top-full left-0 right-0 mt-1 bg-pampas rounded-xl border border-sand shadow-lg overflow-hidden z-50 animate-fade-in">
             {results.total === 0 ? (
               <div className="px-4 py-3 text-xs text-warm-500">
                 No results for &ldquo;{query}&rdquo;

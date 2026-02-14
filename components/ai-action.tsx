@@ -171,7 +171,7 @@ function AIResponsePanel({
 }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/20 backdrop-blur-sm animate-fade-in">
-      <div className="bg-white rounded-2xl border border-sand shadow-xl max-w-lg w-full max-h-[60vh] overflow-hidden">
+      <div className="bg-pampas rounded-2xl border border-sand shadow-xl max-w-lg w-full max-h-[60vh] overflow-hidden">
         <div className="flex items-center justify-between px-5 py-3 border-b border-sand">
           <div className="flex items-center gap-2">
             <Bot size={16} className="text-terra" />

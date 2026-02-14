@@ -208,7 +208,7 @@ export default function ChatPage() {
                   "flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition-all border",
                   activeDemo === d.id
                     ? "bg-terra text-white border-terra"
-                    : "bg-white text-warm-600 border-sand hover:border-terra/30"
+                    : "bg-pampas text-warm-600 border-sand hover:border-terra/30"
                 )}
               >
                 <Icon size={14} />
@@ -243,7 +243,7 @@ export default function ChatPage() {
       </div>
 
       {/* Chat Window */}
-      <div className="bg-white rounded-2xl border border-sand overflow-hidden flex flex-col h-[calc(100vh-340px)] min-h-[400px]">
+      <div className="bg-pampas rounded-2xl border border-sand overflow-hidden flex flex-col h-[calc(100vh-340px)] min-h-[400px]">
         {/* Messages */}
         <div className="flex-1 overflow-y-auto p-5 space-y-4">
           {messages.map((msg) => {
@@ -332,7 +332,7 @@ export default function ChatPage() {
               onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && sendMessage()}
               placeholder={`Message ${agentMeta[activeAgent]?.label || "AI Agent"}...`}
               disabled={isLoading}
-              className="flex-1 px-4 py-2.5 rounded-xl border border-sand bg-white text-sm placeholder:text-cloudy focus:outline-none focus:border-terra/40 focus:ring-1 focus:ring-terra/20 transition disabled:opacity-50"
+              className="flex-1 px-4 py-2.5 rounded-xl border border-sand bg-pampas text-sm placeholder:text-cloudy focus:outline-none focus:border-terra/40 focus:ring-1 focus:ring-terra/20 transition disabled:opacity-50"
             />
             <button
               onClick={sendMessage}
@@ -346,7 +346,7 @@ export default function ChatPage() {
       </div>
 
       {/* Automation Status */}
-      <div className="bg-white rounded-2xl border border-sand p-4">
+      <div className="bg-pampas rounded-2xl border border-sand p-4">
         <div className="flex items-center gap-2 mb-3">
           <Zap size={14} className="text-terra" />
           <span className="text-xs font-bold text-warm-800">Active Automations (OpenClaw Cron)</span>

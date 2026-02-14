@@ -25,14 +25,14 @@ export default function Error({
         <div className="flex items-center justify-center gap-3 mt-6">
           <button
             onClick={reset}
-            className="px-5 py-2.5 bg-terra text-white text-sm font-semibold rounded-xl hover:bg-terra-dark transition flex items-center gap-2"
+            className="px-5 py-2.5 bg-terra text-cream text-sm font-semibold rounded-xl hover:bg-terra-dark transition flex items-center gap-2"
           >
             <RefreshCw size={14} />
             Try Again
           </button>
           <Link
             href="/dashboard"
-            className="px-5 py-2.5 bg-white text-warm-800 text-sm font-semibold rounded-xl border border-sand hover:border-terra/30 transition flex items-center gap-2"
+            className="px-5 py-2.5 bg-pampas text-warm-800 text-sm font-semibold rounded-xl border border-sand hover:border-terra/30 transition flex items-center gap-2"
           >
             <Home size={14} />
             Dashboard

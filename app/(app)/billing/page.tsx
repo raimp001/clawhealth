@@ -106,7 +106,7 @@ export default function BillingPage() {
         {statCards.map((s) => (
           <div
             key={s.label}
-            className="bg-white rounded-2xl border border-sand p-5"
+            className="bg-pampas rounded-2xl border border-sand p-5"
           >
             <div
               className={cn(
@@ -127,7 +127,7 @@ export default function BillingPage() {
       {/* Filter */}
       <div className="flex items-center gap-3">
         <Filter size={14} className="text-cloudy" />
-        <div className="flex bg-white border border-sand rounded-xl overflow-hidden">
+        <div className="flex bg-pampas border border-sand rounded-xl overflow-hidden">
           <button
             onClick={() => setStatusFilter("")}
             className={cn(
@@ -157,7 +157,7 @@ export default function BillingPage() {
       </div>
 
       {/* Claims Table */}
-      <div className="bg-white rounded-2xl border border-sand overflow-hidden">
+      <div className="bg-pampas rounded-2xl border border-sand overflow-hidden">
         <div className="hidden lg:grid grid-cols-[1fr_auto_auto_auto_auto_auto] gap-4 px-5 py-3 bg-cream/50 border-b border-sand text-[10px] font-bold text-warm-500 uppercase tracking-wider">
           <span>Claim Details</span>
           <span className="w-20 text-right">Amount</span>

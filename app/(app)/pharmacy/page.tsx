@@ -104,7 +104,7 @@ export default function PharmacyPage() {
       </div>
 
       {/* Search Form */}
-      <div className="bg-white rounded-2xl border border-sand p-5">
+      <div className="bg-pampas rounded-2xl border border-sand p-5">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
           <div>
             <label className="text-xs font-semibold text-warm-700 mb-1.5 block">
@@ -208,7 +208,7 @@ export default function PharmacyPage() {
               <div
                 key={pharmacy.npi}
                 className={cn(
-                  "bg-white rounded-2xl border p-5 hover:border-terra/20 transition cursor-pointer",
+                  "bg-pampas rounded-2xl border p-5 hover:border-terra/20 transition cursor-pointer",
                   selectedPharmacy === pharmacy.npi
                     ? "border-terra/30 ring-1 ring-terra/10"
                     : "border-sand"
@@ -279,7 +279,7 @@ export default function PharmacyPage() {
           </div>
 
           {results.length === 0 && !isLoading && (
-            <div className="text-center py-12 bg-white rounded-2xl border border-sand">
+            <div className="text-center py-12 bg-pampas rounded-2xl border border-sand">
               <Pill size={32} className="text-sand mx-auto mb-3" />
               <p className="text-sm text-warm-500">
                 No pharmacies found. Try adjusting your search.
@@ -291,7 +291,7 @@ export default function PharmacyPage() {
 
       {/* Pre-search state */}
       {!hasSearched && (
-        <div className="text-center py-16 bg-white rounded-2xl border border-sand">
+        <div className="text-center py-16 bg-pampas rounded-2xl border border-sand">
           <div className="w-16 h-16 rounded-2xl bg-accent/5 flex items-center justify-center mx-auto mb-4">
             <Pill size={28} className="text-accent" />
           </div>

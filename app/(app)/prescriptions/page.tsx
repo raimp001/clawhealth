@@ -86,10 +86,10 @@ export default function PrescriptionsPage() {
             placeholder="Search medication..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-sand bg-white text-sm text-warm-800 placeholder:text-cloudy focus:outline-none focus:border-terra/40 focus:ring-1 focus:ring-terra/20 transition"
+            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-sand bg-pampas text-sm text-warm-800 placeholder:text-cloudy focus:outline-none focus:border-terra/40 focus:ring-1 focus:ring-terra/20 transition"
           />
         </div>
-        <div className="flex bg-white border border-sand rounded-xl overflow-hidden">
+        <div className="flex bg-pampas border border-sand rounded-xl overflow-hidden">
           <button
             onClick={() => setStatusFilter("")}
             className={cn(
@@ -119,7 +119,7 @@ export default function PrescriptionsPage() {
       </div>
 
       {/* Prescriptions List */}
-      <div className="bg-white rounded-2xl border border-sand divide-y divide-sand/50">
+      <div className="bg-pampas rounded-2xl border border-sand divide-y divide-sand/50">
         {filtered.map((rx) => {
           const physician = getPhysician(rx.physician_id)
           const isLowAdherence = rx.status === "active" && rx.adherence_pct < 80

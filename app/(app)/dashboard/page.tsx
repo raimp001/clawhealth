@@ -57,7 +57,7 @@ export default function DashboardPage() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <Link
           href="/scheduling"
-          className="bg-white rounded-2xl p-4 border border-sand hover:border-terra/30 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-terra/5 transition-all"
+          className="bg-pampas rounded-2xl p-4 border border-sand hover:border-terra/30 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-terra/5 transition-all"
         >
           <Calendar size={20} className="text-terra mb-2" />
           <div className="text-lg font-bold text-warm-800">{upcomingApts.length}</div>
@@ -65,7 +65,7 @@ export default function DashboardPage() {
         </Link>
         <Link
           href="/prescriptions"
-          className="bg-white rounded-2xl p-4 border border-sand hover:border-terra/30 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-terra/5 transition-all"
+          className="bg-pampas rounded-2xl p-4 border border-sand hover:border-terra/30 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-terra/5 transition-all"
         >
           <Pill size={20} className="text-accent mb-2" />
           <div className="text-lg font-bold text-warm-800">{myRx.length}</div>
@@ -73,7 +73,7 @@ export default function DashboardPage() {
         </Link>
         <Link
           href="/billing"
-          className="bg-white rounded-2xl p-4 border border-sand hover:border-terra/30 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-terra/5 transition-all"
+          className="bg-pampas rounded-2xl p-4 border border-sand hover:border-terra/30 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-terra/5 transition-all"
         >
           <Receipt size={20} className="text-soft-blue mb-2" />
           <div className="text-lg font-bold text-warm-800">
@@ -83,7 +83,7 @@ export default function DashboardPage() {
         </Link>
         <Link
           href="/messages"
-          className="bg-white rounded-2xl p-4 border border-sand hover:border-terra/30 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-terra/5 transition-all"
+          className="bg-pampas rounded-2xl p-4 border border-sand hover:border-terra/30 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-terra/5 transition-all"
         >
           <MessageSquare size={20} className="text-yellow-600 mb-2" />
           <div className="text-lg font-bold text-warm-800">{unreadCount}</div>
@@ -93,7 +93,7 @@ export default function DashboardPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* My Upcoming Appointments */}
-        <div className="lg:col-span-2 bg-white rounded-2xl border border-sand">
+        <div className="lg:col-span-2 bg-pampas rounded-2xl border border-sand">
           <div className="flex items-center justify-between p-5 border-b border-sand">
             <h2 className="text-base font-serif text-warm-800">My Upcoming Visits</h2>
             <Link
@@ -166,7 +166,7 @@ export default function DashboardPage() {
         {/* Right Column */}
         <div className="space-y-4">
           {/* My Medications */}
-          <div className="bg-white rounded-2xl border border-sand">
+          <div className="bg-pampas rounded-2xl border border-sand">
             <div className="flex items-center gap-2 p-4 border-b border-sand">
               <Pill size={16} className="text-accent" />
               <h3 className="text-sm font-bold text-warm-800">My Medications</h3>
@@ -249,7 +249,7 @@ export default function DashboardPage() {
       </div>
 
       {/* AI Care Team Activity */}
-      <div className="bg-white rounded-2xl border border-sand">
+      <div className="bg-pampas rounded-2xl border border-sand">
         <div className="flex items-center justify-between p-4 border-b border-sand">
           <div className="flex items-center gap-2">
             <Bot size={14} className="text-terra" />

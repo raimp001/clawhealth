@@ -104,7 +104,7 @@ export default function PriorAuthPage() {
       </div>
 
       {/* PA List */}
-      <div className="bg-white rounded-2xl border border-sand divide-y divide-sand/50">
+      <div className="bg-pampas rounded-2xl border border-sand divide-y divide-sand/50">
         <div className="px-5 py-3 bg-cream/50 border-b border-sand">
           <h2 className="text-sm font-bold text-warm-700">
             All My Authorizations

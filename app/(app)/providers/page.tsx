@@ -107,7 +107,7 @@ export default function ProvidersPage() {
       </div>
 
       {/* Single Search Bar */}
-      <div className="bg-white rounded-2xl border border-sand p-5">
+      <div className="bg-pampas rounded-2xl border border-sand p-5">
         <div className="flex gap-3">
           <div className="relative flex-1">
             <Search
@@ -185,7 +185,7 @@ export default function ProvidersPage() {
             {results.map((provider) => (
               <div
                 key={provider.npi}
-                className="bg-white rounded-2xl border border-sand p-5 hover:border-terra/20 hover:shadow-sm transition"
+                className="bg-pampas rounded-2xl border border-sand p-5 hover:border-terra/20 hover:shadow-sm transition"
               >
                 <div className="flex items-start gap-4">
                   <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-terra/10 to-terra/5 flex items-center justify-center text-terra shrink-0">
@@ -241,7 +241,7 @@ export default function ProvidersPage() {
           </div>
 
           {results.length === 0 && !isLoading && (
-            <div className="text-center py-12 bg-white rounded-2xl border border-sand">
+            <div className="text-center py-12 bg-pampas rounded-2xl border border-sand">
               <Stethoscope size={32} className="text-sand mx-auto mb-3" />
               <p className="text-sm text-warm-500">
                 No providers found. Try a different search.
@@ -257,7 +257,7 @@ export default function ProvidersPage() {
 
       {/* Pre-search state with examples */}
       {!hasSearched && (
-        <div className="text-center py-12 bg-white rounded-2xl border border-sand">
+        <div className="text-center py-12 bg-pampas rounded-2xl border border-sand">
           <div className="w-16 h-16 rounded-2xl bg-terra/5 flex items-center justify-center mx-auto mb-4">
             <Search size={28} className="text-terra" />
           </div>

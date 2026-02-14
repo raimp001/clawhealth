@@ -360,7 +360,7 @@ export default function OnboardingPage() {
       </div>
 
       {/* Chat */}
-      <div className="bg-white rounded-2xl border border-sand overflow-hidden flex flex-col h-[calc(100vh-280px)] min-h-[500px]">
+      <div className="bg-pampas rounded-2xl border border-sand overflow-hidden flex flex-col h-[calc(100vh-280px)] min-h-[500px]">
         <div className="flex-1 overflow-y-auto p-5 space-y-4">
           {messages.map((msg) => {
             const agentInfo = msg.agent ? AGENT_NAMES[msg.agent] : null
@@ -446,7 +446,7 @@ export default function OnboardingPage() {
                 placeholder="Type your answer..."
                 disabled={isTyping || isSearching}
                 aria-label="Onboarding chat input"
-                className="flex-1 px-4 py-2.5 rounded-xl border border-sand bg-white text-sm placeholder:text-cloudy focus:outline-none focus:border-terra/40 focus:ring-1 focus:ring-terra/20 transition disabled:opacity-50"
+                className="flex-1 px-4 py-2.5 rounded-xl border border-sand bg-pampas text-sm placeholder:text-cloudy focus:outline-none focus:border-terra/40 focus:ring-1 focus:ring-terra/20 transition disabled:opacity-50"
               />
               <button
                 onClick={handleSubmit}

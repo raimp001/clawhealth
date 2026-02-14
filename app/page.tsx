@@ -18,14 +18,14 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-cream">
       {/* Nav */}
-      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-sm border-b border-sand">
+      <header className="sticky top-0 z-50 bg-cream/90 backdrop-blur-sm border-b border-sand">
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-terra to-terra-dark flex items-center justify-center">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
                 <path
                   d="M12 4v16M4 12h16"
-                  stroke="#F4F3EE"
+                  stroke="#0B1426"
                   strokeWidth="3"
                   strokeLinecap="round"
                 />
@@ -37,7 +37,7 @@ export default function LandingPage() {
           </div>
           <Link
             href="/dashboard"
-            className="px-5 py-2.5 bg-terra text-white text-sm font-semibold rounded-xl hover:bg-terra-dark transition shadow-lg shadow-terra/20"
+            className="px-5 py-2.5 bg-terra text-cream text-sm font-semibold rounded-xl hover:bg-terra-dark transition shadow-lg shadow-terra/20"
           >
             Open Dashboard
           </Link>
@@ -64,14 +64,14 @@ export default function LandingPage() {
           <div className="flex items-center justify-center gap-4 mt-8">
             <Link
               href="/onboarding"
-              className="px-6 py-3 bg-terra text-white text-sm font-bold rounded-xl hover:bg-terra-dark transition shadow-xl shadow-terra/25 flex items-center gap-2"
+              className="px-6 py-3 bg-terra text-cream text-sm font-bold rounded-xl hover:bg-terra-dark transition shadow-xl shadow-terra/25 flex items-center gap-2"
             >
               Get Started
               <ArrowRight size={16} />
             </Link>
             <Link
               href="/chat"
-              className="px-6 py-3 bg-white text-warm-800 text-sm font-bold rounded-xl border border-sand hover:border-terra/30 transition flex items-center gap-2"
+              className="px-6 py-3 bg-pampas text-warm-800 text-sm font-bold rounded-xl border border-sand hover:border-terra/30 transition flex items-center gap-2"
             >
               <Bot size={16} className="text-terra" />
               Talk to AI Agent
@@ -91,7 +91,7 @@ export default function LandingPage() {
           ].map((s) => (
             <div
               key={s.label}
-              className="bg-white rounded-2xl border border-sand p-6 text-center"
+              className="bg-pampas rounded-2xl border border-sand p-6 text-center"
             >
               <s.icon size={24} className="text-terra mx-auto mb-3" />
               <div className="text-3xl font-bold text-warm-800 font-serif">
@@ -107,7 +107,7 @@ export default function LandingPage() {
 
       {/* OpenClaw Integration */}
       <section className="max-w-6xl mx-auto px-6 pb-16">
-        <div className="bg-warm-800 rounded-3xl p-8 lg:p-12 text-cream">
+        <div className="bg-sand rounded-3xl p-8 lg:p-12 text-cream">
           <div className="max-w-3xl mx-auto text-center">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-white/10 rounded-full text-xs font-bold text-terra-light mb-4">
               Powered by OpenClaw Gateway
@@ -199,7 +199,7 @@ export default function LandingPage() {
             <Link
               key={f.title}
               href={f.href}
-              className="bg-white rounded-2xl border border-sand p-6 hover:border-terra/30 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-terra/5 transition-all group"
+              className="bg-pampas rounded-2xl border border-sand p-6 hover:border-terra/30 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-terra/5 transition-all group"
             >
               <f.icon
                 size={24}
@@ -220,7 +220,7 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-sand bg-white">
+      <footer className="border-t border-sand bg-pampas">
         <div className="max-w-6xl mx-auto px-6 py-8 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Heart size={14} className="text-terra" />

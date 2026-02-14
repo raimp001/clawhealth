@@ -85,7 +85,7 @@ export default function SchedulingPage() {
 
       {/* Tabs */}
       <div className="flex items-center justify-between">
-        <div className="flex bg-white border border-sand rounded-xl overflow-hidden">
+        <div className="flex bg-pampas border border-sand rounded-xl overflow-hidden">
           {(["today", "upcoming", "past"] as ViewMode[]).map((v) => (
             <button
               key={v}
@@ -104,7 +104,7 @@ export default function SchedulingPage() {
       </div>
 
       {/* Appointment List */}
-      <div className="bg-white rounded-2xl border border-sand divide-y divide-sand/50">
+      <div className="bg-pampas rounded-2xl border border-sand divide-y divide-sand/50">
         {activeList.length === 0 && (
           <div className="text-center py-12 text-sm text-warm-500">
             No appointments to display.

@@ -89,7 +89,7 @@ export default function MessagesPage() {
       </div>
 
       {/* Message Thread */}
-      <div className="bg-white rounded-2xl border border-sand overflow-hidden flex flex-col h-[calc(100vh-220px)]">
+      <div className="bg-pampas rounded-2xl border border-sand overflow-hidden flex flex-col h-[calc(100vh-220px)]">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-3 border-b border-sand">
           <div className="flex items-center gap-3">

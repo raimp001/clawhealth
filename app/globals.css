@@ -8,8 +8,8 @@
 
 body {
   font-family: var(--font-sans), system-ui, sans-serif;
-  background: #F4F3EE;
-  color: #3D2E24;
+  background: #0B1426;
+  color: #F1F3F7;
 }
 
 ::-webkit-scrollbar {
@@ -19,7 +19,7 @@ body {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #D9D2C5;
+  background: #1E2D4A;
   border-radius: 10px;
 }
 
