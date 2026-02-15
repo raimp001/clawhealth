@@ -12,15 +12,29 @@ import {
   Zap,
   DollarSign,
   CheckCircle2,
+  TrendingUp,
+  BarChart3,
+  Layers,
 } from "lucide-react"
 import { useAccount } from "wagmi"
 import { PLATFORM_WALLET, DEVELOPER_WALLET } from "@/app/providers"
-// OnchainKit transaction + fund components available when API key is configured
 import { useState } from "react"
+import Link from "next/link"
+import {
+  getAgentWallets,
+  getActivePositions,
+  getTotalEarnings,
+  getTotalPortfolioValue,
+} from "@/lib/wallet/agent-wallet"
 
 export default function WalletPage() {
   const { address, isConnected } = useAccount()
   const [copied, setCopied] = useState(false)
+
+  const agentWallets = getAgentWallets()
+  const totalEarnings = getTotalEarnings()
+  const totalPortfolio = getTotalPortfolioValue()
+  const activePositions = getActivePositions()
 
   const copyAddress = () => {
     if (address) {
@@ -113,6 +127,124 @@ export default function WalletPage() {
             </div>
           </div>
 
+          {/* Earnings Summary — links to Earn page */}
+          <div className="bg-accent/5 rounded-2xl border border-accent/10 p-5">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <TrendingUp size={16} className="text-accent" />
+                <h3 className="text-sm font-bold text-warm-800">
+                  DeFi Earnings
+                </h3>
+              </div>
+              <Link
+                href="/earn"
+                className="text-xs text-terra font-semibold hover:underline flex items-center gap-1"
+              >
+                View All <ArrowUpRight size={12} />
+              </Link>
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <p className="text-[10px] font-bold text-cloudy uppercase tracking-wider">
+                  Portfolio
+                </p>
+                <p className="text-sm font-bold text-warm-800">
+                  ${totalPortfolio.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                </p>
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-cloudy uppercase tracking-wider">
+                  Earned
+                </p>
+                <p className="text-sm font-bold text-accent">
+                  +${totalEarnings.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                </p>
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-cloudy uppercase tracking-wider">
+                  Positions
+                </p>
+                <p className="text-sm font-bold text-warm-800">
+                  {activePositions.length} active
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Agent Wallets */}
+          <div className="bg-pampas rounded-2xl border border-sand p-5">
+            <div className="flex items-center gap-2 mb-4">
+              <Bot size={16} className="text-terra" />
+              <h3 className="text-sm font-bold text-warm-800">
+                Agent Wallets
+              </h3>
+            </div>
+            <div className="space-y-3">
+              {agentWallets.map((wallet) => (
+                <div
+                  key={wallet.agentId}
+                  className="flex items-center justify-between px-4 py-3 rounded-xl bg-sand/30 border border-sand"
+                >
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={cn(
+                        "w-8 h-8 rounded-lg flex items-center justify-center",
+                        wallet.agentId === "defi"
+                          ? "bg-terra/10"
+                          : wallet.agentId === "billing"
+                          ? "bg-accent/10"
+                          : "bg-soft-blue/10"
+                      )}
+                    >
+                      {wallet.agentId === "defi" ? (
+                        <TrendingUp size={14} className="text-terra" />
+                      ) : wallet.agentId === "billing" ? (
+                        <BarChart3 size={14} className="text-accent" />
+                      ) : (
+                        <Layers size={14} className="text-soft-blue" />
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-warm-800">
+                        {wallet.label}
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[9px] font-mono text-cloudy">
+                          {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}
+                        </span>
+                        <div className="flex gap-1">
+                          {wallet.permissions.slice(0, 3).map((p) => (
+                            <span
+                              key={p}
+                              className="text-[8px] font-bold text-warm-400 bg-sand/50 px-1 py-0.5 rounded"
+                            >
+                              {p}
+                            </span>
+                          ))}
+                          {wallet.permissions.length > 3 && (
+                            <span className="text-[8px] text-warm-400">
+                              +{wallet.permissions.length - 3}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs font-bold text-warm-800">
+                      ${wallet.totalValueUsd.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                    </p>
+                    {wallet.totalEarningsUsd > 0 && (
+                      <p className="text-[9px] font-semibold text-accent">
+                        +${wallet.totalEarningsUsd.toFixed(2)}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
           {/* Payment Actions */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {/* Pay for Services */}
@@ -181,6 +313,19 @@ export default function WalletPage() {
                   </div>
                   <div className="w-10 h-5 bg-sand rounded-full relative cursor-pointer">
                     <div className="w-4 h-4 bg-cloudy rounded-full absolute left-0.5 top-0.5" />
+                  </div>
+                </div>
+                <div className="flex items-center justify-between px-4 py-2.5 rounded-xl bg-accent/5 border border-accent/10">
+                  <div>
+                    <span className="text-xs font-semibold text-warm-800">
+                      Knox DeFi Earning
+                    </span>
+                    <p className="text-[10px] text-warm-500">
+                      Allow Knox to deploy idle funds to earn yield
+                    </p>
+                  </div>
+                  <div className="w-10 h-5 bg-accent rounded-full relative cursor-pointer">
+                    <div className="w-4 h-4 bg-white rounded-full absolute right-0.5 top-0.5" />
                   </div>
                 </div>
               </div>
@@ -252,7 +397,7 @@ export default function WalletPage() {
                 {
                   step: "1",
                   title: "Agents Request",
-                  desc: "AI agents (Maya, Cal, Vera) identify a payment needed — a copay, refill, or bill.",
+                  desc: "AI agents (Maya, Cal, Vera, Knox) identify a payment or earning opportunity.",
                 },
                 {
                   step: "2",

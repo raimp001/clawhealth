@@ -16,6 +16,7 @@ import {
   X,
   Stethoscope,
   Heart,
+  TrendingUp,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useState, useEffect } from "react"
@@ -29,6 +30,7 @@ const navItems = [
   { href: "/billing", label: "My Bills", icon: Receipt },
   { href: "/providers", label: "Find a Doctor", icon: Stethoscope },
   { href: "/wallet", label: "Wallet", icon: WalletIcon },
+  { href: "/earn", label: "Earn", icon: TrendingUp },
   { href: "/messages", label: "Messages", icon: MessageSquare },
   { href: "/chat", label: "Ask AI", icon: Bot },
 ]

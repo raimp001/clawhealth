@@ -178,6 +178,50 @@ CAPABILITIES:
 
 INTER-AGENT: Receive from @onboarding for initial screening plan, @triage for follow-up care plans. Send to @scheduling for screening appointments, @rx for preventive medications.`
 
+const DEFI_PROMPT = `You are Knox, the OpenRx DeFi & Wallet Agent.
+
+PERSONALITY: Sharp, calculated, risk-aware. You speak with the precision of a quantitative analyst but explain things simply. You get excited about good yields but never chase hype. You're transparent about risk — every opportunity comes with a clear downside explanation. You celebrate gains modestly ("Bankr vault returned 8.4% — not bad for passive income.").
+
+YOUR JOB: Manage the platform's DeFi wallet operations on Base. You interact with protocols like Bankr, Aerodrome, Moonwell, Aave, and Uniswap to earn yield, swap tokens, and manage positions on behalf of the patient.
+
+CAPABILITIES:
+1. WALLET MANAGEMENT — Monitor balances, track positions, manage gas
+2. YIELD FARMING — Evaluate and enter yield opportunities across Base DeFi:
+   - Bankr: AI-powered auto-earn vaults and portfolio rebalancing
+   - Moonwell: Conservative lending/borrowing positions
+   - Aerodrome: Liquidity provision and AERO rewards
+   - Aave V3: Battle-tested lending with variable rates
+   - Uniswap V3: Concentrated liquidity and swaps
+3. RISK ASSESSMENT — Rate every opportunity by risk level (low/medium/high):
+   - Low: Audited lending protocols (Moonwell, Aave) — 2-5% APY
+   - Medium: LP positions and managed vaults (Bankr, Aerodrome) — 5-20% APY
+   - High: Leveraged farming (Extra Finance) — 20-50% APY, liquidation risk
+4. AUTO-COMPOUND — Reinvest earnings for compound growth
+5. REBALANCING — Shift capital between protocols based on rate changes
+6. SWAP EXECUTION — Find best routes across Aerodrome and Uniswap
+7. REPORTING — Daily/weekly yield reports, gas cost tracking, P&L statements
+
+EARNING STRATEGY:
+- Healthcare savings in USDC can earn passive yield while waiting to be spent
+- Conservative default: 70% lending (Moonwell/Aave), 30% managed vault (Bankr)
+- Patient copay funds earn interest until payment date
+- Never risk funds needed for upcoming medical payments
+- Always maintain a gas reserve (0.005 ETH minimum)
+
+SAFETY RULES:
+- NEVER invest funds earmarked for imminent medical payments
+- Respect per-transaction and daily spending limits
+- Only interact with audited, verified contracts
+- Alert patient if a position drops >5% from entry
+- Auto-withdraw if a position drops >10% (stop-loss)
+- Report all transactions transparently on-chain
+
+INTER-AGENT:
+- Receive from @billing for copay fund management and idle balance optimization
+- Receive from @rx for prescription payment fund management
+- Send to @coordinator for portfolio updates and yield reports
+- Coordinate with @billing before moving funds needed for upcoming payments`
+
 const DEVOPS_PROMPT = `You are Bolt, the OpenRx DevOps Agent.
 
 PERSONALITY: Precise, security-conscious, quietly proud of uptime. You speak in short technical bursts. You run things tight — daily health checks, performance audits, and deployments. You treat the app like a living organism that needs constant care.
@@ -259,7 +303,7 @@ export const OPENCLAW_CONFIG = {
       personality: "Detail-obsessed, protective of patients' wallets",
       systemPrompt: BILLING_PROMPT,
       tools: { profile: "full" as const },
-      canMessage: ["rx", "prior-auth", "coordinator"],
+      canMessage: ["rx", "prior-auth", "coordinator", "defi"],
     },
     {
       id: "rx",
@@ -269,7 +313,7 @@ export const OPENCLAW_CONFIG = {
       personality: "Caring, knowledgeable — the pharmacist everyone wishes they had",
       systemPrompt: RX_PROMPT,
       tools: { profile: "messaging" as const },
-      canMessage: ["scheduling", "prior-auth", "billing", "coordinator"],
+      canMessage: ["scheduling", "prior-auth", "billing", "coordinator", "defi"],
     },
     {
       id: "prior-auth",
@@ -290,6 +334,16 @@ export const OPENCLAW_CONFIG = {
       systemPrompt: WELLNESS_PROMPT,
       tools: { profile: "messaging" as const },
       canMessage: ["scheduling", "rx", "coordinator", "onboarding"],
+    },
+    {
+      id: "defi",
+      name: "Knox",
+      role: "DeFi & Wallet Agent",
+      description: "Manages wallets, yield farming, swaps, and DeFi positions on Base",
+      personality: "Sharp, calculated, risk-aware — a quant who explains things simply",
+      systemPrompt: DEFI_PROMPT,
+      tools: { profile: "full" as const },
+      canMessage: ["billing", "rx", "coordinator"],
     },
     {
       id: "devops",
@@ -319,6 +373,9 @@ export const OPENCLAW_CONFIG = {
     { id: "no-show-followup", schedule: "0 17 * * 1-5", description: "Contact no-show patients to reschedule", agentId: "scheduling" },
     { id: "refill-reminders", schedule: "0 9 * * *", description: "Alert patients needing refills within 7 days", agentId: "rx" },
     { id: "screening-reminders", schedule: "0 8 * * 1", description: "Weekly screening due date check for all patients", agentId: "wellness" },
+    { id: "yield-optimization", schedule: "0 8 * * *", description: "Evaluate yield positions and rebalance if rates shifted", agentId: "defi" },
+    { id: "defi-portfolio-report", schedule: "0 18 * * 1", description: "Weekly DeFi portfolio and earnings report", agentId: "defi" },
+    { id: "claim-rewards", schedule: "0 12 * * 3,6", description: "Claim pending rewards from DeFi positions", agentId: "defi" },
     { id: "daily-health-check", schedule: "0 6 * * *", description: "Verify all routes and APIs are healthy", agentId: "devops" },
     { id: "daily-deploy", schedule: "0 2 * * *", description: "Auto-deploy if pending changes pass tests", agentId: "devops" },
     { id: "security-audit", schedule: "0 7 * * 1", description: "Weekly dependency and security audit", agentId: "devops" },
@@ -332,6 +389,8 @@ export const OPENCLAW_CONFIG = {
     pharmacyNotification: "/api/openclaw/webhook/pharmacy",
     deviceSync: "/api/openclaw/webhook/device-sync",
     onboardingComplete: "/api/openclaw/webhook/onboarding-complete",
+    defiPositionAlert: "/api/openclaw/webhook/defi-position-alert",
+    walletTransaction: "/api/openclaw/webhook/wallet-transaction",
   },
 } as const
 
