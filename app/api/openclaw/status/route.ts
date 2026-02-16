@@ -1,21 +1,18 @@
 import { NextResponse } from "next/server"
-import { openclawClient } from "@/lib/openclaw/client"
 import { OPENCLAW_CONFIG } from "@/lib/openclaw/config"
+import { getRecentActions } from "@/lib/ai-engine"
 
 export async function GET() {
-  let connected = false
-  try {
-    connected = await openclawClient.isConnected()
-  } catch (error) {
-    console.error("Gateway health check failed:", error)
-  }
+  const hasLLM = !!process.env.OPENAI_API_KEY
+  const recentActions = getRecentActions(5)
 
   return NextResponse.json({
-    connected,
+    connected: hasLLM,
     gateway: {
-      url: OPENCLAW_CONFIG.gateway.url,
-      status: connected ? "online" : "demo-mode",
+      status: hasLLM ? "live" : "demo-mode",
+      engine: hasLLM ? "OpenAI GPT-4o-mini" : "fallback-demo",
     },
+    recentActions,
     agents: OPENCLAW_CONFIG.agents.map((a) => ({
       id: a.id,
       name: a.name,

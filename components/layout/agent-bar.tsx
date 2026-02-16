@@ -20,22 +20,33 @@ export default function AgentBar() {
       .catch(() => setStatus("demo"))
   }, [])
 
-  // Simulate periodic agent activity in demo mode
+  // Poll real agent actions (falls back to demo if none)
   useEffect(() => {
-    if (status !== "demo") return
-    const actions = [
+    const demoActions = [
       "Your appointment reminder sent for tomorrow",
       "Checked your latest bill — looks correct",
       "Refill for Metformin ready at Walgreens",
       "Cholesterol screening due — want me to book it?",
-      "Your prior auth for lab work was approved",
-      "Dr. Chen responded to your message",
     ]
-    let idx = 0
-    const interval = setInterval(() => {
-      setRecentAction(actions[idx % actions.length])
-      idx++
-    }, 8000)
+    let demoIdx = 0
+
+    const poll = async () => {
+      try {
+        const res = await fetch("/api/openclaw/actions?limit=1")
+        const data = await res.json()
+        if (data.actions?.length > 0) {
+          const a = data.actions[0]
+          setRecentAction(`${a.agentName}: ${a.action} — ${a.detail.slice(0, 60)}`)
+          return
+        }
+      } catch {}
+      // Fallback to demo
+      setRecentAction(demoActions[demoIdx % demoActions.length])
+      demoIdx++
+    }
+
+    poll()
+    const interval = setInterval(poll, 6000)
     return () => clearInterval(interval)
   }, [status])
 
