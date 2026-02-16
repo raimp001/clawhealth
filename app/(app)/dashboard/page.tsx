@@ -85,7 +85,7 @@ export default function DashboardPage() {
           href="/messages"
           className="bg-pampas rounded-2xl p-4 border border-sand hover:border-terra/30 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-terra/5 transition-all"
         >
-          <MessageSquare size={20} className="text-yellow-600 mb-2" />
+          <MessageSquare size={20} className="text-yellow-400 mb-2" />
           <div className="text-lg font-bold text-warm-800">{unreadCount}</div>
           <div className="text-xs text-warm-500">Unread Messages</div>
         </Link>
@@ -118,7 +118,7 @@ export default function DashboardPage() {
               return (
                 <div
                   key={apt.id}
-                  className="flex items-center gap-4 px-5 py-3.5 hover:bg-cream/50 transition"
+                  className="flex items-center gap-4 px-5 py-3.5 hover:bg-sand/30 transition"
                 >
                   <div className="text-sm font-semibold text-warm-600 w-16 shrink-0">
                     {formatTime(apt.scheduled_at)}
@@ -196,7 +196,7 @@ export default function DashboardPage() {
             </div>
             <Link
               href="/prescriptions"
-              className="block text-center py-2.5 border-t border-sand text-xs font-semibold text-terra hover:bg-cream/50 transition"
+              className="block text-center py-2.5 border-t border-sand text-xs font-semibold text-terra hover:bg-sand/30 transition"
             >
               View all →
             </Link>
@@ -219,10 +219,10 @@ export default function DashboardPage() {
 
           {/* Pending Prior Auths */}
           {pendingPA.length > 0 && (
-            <div className="bg-yellow-50 rounded-2xl border border-yellow-200/50 p-4">
+            <div className="bg-yellow-900/20 rounded-2xl border border-yellow-700/30 p-4">
               <div className="flex items-center gap-2 mb-2">
-                <CheckCircle2 size={14} className="text-yellow-600" />
-                <span className="text-xs font-bold text-yellow-700">Pending Approvals</span>
+                <CheckCircle2 size={14} className="text-yellow-400" />
+                <span className="text-xs font-bold text-yellow-400">Pending Approvals</span>
               </div>
               {pendingPA.map((pa) => (
                 <p key={pa.id} className="text-xs text-warm-600 mt-1">
@@ -262,11 +262,11 @@ export default function DashboardPage() {
         <div className="divide-y divide-sand/50">
           {[
             { icon: Send, color: "text-soft-blue", bg: "bg-soft-blue/5", action: "Appointment reminder sent", detail: "Your diabetes check is coming up", agent: "Cal", time: "2 min ago" },
-            { icon: Pill, color: "text-yellow-600", bg: "bg-yellow-50", action: "Refill checked", detail: "Atorvastatin refill needed soon — 2 refills remaining", agent: "Maya", time: "1 hr ago" },
+            { icon: Pill, color: "text-yellow-400", bg: "bg-yellow-900/20", action: "Refill checked", detail: "Atorvastatin refill needed soon — 2 refills remaining", agent: "Maya", time: "1 hr ago" },
             { icon: CheckCircle2, color: "text-accent", bg: "bg-accent/5", action: "Bill reviewed", detail: "Your latest claim was paid correctly — no action needed", agent: "Vera", time: "3 hrs ago" },
             { icon: Heart, color: "text-terra", bg: "bg-terra/5", action: "Screening reminder", detail: "Your cholesterol check is due — want me to book it?", agent: "Ivy", time: "Yesterday" },
           ].map((item, i) => (
-            <div key={i} className="flex items-center gap-3 px-4 py-3 hover:bg-cream/30 transition">
+            <div key={i} className="flex items-center gap-3 px-4 py-3 hover:bg-sand/20 transition">
               <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center shrink-0", item.bg)}>
                 <item.icon size={14} className={item.color} />
               </div>

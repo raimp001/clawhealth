@@ -232,7 +232,7 @@ export default function ChatPage() {
                 "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-all border",
                 activeAgent === agent.id
                   ? "bg-terra/10 text-terra border-terra/20"
-                  : "text-warm-500 border-transparent hover:text-warm-700 hover:bg-cream"
+                  : "text-warm-500 border-transparent hover:text-warm-700 hover:bg-sand/30"
               )}
             >
               <Icon size={12} className={activeAgent === agent.id ? meta?.color : ""} />
@@ -264,7 +264,7 @@ export default function ChatPage() {
                     msg.role === "agent"
                       ? "bg-terra/10"
                       : msg.role === "system"
-                      ? "bg-yellow-50"
+                      ? "bg-yellow-900/20"
                       : "bg-soft-blue/10"
                   )}
                 >
@@ -280,7 +280,7 @@ export default function ChatPage() {
                     msg.role === "user"
                       ? "bg-soft-blue/5 border-soft-blue/10"
                       : msg.role === "system"
-                      ? "bg-yellow-50 border-yellow-200/50"
+                      ? "bg-yellow-900/20 border-yellow-700/30"
                       : "bg-terra/5 border-terra/10"
                   )}
                 >
@@ -359,7 +359,7 @@ export default function ChatPage() {
             return (
               <div
                 key={job.id}
-                className="flex items-start gap-2 p-2.5 rounded-lg bg-cream/50 border border-sand/50"
+                className="flex items-start gap-2 p-2.5 rounded-lg bg-sand/20 border border-sand/50"
               >
                 <Icon size={12} className={cn("mt-0.5 shrink-0", meta?.color || "text-terra")} />
                 <div>

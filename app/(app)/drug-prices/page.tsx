@@ -145,7 +145,7 @@ export default function DrugPricesPage() {
               onKeyDown={(e) => e.key === "Enter" && searchDrug()}
               placeholder="Search any medication — Ozempic, metformin, insulin..."
               aria-label="Search drug prices"
-              className="w-full pl-12 pr-4 py-3.5 rounded-xl border border-sand bg-cream/50 text-sm text-warm-800 placeholder:text-cloudy focus:outline-none focus:border-terra/40 focus:ring-2 focus:ring-terra/10 transition"
+              className="w-full pl-12 pr-4 py-3.5 rounded-xl border border-sand bg-sand/20 text-sm text-warm-800 placeholder:text-cloudy focus:outline-none focus:border-terra/40 focus:ring-2 focus:ring-terra/10 transition"
             />
           </div>
           <button

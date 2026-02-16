@@ -157,7 +157,7 @@ export default function ProvidersPage() {
               </span>
             )}
             {parsed.zip && (
-              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700">
+              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-yellow-900/30 text-yellow-400">
                 ZIP {parsed.zip}
               </span>
             )}

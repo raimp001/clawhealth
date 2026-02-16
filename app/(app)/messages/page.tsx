@@ -62,9 +62,9 @@ export default function MessagesPage() {
       case "agent":
         return "bg-terra/5 border-terra/10"
       case "system":
-        return "bg-yellow-50 border-yellow-200/50"
+        return "bg-yellow-900/20 border-yellow-700/30"
       default:
-        return "bg-gray-50 border-gray-200"
+        return "bg-sand/20 border-sand"
     }
   }
 
@@ -113,7 +113,7 @@ export default function MessagesPage() {
                 "px-2.5 py-1 text-[10px] font-semibold rounded-lg transition",
                 !channelFilter
                   ? "bg-terra text-white"
-                  : "text-warm-500 hover:bg-cream"
+                  : "text-warm-500 hover:bg-sand/30"
               )}
             >
               All
@@ -126,7 +126,7 @@ export default function MessagesPage() {
                   "px-2.5 py-1 text-[10px] font-semibold rounded-lg transition capitalize",
                   channelFilter === ch
                     ? "bg-terra text-white"
-                    : "text-warm-500 hover:bg-cream"
+                    : "text-warm-500 hover:bg-sand/30"
                 )}
               >
                 {ch}
@@ -210,7 +210,7 @@ export default function MessagesPage() {
               }}
               placeholder="Type a message..."
               disabled={isSending}
-              className="flex-1 px-4 py-2.5 rounded-xl border border-sand bg-cream/50 text-sm placeholder:text-cloudy focus:outline-none focus:border-terra/40 transition disabled:opacity-50"
+              className="flex-1 px-4 py-2.5 rounded-xl border border-sand bg-sand/20 text-sm placeholder:text-cloudy focus:outline-none focus:border-terra/40 transition disabled:opacity-50"
             />
             <button
               onClick={async () => {

@@ -94,7 +94,7 @@ export default function SchedulingPage() {
                 "px-4 py-2 text-sm font-semibold transition-all capitalize",
                 view === v
                   ? "bg-terra text-white"
-                  : "text-warm-600 hover:text-warm-800 hover:bg-cream"
+                  : "text-warm-600 hover:text-warm-800 hover:bg-sand/30"
               )}
             >
               {v}
@@ -115,7 +115,7 @@ export default function SchedulingPage() {
           return (
             <div
               key={apt.id}
-              className="flex items-center gap-4 px-5 py-4 hover:bg-cream/30 transition"
+              className="flex items-center gap-4 px-5 py-4 hover:bg-sand/20 transition"
             >
               {/* Time */}
               <div className="w-20 shrink-0 text-center">

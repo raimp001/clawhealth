@@ -183,7 +183,7 @@ function AIResponsePanel({
           <button
             onClick={onClose}
             aria-label="Close AI response"
-            className="p-1 hover:bg-cream rounded-lg transition"
+            className="p-1 hover:bg-sand/30 rounded-lg transition"
           >
             <X size={16} className="text-warm-500" />
           </button>

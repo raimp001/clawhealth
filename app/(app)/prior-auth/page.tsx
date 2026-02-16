@@ -31,7 +31,7 @@ export default function PriorAuthPage() {
       case "submitted":
         return <Send size={16} className="text-soft-blue" />
       default:
-        return <Clock size={16} className="text-yellow-600" />
+        return <Clock size={16} className="text-yellow-400" />
     }
   }
 
@@ -44,7 +44,7 @@ export default function PriorAuthPage() {
           </h1>
           <p className="text-sm text-warm-500 mt-1">
             {myAuths.length} total &middot;{" "}
-            <span className="text-yellow-600 font-medium">
+            <span className="text-yellow-400 font-medium">
               {pending.length} pending
             </span>{" "}
             &middot;{" "}
@@ -67,17 +67,17 @@ export default function PriorAuthPage() {
 
       {/* Summary Stats */}
       <div className="grid grid-cols-3 gap-4">
-        <div className="bg-yellow-50 rounded-2xl border border-yellow-200/50 p-5">
+        <div className="bg-yellow-900/20 rounded-2xl border border-yellow-700/30 p-5">
           <div className="flex items-center gap-2 mb-2">
-            <Clock size={18} className="text-yellow-600" />
-            <span className="text-sm font-bold text-yellow-700">
+            <Clock size={18} className="text-yellow-400" />
+            <span className="text-sm font-bold text-yellow-400">
               Pending Review
             </span>
           </div>
-          <div className="text-3xl font-bold text-yellow-700">
+          <div className="text-3xl font-bold text-yellow-400">
             {pending.length}
           </div>
-          <div className="text-xs text-yellow-600 mt-1">
+          <div className="text-xs text-yellow-400 mt-1">
             {pending.filter((p) => p.urgency === "urgent").length} urgent
           </div>
         </div>
@@ -105,7 +105,7 @@ export default function PriorAuthPage() {
 
       {/* PA List */}
       <div className="bg-pampas rounded-2xl border border-sand divide-y divide-sand/50">
-        <div className="px-5 py-3 bg-cream/50 border-b border-sand">
+        <div className="px-5 py-3 bg-sand/20 border-b border-sand">
           <h2 className="text-sm font-bold text-warm-700">
             All My Authorizations
           </h2>
@@ -117,7 +117,7 @@ export default function PriorAuthPage() {
             <div
               key={pa.id}
               className={cn(
-                "px-5 py-4 hover:bg-cream/30 transition",
+                "px-5 py-4 hover:bg-sand/20 transition",
                 pa.urgency === "urgent" &&
                   pa.status === "pending" &&
                   "border-l-2 border-l-soft-red"
