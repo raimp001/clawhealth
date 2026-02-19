@@ -36,6 +36,21 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    // Validate optional fields
+    if (channel && !["portal", "sms", "whatsapp", "telegram", "voice"].includes(channel)) {
+      return NextResponse.json(
+        { error: "Invalid channel" },
+        { status: 400 }
+      )
+    }
+
+    if (patientId && (typeof patientId !== "string" || patientId.length > 100)) {
+      return NextResponse.json(
+        { error: "Invalid patientId" },
+        { status: 400 }
+      )
+    }
+
     // Check gateway connectivity
     const connected = await openclawClient.isConnected()
     if (!connected) {

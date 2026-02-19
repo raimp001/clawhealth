@@ -1,10 +1,11 @@
 "use client"
 
 import { cn } from "@/lib/utils"
+import { useWalletIdentity } from "@/lib/wallet-context"
 import {
   Bot, User, Heart, Pill, Stethoscope, MapPin, Shield,
   CheckCircle2, Loader2, Search, Building2, Smartphone,
-  Activity, ArrowRight, Sparkles,
+  Activity, ArrowRight, Sparkles, Wallet as WalletIcon,
 } from "lucide-react"
 import { useState, useRef, useEffect, useCallback } from "react"
 
@@ -59,14 +60,14 @@ const AGENT_NAMES: Record<string, { name: string; icon: typeof Bot; color: strin
 }
 
 export default function OnboardingPage() {
+  const { isConnected, walletAddress, profile, updateProfile, completeOnboarding } = useWalletIdentity()
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState("")
   const [step, setStep] = useState<Step>("welcome")
   const [patient, setPatient] = useState<PatientData>({})
   const [isTyping, setIsTyping] = useState(false)
-  const [searchResults, setSearchResults] = useState<any[]>([])
+  const [searchResults, setSearchResults] = useState<{ name: string; npi: string; credential?: string; specialty?: string; fullAddress?: string; phone?: string }[]>([])
   const [isSearching, setIsSearching] = useState(false)
-  const [currentMed, setCurrentMed] = useState<{ name: string; dose: string; frequency: string }>({ name: "", dose: "", frequency: "" })
   const endRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -106,16 +107,46 @@ export default function OnboardingPage() {
     }])
   }, [])
 
-  // Start onboarding — skip personal identifiers, jump to care setup
+  // Start onboarding
   useEffect(() => {
     if (step === "welcome" && messages.length === 0) {
-      addAgent("Hey there! I'm Sage, your onboarding guide at OpenRx. 👋\n\nLet's get your care team set up. This takes about 2 minutes — no forms, just a quick chat.\n\nDo you currently have a primary care physician (PCP)?", "sage", [
-        { label: "Yes, I have one", value: "yes" },
-        { label: "No, I need one", value: "no" },
-      ])
+      const walletNote = isConnected
+        ? `\n\nYour Coinbase Smart Wallet is connected — I'll save everything to your wallet identity so you never have to enter it again.`
+        : "\n\nTip: Connect your Coinbase Smart Wallet (top right) to save your profile permanently."
+
+      addAgent(
+        `Hey there! I'm Sage, your onboarding guide at OpenRx.${walletNote}\n\nLet's get your care team set up. This takes about 2 minutes — no forms, just a quick chat.\n\nDo you currently have a primary care physician (PCP)?`,
+        "sage",
+        [
+          { label: "Yes, I have one", value: "yes" },
+          { label: "No, I need one", value: "no" },
+        ]
+      )
       setStep("has-pcp")
     }
-  }, [step, messages.length, addAgent])
+  }, [step, messages.length, addAgent, isConnected])
+
+  // Save to wallet identity when onboarding completes
+  const saveToWallet = useCallback(() => {
+    if (!isConnected || !walletAddress) return
+
+    updateProfile({
+      fullName: patient.fullName || "",
+      dateOfBirth: patient.dob || "",
+      gender: patient.gender || "",
+      phone: patient.phone || "",
+      email: patient.email || "",
+      address: patient.address || "",
+      insuranceProvider: patient.insuranceProvider || "",
+      insurancePlan: patient.insurancePlan || "",
+      insuranceId: patient.insuranceId || "",
+      primaryPhysicianId: patient.pcpNpi || "",
+      preferredPharmacy: patient.pharmacy || "",
+      pharmacyNpi: patient.pharmacyNpi || "",
+      devices: patient.devices || [],
+    })
+    completeOnboarding()
+  }, [isConnected, walletAddress, patient, updateProfile, completeOnboarding])
 
   const handleSubmit = useCallback(async () => {
     const val = input.trim()
@@ -139,14 +170,14 @@ export default function OnboardingPage() {
       case "pcp-search":
         addUser(val)
         setIsSearching(true)
-        addSystem("🔍 Searching NPI Registry...")
+        addSystem("Searching NPI Registry...")
         try {
           const res = await fetch(`/api/providers/search?q=${encodeURIComponent(val + " internal medicine")}&limit=5`)
           const data = await res.json()
           setSearchResults(data.providers || [])
           if (data.providers?.length > 0) {
-            const list = data.providers.slice(0, 3).map((p: any, i: number) =>
-              `${i + 1}. **${p.name}**${p.credential ? `, ${p.credential}` : ""} — ${p.specialty}\n   📍 ${p.fullAddress}${p.phone ? `\n   📞 ${p.phone}` : ""}\n   NPI: ${p.npi}`
+            const list = data.providers.slice(0, 3).map((p: { name: string; credential?: string; specialty?: string; fullAddress?: string; phone?: string; npi: string }, i: number) =>
+              `${i + 1}. **${p.name}**${p.credential ? `, ${p.credential}` : ""} — ${p.specialty}\n   ${p.fullAddress}${p.phone ? `\n   ${p.phone}` : ""}\n   NPI: ${p.npi}`
             ).join("\n\n")
             addAgent(`Found some options for you!\n\n${list}\n\nWhich one would you like? (Just say the number, or tell me to search again)`)
           } else {
@@ -165,7 +196,7 @@ export default function OnboardingPage() {
         if (idx >= 0 && idx < searchResults.length) {
           const chosen = searchResults[idx]
           setPatient(p => ({ ...p, pcpName: chosen.name, pcpNpi: chosen.npi }))
-          addAgent(`${chosen.name} — great choice! ✅\n\nDo you have a dentist?`, "sage", [
+          addAgent(`${chosen.name} — great choice!\n\nDo you have a dentist?`, "sage", [
             { label: "Yes", value: "yes" },
             { label: "No, find me one", value: "no" },
             { label: "Skip for now", value: "skip" },
@@ -200,16 +231,16 @@ export default function OnboardingPage() {
       case "pharmacy-search":
         addUser(val)
         setIsSearching(true)
-        addSystem("🔍 Searching pharmacies...")
+        addSystem("Searching pharmacies...")
         try {
           const res = await fetch(`/api/pharmacy/search?name=${encodeURIComponent(val)}&limit=3`)
           const data = await res.json()
           if (data.pharmacies?.length > 0) {
             const p = data.pharmacies[0]
             setPatient(prev => ({ ...prev, pharmacy: p.name, pharmacyNpi: p.npi }))
-            addAgent(`Found it! **${p.name}**\n📍 ${p.fullAddress}\nNPI: ${p.npi}\n\nI've set this as your default pharmacy. ✅\n\nNow the important part — let's go through your medications. I'm handing you to Maya, our Rx specialist. 💊`)
+            addAgent(`Found it! **${p.name}**\n${p.fullAddress}\nNPI: ${p.npi}\n\nI've set this as your default pharmacy.\n\nNow the important part — let's go through your medications. I'm handing you to Maya, our Rx specialist.`)
             setTimeout(() => {
-              addAgent("Hey! I'm Maya, your medication manager. 😊\n\nLet's make sure we have your complete med list. What medications are you currently taking?\n\n(Just tell me the name, dose, and how often — like 'Metformin 500mg twice daily'. One at a time is fine!)", "maya")
+              addAgent("Hey! I'm Maya, your medication manager.\n\nLet's make sure we have your complete med list. What medications are you currently taking?\n\n(Just tell me the name, dose, and how often — like 'Metformin 500mg twice daily'. One at a time is fine!)", "maya")
               setStep("medications")
             }, 1000)
           } else {
@@ -225,7 +256,7 @@ export default function OnboardingPage() {
         addUser(val)
         if (val.toLowerCase().includes("none") || val.toLowerCase().includes("no meds") || val.toLowerCase().includes("nothing")) {
           setPatient(p => ({ ...p, medications: [] }))
-          addAgent("No medications — noted! ✅\n\nLet me hand you back to Sage for the rest. 🤝", "maya")
+          addAgent("No medications — noted!\n\nLet me hand you back to Sage for the rest.", "maya")
           setTimeout(() => {
             addAgent("Thanks Maya! Almost done. Do you use any health devices?", "sage", [
               { label: "Apple Watch / Fitbit", value: "smartwatch" },
@@ -236,11 +267,10 @@ export default function OnboardingPage() {
             setStep("devices")
           }, 800)
         } else {
-          // Parse medication
           const parts = val.split(/\s+/)
           const med = { name: parts.slice(0, -2).join(" ") || val, dose: parts[parts.length - 2] || "", frequency: parts[parts.length - 1] || "" }
           setPatient(p => ({ ...p, medications: [...(p.medications || []), med] }))
-          addAgent(`Got it — **${val}** added to your list. ✅\n\nI'll check for interactions once we have everything.\n\nAny other medications? (Say 'done' when you're finished)`, "maya")
+          addAgent(`Got it — **${val}** added to your list.\n\nI'll check for interactions once we have everything.\n\nAny other medications? (Say 'done' when you're finished)`, "maya")
           setStep("med-more")
         }
         break
@@ -249,7 +279,7 @@ export default function OnboardingPage() {
         addUser(val)
         if (val.toLowerCase() === "done" || val.toLowerCase() === "that's it" || val.toLowerCase() === "no") {
           const medCount = patient.medications?.length || 0
-          addAgent(`${medCount} medication${medCount !== 1 ? "s" : ""} recorded. Running interaction check... ✅ No interactions found!\n\nHanding you back to Sage. 🤝`, "maya")
+          addAgent(`${medCount} medication${medCount !== 1 ? "s" : ""} recorded. Running interaction check... No interactions found!\n\nHanding you back to Sage.`, "maya")
           setTimeout(() => {
             addAgent("Almost done! Do you use any health devices we should connect?", "sage", [
               { label: "Apple Watch / Fitbit", value: "smartwatch" },
@@ -263,16 +293,15 @@ export default function OnboardingPage() {
         } else {
           const med = { name: val, dose: "", frequency: "" }
           setPatient(p => ({ ...p, medications: [...(p.medications || []), med] }))
-          addAgent(`Added **${val}** ✅ — any more? (Say 'done' when finished)`, "maya")
+          addAgent(`Added **${val}** — any more? (Say 'done' when finished)`, "maya")
         }
         break
 
       case "devices":
         addUser(val)
         setPatient(p => ({ ...p, devices: [val] }))
-        addAgent("Noted! 📱\n\nLast step — let me bring in Ivy, our wellness coach, to set up your preventive screenings.", "sage")
+        addAgent("Noted!\n\nLast step — let me bring in Ivy, our wellness coach, to set up your preventive screenings.", "sage")
         setTimeout(async () => {
-          // Calculate age from DOB
           let age = 40
           try {
             const dob = new Date(patient.dob || "")
@@ -292,8 +321,8 @@ export default function OnboardingPage() {
             const screenings = data.screenings || []
             setPatient(p => ({ ...p, screenings }))
 
-            const list = screenings.map((s: any) => `• **${s.name}** — ${s.frequency}\n  _${s.reason}_`).join("\n\n")
-            addAgent(`Hi ${patient.fullName?.split(" ")[0] || "there"}! I'm Ivy, your wellness coach. 🌿\n\nBased on your profile, here are your recommended screenings:\n\n${list}\n\nI'll work with Cal (scheduling) to get these booked for you. Want me to schedule them now?`, "ivy", [
+            const list = screenings.map((s: { name: string; frequency: string; reason: string }) => `- **${s.name}** — ${s.frequency}\n  _${s.reason}_`).join("\n\n")
+            addAgent(`Hi ${patient.fullName?.split(" ")[0] || "there"}! I'm Ivy, your wellness coach.\n\nBased on your profile, here are your recommended screenings:\n\n${list}\n\nI'll work with Cal (scheduling) to get these booked for you. Want me to schedule them now?`, "ivy", [
               { label: "Yes, schedule them!", value: "yes" },
               { label: "Let me review first", value: "later" },
             ])
@@ -308,23 +337,30 @@ export default function OnboardingPage() {
       case "screenings":
         addUser(val)
         if (val.toLowerCase().includes("yes")) {
-          addSystem("📅 Cal is scheduling your screenings...")
-          addAgent("I've asked Cal to find the best times for your screenings. You'll get confirmations shortly! 🎉", "ivy")
+          addSystem("Cal is scheduling your screenings...")
+          addAgent("I've asked Cal to find the best times for your screenings. You'll get confirmations shortly!", "ivy")
         }
         setTimeout(() => {
           const medList = patient.medications?.length
-            ? patient.medications.map(m => `• ${m.name} ${m.dose} ${m.frequency}`.trim()).join("\n")
-            : "• None"
-          const screenList = patient.screenings?.map(s => `• ${s.name}`).join("\n") || "• To be determined"
+            ? patient.medications.map(m => `- ${m.name} ${m.dose} ${m.frequency}`.trim()).join("\n")
+            : "- None"
+          const screenList = patient.screenings?.map(s => `- ${s.name}`).join("\n") || "- To be determined"
 
           addAgent(
-            `You're all set! 🎉\n\nHere's your care team summary:\n\n` +
+            `You're all set!\n\nHere's your care team summary:\n\n` +
             `**PCP:** ${patient.pcpName || "To be assigned"}\n` +
             `**Pharmacy:** ${patient.pharmacy || "To be assigned"}\n\n` +
             `**Medications:**\n${medList}\n\n` +
             `**Upcoming Screenings:**\n${screenList}\n\n` +
-            `Your OpenRx care team — Atlas, Nova, Cal, Vera, Maya, Rex, Ivy, and I — are all working together behind the scenes for you. Welcome aboard! 💙`
+            (isConnected
+              ? `Your profile has been saved to your wallet identity. When you reconnect, everything will be here.\n\n`
+              : "") +
+            `Your OpenRx care team — Atlas, Nova, Cal, Vera, Maya, Rex, Ivy, and I — are all working together behind the scenes for you. Welcome aboard!`
           )
+
+          // Save to wallet identity
+          saveToWallet()
+
           setStep("complete")
         }, 1500)
         break
@@ -333,20 +369,14 @@ export default function OnboardingPage() {
         addUser(val)
         break
     }
-  }, [input, step, patient, searchResults, addUser, addAgent, addSystem])
+  }, [input, step, patient, searchResults, addUser, addAgent, addSystem, isConnected, saveToWallet])
 
-  const handleOption = (value: string) => {
+  const handleOption = useCallback((value: string) => {
     setInput(value)
-    setTimeout(() => {
-      const event = { trim: () => value } as any
-      setInput("")
-      addUser(value)
-      // Re-trigger handleSubmit logic with the option value
-      const fakeInput = value
-      setInput(fakeInput)
-      setTimeout(() => handleSubmit(), 50)
-    }, 0)
-  }
+    Promise.resolve().then(() => {
+      handleSubmit()
+    })
+  }, [handleSubmit])
 
   return (
     <div className="animate-slide-up max-w-2xl mx-auto">
@@ -357,6 +387,12 @@ export default function OnboardingPage() {
         </div>
         <h1 className="text-2xl font-serif text-warm-800">Welcome to OpenRx</h1>
         <p className="text-sm text-warm-500 mt-1">Your AI care team is ready. No forms — just a conversation.</p>
+        {isConnected && (
+          <div className="inline-flex items-center gap-1.5 mt-2 px-3 py-1 rounded-full bg-accent/10 text-[10px] font-semibold text-accent">
+            <WalletIcon size={10} />
+            Wallet connected — profile will be saved automatically
+          </div>
+        )}
       </div>
 
       {/* Chat */}
@@ -400,10 +436,7 @@ export default function OnboardingPage() {
                     {msg.options.map((opt) => (
                       <button
                         key={opt.value}
-                        onClick={() => {
-                          setInput(opt.value)
-                          setTimeout(() => handleSubmit(), 50)
-                        }}
+                        onClick={() => handleOption(opt.value)}
                         className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-terra/20 bg-terra/5 text-terra hover:bg-terra/10 transition"
                       >
                         {opt.label}
@@ -465,6 +498,9 @@ export default function OnboardingPage() {
           <div className="px-5 py-4 border-t border-sand bg-accent/5 text-center">
             <CheckCircle2 size={20} className="text-accent mx-auto mb-1" />
             <p className="text-sm font-semibold text-accent">Onboarding Complete</p>
+            {isConnected && (
+              <p className="text-[10px] text-accent/70 mt-0.5">Profile saved to your wallet identity</p>
+            )}
             <a href="/dashboard" className="text-xs text-terra font-semibold mt-1 inline-block hover:underline">
               Go to Dashboard →
             </a>

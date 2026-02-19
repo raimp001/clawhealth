@@ -3,6 +3,7 @@
 import type { ReactNode } from "react"
 import { OnchainKitProvider } from "@coinbase/onchainkit"
 import { base } from "wagmi/chains"
+import { WalletIdentityProvider } from "@/lib/wallet-context"
 
 // Platform wallet — OpenRx treasury on Base
 // This is where platform fees, agent payments, and funds are managed
@@ -21,7 +22,9 @@ export function Providers({ children }: { children: ReactNode }) {
         },
       }}
     >
-      {children}
+      <WalletIdentityProvider>
+        {children}
+      </WalletIdentityProvider>
     </OnchainKitProvider>
   )
 }

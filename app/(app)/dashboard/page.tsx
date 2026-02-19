@@ -32,7 +32,7 @@ export default function DashboardPage() {
   const myPA = priorAuths.filter((p) => p.patient_id === currentUser.id)
   const pendingPA = myPA.filter((p) => p.status === "pending" || p.status === "submitted")
   const owedAmount = myClaims
-    .filter((c) => c.status === "paid")
+    .filter((c) => ["paid", "submitted", "processing", "appealed"].includes(c.status))
     .reduce((sum, c) => sum + c.patient_responsibility, 0)
 
   return (
