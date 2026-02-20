@@ -53,7 +53,7 @@ export default function BillingPage() {
       value: formatCurrency(stats.totalPending),
       icon: Clock,
       color: "text-yellow-600",
-      bg: "bg-yellow-50",
+      bg: "bg-yellow-900/20",
     },
     {
       label: "Denied",
@@ -134,7 +134,7 @@ export default function BillingPage() {
               "px-3 py-1.5 text-xs font-semibold transition-all",
               !statusFilter
                 ? "bg-terra text-white"
-                : "text-warm-600 hover:bg-cream"
+                : "text-warm-600 hover:bg-sand/30"
             )}
           >
             All
@@ -147,7 +147,7 @@ export default function BillingPage() {
                 "px-3 py-1.5 text-xs font-semibold transition-all capitalize",
                 statusFilter === s
                   ? "bg-terra text-white"
-                  : "text-warm-600 hover:bg-cream"
+                  : "text-warm-600 hover:bg-sand/30"
               )}
             >
               {s}
@@ -158,7 +158,7 @@ export default function BillingPage() {
 
       {/* Claims Table */}
       <div className="bg-pampas rounded-2xl border border-sand overflow-hidden">
-        <div className="hidden lg:grid grid-cols-[1fr_auto_auto_auto_auto_auto] gap-4 px-5 py-3 bg-cream/50 border-b border-sand text-[10px] font-bold text-warm-500 uppercase tracking-wider">
+        <div className="hidden lg:grid grid-cols-[1fr_auto_auto_auto_auto_auto] gap-4 px-5 py-3 bg-sand/20 border-b border-sand text-[10px] font-bold text-warm-500 uppercase tracking-wider">
           <span>Claim Details</span>
           <span className="w-20 text-right">Amount</span>
           <span className="w-20 text-right">Ins. Paid</span>
@@ -171,7 +171,7 @@ export default function BillingPage() {
             return (
               <div
                 key={claim.id}
-                className="lg:grid lg:grid-cols-[1fr_auto_auto_auto_auto_auto] gap-4 px-5 py-3.5 hover:bg-cream/30 transition items-center"
+                className="lg:grid lg:grid-cols-[1fr_auto_auto_auto_auto_auto] gap-4 px-5 py-3.5 hover:bg-sand/20 transition items-center"
               >
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">

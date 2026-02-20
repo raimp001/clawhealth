@@ -71,7 +71,7 @@ export default function Topbar() {
           }}
           onFocus={() => query.length >= 2 && setIsOpen(true)}
           placeholder="Search claims, codes..."
-          className="w-full pl-10 pr-8 py-2 rounded-xl border border-sand bg-cream/50 text-sm text-warm-800 placeholder:text-cloudy focus:outline-none focus:border-terra/40 focus:ring-1 focus:ring-terra/20 transition"
+          className="w-full pl-10 pr-8 py-2 rounded-xl border border-sand bg-sand/20 text-sm text-warm-800 placeholder:text-cloudy focus:outline-none focus:border-terra/40 focus:ring-1 focus:ring-terra/20 transition"
         />
         {query && (
           <button
@@ -96,7 +96,7 @@ export default function Topbar() {
               <>
                 {results.claims.length > 0 && (
                   <>
-                    <div className="px-4 py-1.5 bg-cream/50 text-[10px] font-bold text-warm-500 uppercase tracking-wider">
+                    <div className="px-4 py-1.5 bg-sand/20 text-[10px] font-bold text-warm-500 uppercase tracking-wider">
                       My Claims
                     </div>
                     {results.claims.map((c) => (
@@ -107,7 +107,7 @@ export default function Topbar() {
                           setIsOpen(false)
                           setQuery("")
                         }}
-                        className="flex items-center gap-3 px-4 py-2.5 hover:bg-cream/50 transition"
+                        className="flex items-center gap-3 px-4 py-2.5 hover:bg-sand/30 transition"
                       >
                         <div className="text-xs">
                           <p className="font-semibold text-warm-800">

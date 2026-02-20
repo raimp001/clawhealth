@@ -96,7 +96,7 @@ export default function PrescriptionsPage() {
               "px-3 py-2 text-xs font-semibold transition-all",
               !statusFilter
                 ? "bg-terra text-white"
-                : "text-warm-600 hover:bg-cream"
+                : "text-warm-600 hover:bg-sand/30"
             )}
           >
             All
@@ -109,7 +109,7 @@ export default function PrescriptionsPage() {
                 "px-3 py-2 text-xs font-semibold transition-all capitalize",
                 statusFilter === s
                   ? "bg-terra text-white"
-                  : "text-warm-600 hover:bg-cream"
+                  : "text-warm-600 hover:bg-sand/30"
               )}
             >
               {s}
@@ -128,7 +128,7 @@ export default function PrescriptionsPage() {
             <div
               key={rx.id}
               className={cn(
-                "flex items-center gap-4 px-5 py-4 hover:bg-cream/30 transition",
+                "flex items-center gap-4 px-5 py-4 hover:bg-sand/20 transition",
                 isLowAdherence && "border-l-2 border-l-soft-red"
               )}
             >
@@ -139,9 +139,9 @@ export default function PrescriptionsPage() {
                   isLowAdherence
                     ? "bg-soft-red/10"
                     : rx.status === "pending-refill"
-                    ? "bg-yellow-50"
+                    ? "bg-yellow-900/20"
                     : rx.status === "completed"
-                    ? "bg-gray-100"
+                    ? "bg-sand/40"
                     : "bg-accent/5"
                 )}
               >
@@ -201,7 +201,7 @@ export default function PrescriptionsPage() {
                   {rx.adherence_pct}%
                 </div>
                 <div className="text-[10px] text-cloudy">adherence</div>
-                <div className="w-full h-1.5 bg-gray-100 rounded-full mt-1 overflow-hidden">
+                <div className="w-full h-1.5 bg-sand/40 rounded-full mt-1 overflow-hidden">
                   <div
                     className={cn(
                       "h-full rounded-full transition-all",

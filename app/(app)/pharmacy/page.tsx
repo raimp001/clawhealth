@@ -120,7 +120,7 @@ export default function PharmacyPage() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="e.g. Walgreens"
-                className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-sand bg-cream/50 text-sm text-warm-800 placeholder:text-cloudy focus:outline-none focus:border-terra/40 focus:ring-1 focus:ring-terra/20 transition"
+                className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-sand bg-sand/20 text-sm text-warm-800 placeholder:text-cloudy focus:outline-none focus:border-terra/40 focus:ring-1 focus:ring-terra/20 transition"
               />
             </div>
           </div>
@@ -134,7 +134,7 @@ export default function PharmacyPage() {
               value={city}
               onChange={(e) => setCity(e.target.value)}
               placeholder="e.g. Portland"
-              className="w-full px-4 py-2.5 rounded-xl border border-sand bg-cream/50 text-sm text-warm-800 placeholder:text-cloudy focus:outline-none focus:border-terra/40 focus:ring-1 focus:ring-terra/20 transition"
+              className="w-full px-4 py-2.5 rounded-xl border border-sand bg-sand/20 text-sm text-warm-800 placeholder:text-cloudy focus:outline-none focus:border-terra/40 focus:ring-1 focus:ring-terra/20 transition"
             />
           </div>
 
@@ -145,7 +145,7 @@ export default function PharmacyPage() {
             <select
               value={state}
               onChange={(e) => setState(e.target.value)}
-              className="w-full px-3 py-2.5 rounded-xl border border-sand bg-cream/50 text-sm text-warm-800 focus:outline-none focus:border-terra/40 appearance-none cursor-pointer"
+              className="w-full px-3 py-2.5 rounded-xl border border-sand bg-sand/20 text-sm text-warm-800 focus:outline-none focus:border-terra/40 appearance-none cursor-pointer"
             >
               <option value="">Any State</option>
               {US_STATES.map((s) => (
@@ -164,7 +164,7 @@ export default function PharmacyPage() {
               onChange={(e) => setZip(e.target.value.replace(/\D/g, "").slice(0, 5))}
               placeholder="e.g. 97201"
               maxLength={5}
-              className="w-full px-4 py-2.5 rounded-xl border border-sand bg-cream/50 text-sm text-warm-800 placeholder:text-cloudy focus:outline-none focus:border-terra/40 focus:ring-1 focus:ring-terra/20 transition"
+              className="w-full px-4 py-2.5 rounded-xl border border-sand bg-sand/20 text-sm text-warm-800 placeholder:text-cloudy focus:outline-none focus:border-terra/40 focus:ring-1 focus:ring-terra/20 transition"
             />
           </div>
 
