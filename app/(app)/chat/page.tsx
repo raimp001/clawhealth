@@ -4,6 +4,17 @@ import { CHAT_DEMOS } from "@/lib/seed-data"
 import { OPENCLAW_CONFIG } from "@/lib/openclaw/config"
 import { cn } from "@/lib/utils"
 import {
+  executeWorkflow,
+  getRecentMessages as getOrchestratorMessages,
+  getActiveTasks,
+} from "@/lib/openclaw/orchestrator"
+import {
+  getImprovements,
+  getImprovementMetrics,
+  runImprovementCycle,
+} from "@/lib/openclaw/self-improve"
+import { useWalletIdentity } from "@/lib/wallet-context"
+import {
   Bot,
   Calendar,
   Receipt,
@@ -19,6 +30,12 @@ import {
   WifiOff,
   Zap,
   Clock,
+  ArrowRight,
+  Users,
+  TrendingUp,
+  CheckCircle2,
+  AlertCircle,
+  GitBranch,
 } from "lucide-react"
 import { useState, useEffect, useRef, useCallback } from "react"
 
@@ -29,6 +46,8 @@ interface ChatMessage {
   role: "user" | "agent" | "system"
   content: string
   agentId?: string
+  collaborators?: string[]
+  routingInfo?: string
   timestamp: Date
 }
 
@@ -53,12 +72,17 @@ const iconMap: Record<string, typeof Calendar> = {
 }
 
 export default function ChatPage() {
+  const { isConnected, profile, walletAddress } = useWalletIdentity()
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: "welcome",
       role: "agent",
       content:
-        "Welcome to OpenRx AI. I'm your healthcare coordination assistant powered by OpenClaw.\n\nI can help with:\n• 📅 Schedule appointments (insurance-aware)\n• 💳 Analyze bills & file appeals\n• 💊 Manage prescriptions & refills\n• 🛡️ Handle prior authorizations\n• 🏥 Triage symptoms\n\nHow can I help you today?",
+        "Welcome to OpenRx AI. I'm Atlas, your healthcare coordination agent powered by OpenClaw.\n\nI orchestrate a team of 9 specialist agents who collaborate to help you:\n\n" +
+        (isConnected
+          ? "Your wallet is connected. I can see your profile and personalize my responses.\n\n"
+          : "") +
+        "How can I help you today?",
       agentId: "coordinator",
       timestamp: new Date(),
     },
@@ -69,7 +93,13 @@ export default function ChatPage() {
   const [activeAgent, setActiveAgent] = useState<AgentId>("coordinator")
   const [showDemos, setShowDemos] = useState(false)
   const [activeDemo, setActiveDemo] = useState<string | null>(null)
+  const [showImprovements, setShowImprovements] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+
+  // Run improvement cycle on mount
+  useEffect(() => {
+    runImprovementCycle()
+  }, [])
 
   // Check gateway status
   useEffect(() => {
@@ -98,13 +128,43 @@ export default function ChatPage() {
     setInput("")
     setIsLoading(true)
 
+    // Execute orchestrator workflow — route to best agent with collaborators
+    const workflow = executeWorkflow(userMsg.content)
+
+    // If the orchestrator routes to a different agent, auto-switch
+    if (workflow.route.primaryAgent !== activeAgent) {
+      setActiveAgent(workflow.route.primaryAgent)
+    }
+
+    // Show routing info as a system message if collaborators are involved
+    if (workflow.route.collaborators.length > 0) {
+      const collaboratorNames = workflow.route.collaborators
+        .map((id) => {
+          const agent = OPENCLAW_CONFIG.agents.find((a) => a.id === id)
+          return agent ? agent.name : id
+        })
+        .join(", ")
+      const primaryAgent = OPENCLAW_CONFIG.agents.find((a) => a.id === workflow.route.primaryAgent)
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `routing-${Date.now()}`,
+          role: "system",
+          content: `${primaryAgent?.name || "Agent"} is handling this with support from ${collaboratorNames}`,
+          timestamp: new Date(),
+        },
+      ])
+    }
+
     try {
       const res = await fetch("/api/openclaw/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           message: userMsg.content,
-          agentId: activeAgent,
+          agentId: workflow.route.primaryAgent,
+          walletAddress: walletAddress,
         }),
       })
 
@@ -114,11 +174,33 @@ export default function ChatPage() {
         id: `agent-${Date.now()}`,
         role: "agent",
         content: data.response || data.error || "No response received.",
-        agentId: activeAgent,
+        agentId: workflow.route.primaryAgent,
+        collaborators: workflow.route.collaborators,
+        routingInfo: workflow.route.reasoning,
         timestamp: new Date(),
       }
 
       setMessages((prev) => [...prev, agentMsg])
+
+      // If collaborators are involved, simulate their contributions
+      if (workflow.route.collaborators.length > 0) {
+        for (const collabId of workflow.route.collaborators) {
+          await new Promise((resolve) => setTimeout(resolve, 800 + Math.random() * 400))
+          const collabAgent = OPENCLAW_CONFIG.agents.find((a) => a.id === collabId)
+          if (collabAgent) {
+            setMessages((prev) => [
+              ...prev,
+              {
+                id: `collab-${collabId}-${Date.now()}`,
+                role: "agent",
+                content: getCollaboratorResponse(collabId as AgentId, userMsg.content),
+                agentId: collabId,
+                timestamp: new Date(),
+              },
+            ])
+          }
+        }
+      }
     } catch {
       setMessages((prev) => [
         ...prev,
@@ -132,7 +214,7 @@ export default function ChatPage() {
     } finally {
       setIsLoading(false)
     }
-  }, [input, isLoading, activeAgent])
+  }, [input, isLoading, activeAgent, walletAddress])
 
   const loadDemo = (demoId: string) => {
     const demo = CHAT_DEMOS.find((d) => d.id === demoId)
@@ -150,6 +232,11 @@ export default function ChatPage() {
     setMessages(demoMessages)
     setShowDemos(false)
   }
+
+  const improvementMetrics = getImprovementMetrics()
+  const recentImprovements = getImprovements().slice(0, 5)
+  const orchestratorMessages = getOrchestratorMessages(10)
+  const activeTasks = getActiveTasks()
 
   return (
     <div className="animate-slide-up space-y-4">
@@ -175,11 +262,28 @@ export default function ChatPage() {
                   <WifiOff size={10} /> Demo Mode
                 </span>
               )}
+              {isConnected && (
+                <span className="flex items-center gap-1 text-[10px] text-accent">
+                  <CheckCircle2 size={8} /> Wallet Identity Active
+                </span>
+              )}
             </div>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowImprovements(!showImprovements)}
+            className={cn(
+              "px-3 py-1.5 text-xs font-semibold rounded-lg border transition",
+              showImprovements
+                ? "bg-accent text-white border-accent"
+                : "text-warm-600 border-sand hover:border-accent/30"
+            )}
+          >
+            <TrendingUp size={12} className="inline mr-1" />
+            Improvements ({improvementMetrics.totalSuggested})
+          </button>
           <button
             onClick={() => setShowDemos(!showDemos)}
             className={cn(
@@ -194,6 +298,81 @@ export default function ChatPage() {
           </button>
         </div>
       </div>
+
+      {/* Self-Improvement Panel */}
+      {showImprovements && (
+        <div className="bg-pampas rounded-2xl border border-sand p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <TrendingUp size={14} className="text-accent" />
+            <span className="text-xs font-bold text-warm-800">
+              Self-Improvement Pipeline
+            </span>
+            <span className="text-[10px] text-warm-500 ml-auto">
+              Agents recursively suggest and vote on improvements
+            </span>
+          </div>
+          <div className="grid grid-cols-4 gap-3 mb-3">
+            <div className="bg-cream/50 rounded-lg p-2.5 text-center">
+              <div className="text-lg font-bold text-warm-800">{improvementMetrics.totalSuggested}</div>
+              <div className="text-[9px] text-warm-500">Suggested</div>
+            </div>
+            <div className="bg-cream/50 rounded-lg p-2.5 text-center">
+              <div className="text-lg font-bold text-accent">{improvementMetrics.totalDeployed}</div>
+              <div className="text-[9px] text-warm-500">Deployed</div>
+            </div>
+            <div className="bg-cream/50 rounded-lg p-2.5 text-center">
+              <div className="text-lg font-bold text-yellow-600">
+                {getImprovements({ status: "in_progress" }).length}
+              </div>
+              <div className="text-[9px] text-warm-500">In Progress</div>
+            </div>
+            <div className="bg-cream/50 rounded-lg p-2.5 text-center">
+              <div className="text-lg font-bold text-soft-blue">
+                {getImprovements({ status: "approved" }).length}
+              </div>
+              <div className="text-[9px] text-warm-500">Approved</div>
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            {recentImprovements.map((imp) => {
+              const agent = OPENCLAW_CONFIG.agents.find((a) => a.id === imp.suggestedBy)
+              return (
+                <div
+                  key={imp.id}
+                  className="flex items-center gap-3 px-3 py-2 rounded-lg bg-cream/30 border border-sand/50"
+                >
+                  <div
+                    className={cn(
+                      "w-1.5 h-1.5 rounded-full",
+                      imp.status === "deployed" ? "bg-accent" :
+                      imp.status === "in_progress" ? "bg-yellow-400" :
+                      imp.status === "approved" ? "bg-soft-blue" :
+                      "bg-warm-300"
+                    )}
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[11px] font-semibold text-warm-800 truncate">{imp.title}</p>
+                    <p className="text-[9px] text-cloudy">
+                      {agent?.name} &middot; {imp.category} &middot; {imp.votes.length} votes
+                    </p>
+                  </div>
+                  <span
+                    className={cn(
+                      "text-[9px] font-bold px-1.5 py-0.5 rounded uppercase",
+                      imp.status === "deployed" ? "bg-accent/10 text-accent" :
+                      imp.status === "in_progress" ? "bg-yellow-100 text-yellow-700" :
+                      imp.status === "approved" ? "bg-blue-100 text-blue-700" :
+                      "bg-warm-100 text-warm-600"
+                    )}
+                  >
+                    {imp.status}
+                  </span>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Demo Scenarios Dropdown */}
       {showDemos && (
@@ -232,18 +411,18 @@ export default function ChatPage() {
                 "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-all border",
                 activeAgent === agent.id
                   ? "bg-terra/10 text-terra border-terra/20"
-                  : "text-warm-500 border-transparent hover:text-warm-700 hover:bg-sand/30"
+                  : "text-warm-500 border-transparent hover:text-warm-700 hover:bg-cream"
               )}
             >
               <Icon size={12} className={activeAgent === agent.id ? meta?.color : ""} />
-              {agent.name.replace("OpenRx ", "")}
+              {agent.name}
             </button>
           )
         })}
       </div>
 
       {/* Chat Window */}
-      <div className="bg-pampas rounded-2xl border border-sand overflow-hidden flex flex-col h-[calc(100vh-340px)] min-h-[400px]">
+      <div className="bg-pampas rounded-2xl border border-sand overflow-hidden flex flex-col h-[calc(100vh-420px)] min-h-[400px]">
         {/* Messages */}
         <div className="flex-1 overflow-y-auto p-5 space-y-4">
           {messages.map((msg) => {
@@ -251,56 +430,81 @@ export default function ChatPage() {
             const Icon = meta?.icon || Bot
 
             return (
-              <div
-                key={msg.id}
-                className={cn(
-                  "flex gap-3",
-                  msg.role === "user" ? "flex-row-reverse" : ""
-                )}
-              >
+              <div key={msg.id}>
                 <div
                   className={cn(
-                    "w-8 h-8 rounded-lg flex items-center justify-center shrink-0",
-                    msg.role === "agent"
-                      ? "bg-terra/10"
-                      : msg.role === "system"
-                      ? "bg-yellow-900/20"
-                      : "bg-soft-blue/10"
+                    "flex gap-3",
+                    msg.role === "user" ? "flex-row-reverse" : ""
                   )}
                 >
-                  {msg.role === "user" ? (
-                    <User size={14} className="text-soft-blue" />
-                  ) : (
-                    <Icon size={14} className={meta?.color || "text-terra"} />
-                  )}
-                </div>
-                <div
-                  className={cn(
-                    "rounded-xl border px-4 py-3 max-w-[80%]",
-                    msg.role === "user"
-                      ? "bg-soft-blue/5 border-soft-blue/10"
-                      : msg.role === "system"
-                      ? "bg-yellow-900/20 border-yellow-700/30"
-                      : "bg-terra/5 border-terra/10"
-                  )}
-                >
-                  {msg.role === "agent" && meta && (
-                    <div className="flex items-center gap-1.5 mb-1.5">
-                      <span className={cn("text-[10px] font-bold uppercase tracking-wider", meta.color)}>
-                        {meta.label}
-                      </span>
-                      {gatewayStatus === "online" && (
-                        <Zap size={8} className="text-accent" />
+                  {msg.role !== "system" && (
+                    <div
+                      className={cn(
+                        "w-8 h-8 rounded-lg flex items-center justify-center shrink-0",
+                        msg.role === "agent"
+                          ? "bg-terra/10"
+                          : "bg-soft-blue/10"
+                      )}
+                    >
+                      {msg.role === "user" ? (
+                        <User size={14} className="text-soft-blue" />
+                      ) : (
+                        <Icon size={14} className={meta?.color || "text-terra"} />
                       )}
                     </div>
                   )}
-                  <p className="text-sm text-warm-700 leading-relaxed whitespace-pre-line">
-                    {msg.content}
-                  </p>
-                  <span className="text-[9px] text-cloudy mt-1 block">
-                    {msg.timestamp.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
-                  </span>
+                  <div
+                    className={cn(
+                      "rounded-xl border px-4 py-3 max-w-[80%]",
+                      msg.role === "user"
+                        ? "bg-soft-blue/5 border-soft-blue/10"
+                        : msg.role === "system"
+                        ? "bg-yellow-50 border-yellow-200/50 w-full text-center"
+                        : "bg-terra/5 border-terra/10"
+                    )}
+                  >
+                    {msg.role === "system" && (
+                      <div className="flex items-center justify-center gap-1.5">
+                        <GitBranch size={10} className="text-yellow-600" />
+                        <span className="text-[10px] text-yellow-700 font-semibold">{msg.content}</span>
+                      </div>
+                    )}
+                    {msg.role === "agent" && meta && (
+                      <div className="flex items-center gap-1.5 mb-1.5">
+                        <span className={cn("text-[10px] font-bold uppercase tracking-wider", meta.color)}>
+                          {meta.label}
+                        </span>
+                        {gatewayStatus === "online" && (
+                          <Zap size={8} className="text-accent" />
+                        )}
+                        {msg.collaborators && msg.collaborators.length > 0 && (
+                          <span className="flex items-center gap-0.5 text-[9px] text-warm-400 ml-1">
+                            <Users size={8} />
+                            +{msg.collaborators.length} agents
+                          </span>
+                        )}
+                      </div>
+                    )}
+                    {msg.role !== "system" && (
+                      <p className="text-sm text-warm-700 leading-relaxed whitespace-pre-line">
+                        {msg.content}
+                      </p>
+                    )}
+                    {msg.role !== "system" && (
+                      <span className="text-[9px] text-cloudy mt-1 block">
+                        {msg.timestamp.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
+                      </span>
+                    )}
+                  </div>
                 </div>
+
+                {/* Routing info */}
+                {msg.routingInfo && (
+                  <div className="ml-11 mt-1 flex items-center gap-1.5">
+                    <AlertCircle size={8} className="text-warm-400" />
+                    <span className="text-[9px] text-warm-400 italic">{msg.routingInfo}</span>
+                  </div>
+                )}
               </div>
             )
           })}
@@ -313,7 +517,9 @@ export default function ChatPage() {
               <div className="rounded-xl border bg-terra/5 border-terra/10 px-4 py-3">
                 <div className="flex items-center gap-2">
                   <Loader2 size={14} className="text-terra animate-spin" />
-                  <span className="text-xs text-warm-500">Processing...</span>
+                  <span className="text-xs text-warm-500">
+                    Agents collaborating...
+                  </span>
                 </div>
               </div>
             </div>
@@ -345,35 +551,136 @@ export default function ChatPage() {
         </div>
       </div>
 
-      {/* Automation Status */}
-      <div className="bg-pampas rounded-2xl border border-sand p-4">
-        <div className="flex items-center gap-2 mb-3">
-          <Zap size={14} className="text-terra" />
-          <span className="text-xs font-bold text-warm-800">Active Automations (OpenClaw Cron)</span>
-        </div>
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-2">
-          {OPENCLAW_CONFIG.cronJobs.map((job) => {
-            const agent = OPENCLAW_CONFIG.agents.find((a) => a.id === job.agentId)
-            const meta = agentMeta[job.agentId]
-            const Icon = meta?.icon || Bot
-            return (
-              <div
-                key={job.id}
-                className="flex items-start gap-2 p-2.5 rounded-lg bg-sand/20 border border-sand/50"
-              >
-                <Icon size={12} className={cn("mt-0.5 shrink-0", meta?.color || "text-terra")} />
-                <div>
-                  <p className="text-[11px] font-semibold text-warm-800">{job.description}</p>
-                  <p className="text-[9px] text-cloudy mt-0.5">
-                    <Clock size={8} className="inline mr-0.5" />
-                    {job.schedule} &middot; {agent?.name.replace("OpenRx ", "")}
-                  </p>
+      {/* Automation Status & Agent Activity */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Cron Jobs */}
+        <div className="bg-pampas rounded-2xl border border-sand p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <Zap size={14} className="text-terra" />
+            <span className="text-xs font-bold text-warm-800">Active Automations</span>
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
+            {OPENCLAW_CONFIG.cronJobs.slice(0, 6).map((job) => {
+              const agent = OPENCLAW_CONFIG.agents.find((a) => a.id === job.agentId)
+              const meta = agentMeta[job.agentId]
+              const Icon = meta?.icon || Bot
+              return (
+                <div
+                  key={job.id}
+                  className="flex items-start gap-2 p-2.5 rounded-lg bg-cream/50 border border-sand/50"
+                >
+                  <Icon size={12} className={cn("mt-0.5 shrink-0", meta?.color || "text-terra")} />
+                  <div>
+                    <p className="text-[11px] font-semibold text-warm-800">{job.description}</p>
+                    <p className="text-[9px] text-cloudy mt-0.5">
+                      <Clock size={8} className="inline mr-0.5" />
+                      {job.schedule} &middot; {agent?.name}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            )
-          })}
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Inter-Agent Activity */}
+        <div className="bg-pampas rounded-2xl border border-sand p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <GitBranch size={14} className="text-terra" />
+            <span className="text-xs font-bold text-warm-800">Agent Collaboration Log</span>
+          </div>
+          {orchestratorMessages.length > 0 ? (
+            <div className="space-y-1.5">
+              {orchestratorMessages.slice(0, 6).map((msg) => {
+                const fromAgent = OPENCLAW_CONFIG.agents.find((a) => a.id === msg.fromAgent)
+                const toAgent = msg.toAgent === "*" ? "All" : OPENCLAW_CONFIG.agents.find((a) => a.id === msg.toAgent)?.name || msg.toAgent
+                return (
+                  <div
+                    key={msg.id}
+                    className="flex items-center gap-2 px-2.5 py-2 rounded-lg bg-cream/50 border border-sand/50"
+                  >
+                    <ArrowRight size={10} className="text-terra shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[11px] text-warm-800 truncate">
+                        <span className="font-semibold">{fromAgent?.name}</span>
+                        {" → "}
+                        <span className="font-semibold">{toAgent}</span>
+                      </p>
+                      <p className="text-[9px] text-cloudy truncate">{msg.content}</p>
+                    </div>
+                    <span className={cn(
+                      "text-[8px] font-bold px-1 py-0.5 rounded",
+                      msg.status === "delivered" ? "bg-accent/10 text-accent" : "bg-warm-100 text-warm-500"
+                    )}>
+                      {msg.status}
+                    </span>
+                  </div>
+                )
+              })}
+            </div>
+          ) : (
+            <div className="text-center py-6">
+              <Users size={20} className="text-sand mx-auto mb-2" />
+              <p className="text-[11px] text-warm-500">Send a message to see agents collaborate</p>
+            </div>
+          )}
+          {activeTasks.length > 0 && (
+            <div className="mt-2 pt-2 border-t border-sand/50">
+              <p className="text-[9px] font-bold text-warm-500 uppercase tracking-wider mb-1">Active Tasks</p>
+              {activeTasks.slice(0, 3).map((task) => {
+                const agent = OPENCLAW_CONFIG.agents.find((a) => a.id === task.assignedTo)
+                return (
+                  <div key={task.id} className="flex items-center gap-2 text-[10px] text-warm-600 py-0.5">
+                    <Loader2 size={8} className="text-terra animate-spin" />
+                    <span className="font-semibold">{agent?.name}</span>: {task.description.slice(0, 60)}...
+                  </div>
+                )
+              })}
+            </div>
+          )}
         </div>
       </div>
     </div>
   )
+}
+
+/** Generate contextual collaborator responses */
+function getCollaboratorResponse(agentId: AgentId, userMessage: string): string {
+  const lower = userMessage.toLowerCase()
+
+  switch (agentId) {
+    case "billing":
+      if (lower.includes("appointment") || lower.includes("schedule"))
+        return "I've checked your insurance plan for this visit type. Estimated copay: $35 for in-network specialist, $0 for preventive care. Let me know if you need a cost breakdown."
+      return "I'll review the billing implications and check your insurance coverage for this."
+
+    case "scheduling":
+      if (lower.includes("refill") || lower.includes("medication"))
+        return "If you need lab work for this medication, I can schedule that too. Dr. Patel has morning slots available this week."
+      if (lower.includes("symptom") || lower.includes("pain"))
+        return "Based on the triage assessment, I can book a same-day visit. Dr. Chen has a 2:00 PM slot available today."
+      return "I'll check physician availability and can book any follow-up appointments needed."
+
+    case "rx":
+      if (lower.includes("symptom") || lower.includes("pain"))
+        return "I've checked your current medications for any interactions with common treatments for these symptoms. No conflicts found with your Metformin, Lisinopril, or Atorvastatin."
+      return "I'll review your medication list to ensure there are no interactions or concerns."
+
+    case "prior-auth":
+      if (lower.includes("bill") || lower.includes("denied"))
+        return "I'll check if this denial is PA-related. If prior authorization was missing, I can file a retroactive PA and appeal simultaneously."
+      return "I'll verify if prior authorization is needed and prepare documentation."
+
+    case "coordinator":
+      return "I'm monitoring this conversation and will route to additional specialists if needed."
+
+    case "wellness":
+      return "I'll check if this relates to any of your pending screenings or preventive care recommendations."
+
+    case "triage":
+      return "I'm standing by for any symptom assessment needs."
+
+    default:
+      return "I'm available to assist with my area of expertise."
+  }
 }

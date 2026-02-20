@@ -1,6 +1,6 @@
 "use client"
 
-import { Bell, Search, X } from "lucide-react"
+import { Bell, Search, X, UserCircle, Sparkles } from "lucide-react"
 import {
   ConnectWallet,
   Wallet,
@@ -9,19 +9,21 @@ import {
   WalletDropdownLink,
 } from "@coinbase/onchainkit/wallet"
 import { Address, Avatar, Name, Identity } from "@coinbase/onchainkit/identity"
-import { getMyClaims, getMyMessages } from "@/lib/current-user"
+import { useWalletIdentity } from "@/lib/wallet-context"
+import { getPatientClaims, getPatientMessages } from "@/lib/seed-data"
 import { cn } from "@/lib/utils"
 import Link from "next/link"
 import { useState, useMemo, useRef, useEffect } from "react"
 
 export default function Topbar() {
-  const myMessages = getMyMessages()
+  const { isConnected, profile, currentPatient, isNewUser } = useWalletIdentity()
+  const myMessages = getPatientMessages(currentPatient.id)
   const unread = myMessages.filter((m) => !m.read).length
   const [query, setQuery] = useState("")
   const [isOpen, setIsOpen] = useState(false)
   const searchRef = useRef<HTMLDivElement>(null)
 
-  const myClaims = getMyClaims()
+  const myClaims = getPatientClaims(currentPatient.id)
 
   // Close on click outside
   useEffect(() => {
@@ -138,7 +140,30 @@ export default function Topbar() {
       </div>
 
       {/* Right side */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3">
+        {/* Wallet-linked identity badge */}
+        {isConnected && profile && (
+          <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-accent/5 border border-accent/10">
+            <UserCircle size={14} className="text-accent" />
+            <span className="text-[10px] font-semibold text-accent">
+              {profile.onboardingComplete
+                ? profile.fullName || "Profile Active"
+                : "Wallet Linked"}
+            </span>
+          </div>
+        )}
+
+        {/* New user nudge */}
+        {isConnected && isNewUser && (
+          <Link
+            href="/onboarding"
+            className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-terra/10 border border-terra/20 text-[10px] font-semibold text-terra hover:bg-terra/15 transition animate-fade-in"
+          >
+            <Sparkles size={10} />
+            Complete Setup
+          </Link>
+        )}
+
         {/* Notifications */}
         <Link href="/messages" aria-label="Notifications" className="relative p-2 rounded-xl hover:bg-pampas transition">
           <Bell size={18} className="text-warm-600" />
@@ -150,7 +175,7 @@ export default function Topbar() {
         </Link>
 
         {/* Wallet */}
-        <div className="pl-4 border-l border-sand">
+        <div className="pl-3 border-l border-sand">
           <Wallet>
             <ConnectWallet className="!bg-terra !text-white !rounded-xl !text-xs !font-semibold !py-2 !px-3 hover:!bg-terra-dark !transition">
               <Avatar className="h-5 w-5" />

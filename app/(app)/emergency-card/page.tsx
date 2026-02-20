@@ -1,0 +1,221 @@
+"use client"
+
+import { currentUser } from "@/lib/current-user"
+import { getPhysician, getPatientPrescriptions } from "@/lib/seed-data"
+import {
+  AlertCircle, Heart, Pill, Phone, User, Shield,
+  MapPin, Droplets, Copy, CheckCircle2,
+} from "lucide-react"
+import { useState } from "react"
+import { cn } from "@/lib/utils"
+
+export default function EmergencyCardPage() {
+  const physician = getPhysician(currentUser.primary_physician_id)
+  const meds = getPatientPrescriptions(currentUser.id).filter((p) => p.status === "active")
+  const [copied, setCopied] = useState(false)
+
+  const emergencyText = [
+    `EMERGENCY MEDICAL INFO`,
+    `Name: ${currentUser.full_name}`,
+    `DOB: ${new Date(currentUser.date_of_birth).toLocaleDateString()}`,
+    `Blood Type: O+ (self-reported)`,
+    `Allergies: ${currentUser.allergies.length > 0 ? currentUser.allergies.join(", ") : "None known"}`,
+    `Conditions: ${currentUser.medical_history.map((h) => h.condition).join(", ")}`,
+    `Medications: ${meds.map((m) => `${m.medication_name} ${m.dosage}`).join(", ")}`,
+    `PCP: ${physician?.full_name || "N/A"} ${physician?.phone || ""}`,
+    `Emergency Contact: ${currentUser.emergency_contact_name} ${currentUser.emergency_contact_phone}`,
+    `Insurance: ${currentUser.insurance_provider} ${currentUser.insurance_plan} (ID: ${currentUser.insurance_id})`,
+  ].join("\n")
+
+  function handleCopy() {
+    navigator.clipboard.writeText(emergencyText).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    })
+  }
+
+  return (
+    <div className="animate-slide-up space-y-6 max-w-2xl mx-auto">
+      <div className="text-center">
+        <div className="w-14 h-14 rounded-2xl bg-soft-red/10 flex items-center justify-center mx-auto mb-3">
+          <AlertCircle size={28} className="text-soft-red" />
+        </div>
+        <h1 className="text-2xl font-serif text-warm-800">Emergency Card</h1>
+        <p className="text-sm text-warm-500 mt-1">
+          Critical medical information for emergency responders.
+        </p>
+      </div>
+
+      {/* Emergency Card */}
+      <div className="bg-white rounded-2xl border-2 border-soft-red/30 shadow-lg overflow-hidden">
+        {/* Red header */}
+        <div className="bg-soft-red px-6 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Heart size={16} className="text-white" />
+            <span className="text-sm font-bold text-white uppercase tracking-wider">
+              Emergency Medical Information
+            </span>
+          </div>
+          <span className="text-[10px] text-white/80">OpenRx Health</span>
+        </div>
+
+        <div className="p-6 space-y-5">
+          {/* Patient Info */}
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-lg font-bold text-warm-800">{currentUser.full_name}</p>
+              <p className="text-xs text-warm-500 mt-0.5">
+                DOB: {new Date(currentUser.date_of_birth).toLocaleDateString()} &middot;{" "}
+                {currentUser.gender} &middot; Blood Type: O+ (self-reported)
+              </p>
+            </div>
+            <div className="w-12 h-12 rounded-xl bg-warm-100 flex items-center justify-center">
+              <User size={24} className="text-warm-400" />
+            </div>
+          </div>
+
+          {/* Allergies — Most Critical */}
+          <div className="bg-soft-red/5 rounded-xl p-4 border border-soft-red/10">
+            <div className="flex items-center gap-2 mb-2">
+              <AlertCircle size={14} className="text-soft-red" />
+              <span className="text-xs font-bold text-soft-red uppercase tracking-wider">
+                Allergies
+              </span>
+            </div>
+            {currentUser.allergies.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {currentUser.allergies.map((allergy) => (
+                  <span
+                    key={allergy}
+                    className="text-sm font-bold text-soft-red bg-soft-red/10 px-3 py-1 rounded-lg"
+                  >
+                    {allergy}
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-warm-600">No known allergies (NKDA)</p>
+            )}
+          </div>
+
+          {/* Medical Conditions */}
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <Droplets size={14} className="text-terra" />
+              <span className="text-xs font-bold text-warm-800 uppercase tracking-wider">
+                Medical Conditions
+              </span>
+            </div>
+            <div className="grid grid-cols-1 gap-1.5">
+              {currentUser.medical_history.map((condition) => (
+                <div
+                  key={condition.condition}
+                  className="flex items-center justify-between px-3 py-2 bg-cream/50 rounded-lg"
+                >
+                  <span className="text-sm font-medium text-warm-800">{condition.condition}</span>
+                  <span className={cn(
+                    "text-[9px] font-bold px-2 py-0.5 rounded uppercase",
+                    condition.status === "active" ? "bg-yellow-100 text-yellow-700" :
+                    condition.status === "managed" ? "bg-accent/10 text-accent" :
+                    "bg-warm-100 text-warm-600"
+                  )}>
+                    {condition.status}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Current Medications */}
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <Pill size={14} className="text-yellow-600" />
+              <span className="text-xs font-bold text-warm-800 uppercase tracking-wider">
+                Current Medications
+              </span>
+            </div>
+            <div className="grid grid-cols-1 gap-1.5">
+              {meds.map((med) => (
+                <div
+                  key={med.id}
+                  className="flex items-center justify-between px-3 py-2 bg-cream/50 rounded-lg"
+                >
+                  <span className="text-sm font-medium text-warm-800">
+                    {med.medication_name} {med.dosage}
+                  </span>
+                  <span className="text-[10px] text-cloudy">{med.frequency}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Emergency Contact & PCP */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="rounded-xl border border-sand p-3">
+              <div className="flex items-center gap-2 mb-2">
+                <Phone size={12} className="text-soft-red" />
+                <span className="text-[10px] font-bold text-warm-800 uppercase">Emergency Contact</span>
+              </div>
+              <p className="text-sm font-semibold text-warm-800">
+                {currentUser.emergency_contact_name}
+              </p>
+              <p className="text-xs text-warm-600 mt-0.5">
+                {currentUser.emergency_contact_phone}
+              </p>
+            </div>
+            <div className="rounded-xl border border-sand p-3">
+              <div className="flex items-center gap-2 mb-2">
+                <Heart size={12} className="text-terra" />
+                <span className="text-[10px] font-bold text-warm-800 uppercase">Primary Doctor</span>
+              </div>
+              <p className="text-sm font-semibold text-warm-800">
+                {physician?.full_name || "Not assigned"}
+              </p>
+              <p className="text-xs text-warm-600 mt-0.5">{physician?.phone || ""}</p>
+            </div>
+          </div>
+
+          {/* Insurance */}
+          <div className="rounded-xl border border-sand p-3">
+            <div className="flex items-center gap-2 mb-2">
+              <Shield size={12} className="text-soft-blue" />
+              <span className="text-[10px] font-bold text-warm-800 uppercase">Insurance</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-semibold text-warm-800">
+                  {currentUser.insurance_provider}
+                </p>
+                <p className="text-xs text-warm-600">{currentUser.insurance_plan}</p>
+              </div>
+              <p className="text-xs font-mono text-cloudy">{currentUser.insurance_id}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Copy Button */}
+      <div className="flex justify-center">
+        <button
+          onClick={handleCopy}
+          className={cn(
+            "flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold transition",
+            copied
+              ? "bg-accent text-white"
+              : "bg-terra text-white hover:bg-terra-dark"
+          )}
+        >
+          {copied ? (
+            <><CheckCircle2 size={16} /> Copied!</>
+          ) : (
+            <><Copy size={16} /> Copy Emergency Info</>
+          )}
+        </button>
+      </div>
+
+      <p className="text-center text-[10px] text-cloudy">
+        Tip: Save this to your phone&apos;s Medical ID for instant access in emergencies.
+      </p>
+    </div>
+  )
+}

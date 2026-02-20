@@ -5,6 +5,18 @@ import { openclawClient } from "@/lib/openclaw/client"
 // OpenClaw Gateway routes WhatsApp/SMS/Telegram messages here
 export async function POST(req: NextRequest) {
   try {
+    // Verify webhook signature when configured
+    const webhookSecret = process.env.OPENCLAW_WEBHOOK_SECRET
+    if (webhookSecret) {
+      const signature = req.headers.get("x-openclaw-signature")
+      if (!signature || signature !== webhookSecret) {
+        return NextResponse.json(
+          { error: "Invalid webhook signature" },
+          { status: 401 }
+        )
+      }
+    }
+
     const body = await req.json()
     const { channel, sender, message, patientId } = body as {
       channel: string
@@ -16,6 +28,21 @@ export async function POST(req: NextRequest) {
     if (!channel || !sender || !message) {
       return NextResponse.json(
         { error: "channel, sender, and message are required" },
+        { status: 400 }
+      )
+    }
+
+    if (message.length > 5000) {
+      return NextResponse.json(
+        { error: "Message too long" },
+        { status: 400 }
+      )
+    }
+
+    const validChannels = ["whatsapp", "sms", "telegram", "portal", "voice"]
+    if (!validChannels.includes(channel)) {
+      return NextResponse.json(
+        { error: "Invalid channel" },
         { status: 400 }
       )
     }

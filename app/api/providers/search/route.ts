@@ -150,9 +150,19 @@ export async function GET(req: NextRequest) {
     const limit = searchParams.get("limit") || "20"
     const skip = searchParams.get("skip") || "0"
 
+    const parsedLimit = Math.min(Math.max(1, parseInt(limit, 10) || 20), 50)
+    const parsedSkip = Math.max(0, parseInt(skip, 10) || 0)
+
     if (!query.trim()) {
       return NextResponse.json(
         { error: "Please enter a search query" },
+        { status: 400 }
+      )
+    }
+
+    if (query.length > 200) {
+      return NextResponse.json(
+        { error: "Search query too long" },
         { status: 400 }
       )
     }
@@ -163,8 +173,8 @@ export async function GET(req: NextRequest) {
     // Build NPPES query
     const params = new URLSearchParams()
     params.set("version", "2.1")
-    params.set("limit", limit)
-    params.set("skip", skip)
+    params.set("limit", String(parsedLimit))
+    params.set("skip", String(parsedSkip))
     params.set("enumeration_type", "NPI-1")
 
     if (parsed.city) params.set("city", parsed.city)
@@ -187,15 +197,15 @@ export async function GET(req: NextRequest) {
 
     const data = await res.json()
 
-    const providers = (data.results || []).map((r: any) => {
+    const providers = (data.results || []).map((r: Record<string, any>) => {
       const basic = r.basic || {}
       const addr =
-        r.addresses?.find((a: any) => a.address_purpose === "LOCATION") ||
+        r.addresses?.find((a: Record<string, any>) => a.address_purpose === "LOCATION") ||
         r.addresses?.[0] ||
         {}
       const taxonomies = r.taxonomies || []
       const primaryTaxonomy =
-        taxonomies.find((t: any) => t.primary) || taxonomies[0] || {}
+        taxonomies.find((t: Record<string, any>) => t.primary) || taxonomies[0] || {}
 
       return {
         npi: r.number,

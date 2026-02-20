@@ -16,21 +16,53 @@ import {
   X,
   Stethoscope,
   Heart,
+  FlaskConical,
+  Activity,
+  Syringe,
+  ArrowRightCircle,
+  AlertCircle,
+  ShieldCheck,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useState, useEffect } from "react"
 
-const navItems = [
-  { href: "/dashboard", label: "Home", icon: LayoutDashboard },
-  { href: "/onboarding", label: "Get Started", icon: Heart },
-  { href: "/scheduling", label: "My Appointments", icon: Calendar },
-  { href: "/prescriptions", label: "My Medications", icon: Pill, matchAlso: ["/pharmacy"] },
-  { href: "/drug-prices", label: "Drug Prices", icon: DollarSign },
-  { href: "/billing", label: "My Bills", icon: Receipt },
-  { href: "/providers", label: "Find a Doctor", icon: Stethoscope },
-  { href: "/wallet", label: "Wallet", icon: WalletIcon },
-  { href: "/messages", label: "Messages", icon: MessageSquare },
-  { href: "/chat", label: "Ask AI", icon: Bot },
+const navSections = [
+  {
+    label: null,
+    items: [
+      { href: "/dashboard", label: "Home", icon: LayoutDashboard },
+      { href: "/onboarding", label: "Get Started", icon: Heart },
+    ],
+  },
+  {
+    label: "Health",
+    items: [
+      { href: "/scheduling", label: "Appointments", icon: Calendar },
+      { href: "/prescriptions", label: "Medications", icon: Pill, matchAlso: ["/pharmacy"] },
+      { href: "/lab-results", label: "Lab Results", icon: FlaskConical },
+      { href: "/vitals", label: "Vital Signs", icon: Activity },
+      { href: "/vaccinations", label: "Vaccinations", icon: Syringe },
+      { href: "/referrals", label: "Referrals", icon: ArrowRightCircle },
+    ],
+  },
+  {
+    label: "Finance",
+    items: [
+      { href: "/billing", label: "Bills & Claims", icon: Receipt },
+      { href: "/drug-prices", label: "Drug Prices", icon: DollarSign },
+      { href: "/prior-auth", label: "Prior Auth", icon: ShieldCheck },
+      { href: "/wallet", label: "Wallet", icon: WalletIcon },
+    ],
+  },
+  {
+    label: "More",
+    items: [
+      { href: "/providers", label: "Find a Doctor", icon: Stethoscope },
+      { href: "/messages", label: "Messages", icon: MessageSquare },
+      { href: "/emergency-card", label: "Emergency Card", icon: AlertCircle },
+      { href: "/chat", label: "Ask AI", icon: Bot },
+    ],
+  },
 ]
 
 export default function Sidebar() {
@@ -81,32 +113,43 @@ export default function Sidebar() {
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 px-3 py-3 space-y-0.5 overflow-y-auto">
-        {navItems.map((item) => {
-          const matchAlso = (item as any).matchAlso as string[] | undefined
-          const active =
-            pathname === item.href ||
-            pathname?.startsWith(item.href + "/") ||
-            matchAlso?.some((m) => pathname === m || pathname?.startsWith(m + "/"))
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                "flex items-center gap-3 px-3 py-2 rounded-xl text-[13px] font-medium transition-all",
-                active
-                  ? "bg-terra/8 text-terra font-semibold"
-                  : "text-warm-600 hover:text-warm-800 hover:bg-pampas"
-              )}
-            >
-              <item.icon
-                size={16}
-                className={active ? "text-terra" : "text-warm-500"}
-              />
-              {item.label}
-            </Link>
-          )
-        })}
+      <nav className="flex-1 px-3 py-2 overflow-y-auto" aria-label="Main navigation">
+        {navSections.map((section, si) => (
+          <div key={si} className={si > 0 ? "mt-3" : ""}>
+            {section.label && (
+              <p className="px-3 py-1 text-[9px] font-bold text-cloudy uppercase tracking-[1.5px]">
+                {section.label}
+              </p>
+            )}
+            <div className="space-y-0.5">
+              {section.items.map((item) => {
+                const matchAlso = "matchAlso" in item ? (item.matchAlso as string[]) : undefined
+                const active =
+                  pathname === item.href ||
+                  pathname?.startsWith(item.href + "/") ||
+                  matchAlso?.some((m) => pathname === m || pathname?.startsWith(m + "/"))
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={cn(
+                      "flex items-center gap-3 px-3 py-1.5 rounded-xl text-[12px] font-medium transition-all",
+                      active
+                        ? "bg-terra/8 text-terra font-semibold"
+                        : "text-warm-600 hover:text-warm-800 hover:bg-pampas"
+                    )}
+                  >
+                    <item.icon
+                      size={14}
+                      className={active ? "text-terra" : "text-warm-500"}
+                    />
+                    {item.label}
+                  </Link>
+                )
+              })}
+            </div>
+          </div>
+        ))}
       </nav>
 
       {/* Bottom */}

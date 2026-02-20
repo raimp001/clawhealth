@@ -1,19 +1,13 @@
 "use client"
 
 import {
-  Calendar,
-  Receipt,
-  Pill,
-  MessageSquare,
-  AlertTriangle,
-  ArrowRight,
-  Bot,
-  Send,
-  CheckCircle2,
-  Heart,
+  Calendar, Receipt, Pill, MessageSquare, AlertTriangle,
+  ArrowRight, Bot, Send, CheckCircle2, Heart,
+  FlaskConical, Activity, Syringe, ArrowRightCircle,
+  AlertCircle, Clock,
 } from "lucide-react"
 import Link from "next/link"
-import { getPhysician, priorAuths } from "@/lib/seed-data"
+import { getPhysician, priorAuths, getPatientLabResults, getPatientVitals, getPatientVaccinations, getPatientReferrals } from "@/lib/seed-data"
 import { currentUser, getMyAppointments, getMyClaims, getMyPrescriptions, getMyMessages } from "@/lib/current-user"
 import { cn, formatCurrency, formatTime, getStatusColor } from "@/lib/utils"
 
@@ -32,8 +26,21 @@ export default function DashboardPage() {
   const myPA = priorAuths.filter((p) => p.patient_id === currentUser.id)
   const pendingPA = myPA.filter((p) => p.status === "pending" || p.status === "submitted")
   const owedAmount = myClaims
-    .filter((c) => c.status === "paid")
+    .filter((c) => ["paid", "submitted", "processing", "appealed"].includes(c.status))
     .reduce((sum, c) => sum + c.patient_responsibility, 0)
+
+  // New healthcare data
+  const myLabs = getPatientLabResults(currentUser.id)
+  const pendingLabs = myLabs.filter((l) => l.status === "pending")
+  const abnormalLabCount = myLabs
+    .filter((l) => l.status !== "pending")
+    .reduce((count, lab) => count + lab.results.filter((r) => r.flag !== "normal").length, 0)
+  const myVitals = getPatientVitals(currentUser.id)
+  const latestVital = myVitals[0]
+  const myVaccinations = getPatientVaccinations(currentUser.id)
+  const dueVaccines = myVaccinations.filter((v) => v.status === "due" || v.status === "overdue")
+  const myReferrals = getPatientReferrals(currentUser.id)
+  const pendingReferrals = myReferrals.filter((r) => r.status === "pending" || r.status === "scheduled")
 
   return (
     <div className="animate-slide-up space-y-6">
@@ -72,24 +79,57 @@ export default function DashboardPage() {
           <div className="text-xs text-warm-500">Active Medications</div>
         </Link>
         <Link
-          href="/billing"
+          href="/lab-results"
           className="bg-pampas rounded-2xl p-4 border border-sand hover:border-terra/30 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-terra/5 transition-all"
         >
-          <Receipt size={20} className="text-soft-blue mb-2" />
-          <div className="text-lg font-bold text-warm-800">
-            {owedAmount > 0 ? formatCurrency(owedAmount) : "$0"}
+          <FlaskConical size={20} className="text-soft-blue mb-2" />
+          <div className="text-lg font-bold text-warm-800">{myLabs.length}</div>
+          <div className="text-xs text-warm-500">
+            Lab Tests{pendingLabs.length > 0 ? ` (${pendingLabs.length} pending)` : ""}
           </div>
-          <div className="text-xs text-warm-500">Amount Owed</div>
         </Link>
         <Link
           href="/messages"
           className="bg-pampas rounded-2xl p-4 border border-sand hover:border-terra/30 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-terra/5 transition-all"
         >
-          <MessageSquare size={20} className="text-yellow-400 mb-2" />
+          <MessageSquare size={20} className="text-yellow-600 mb-2" />
           <div className="text-lg font-bold text-warm-800">{unreadCount}</div>
           <div className="text-xs text-warm-500">Unread Messages</div>
         </Link>
       </div>
+
+      {/* Urgent Alerts Row */}
+      {(abnormalLabCount > 0 || dueVaccines.length > 0 || pendingReferrals.length > 0) && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+          {abnormalLabCount > 0 && (
+            <Link href="/lab-results" className="bg-soft-red/5 rounded-2xl border border-soft-red/10 p-4 hover:border-soft-red/20 transition">
+              <div className="flex items-center gap-2 mb-1">
+                <AlertTriangle size={14} className="text-soft-red" />
+                <span className="text-xs font-bold text-soft-red">Lab Alert</span>
+              </div>
+              <p className="text-xs text-warm-600">{abnormalLabCount} abnormal lab value{abnormalLabCount !== 1 ? "s" : ""} found</p>
+            </Link>
+          )}
+          {dueVaccines.length > 0 && (
+            <Link href="/vaccinations" className="bg-yellow-50 rounded-2xl border border-yellow-200/50 p-4 hover:border-yellow-300/50 transition">
+              <div className="flex items-center gap-2 mb-1">
+                <Syringe size={14} className="text-yellow-600" />
+                <span className="text-xs font-bold text-yellow-700">Vaccines Due</span>
+              </div>
+              <p className="text-xs text-warm-600">{dueVaccines.map((v) => v.vaccine_name).join(", ")}</p>
+            </Link>
+          )}
+          {pendingReferrals.length > 0 && (
+            <Link href="/referrals" className="bg-soft-blue/5 rounded-2xl border border-soft-blue/10 p-4 hover:border-soft-blue/20 transition">
+              <div className="flex items-center gap-2 mb-1">
+                <ArrowRightCircle size={14} className="text-soft-blue" />
+                <span className="text-xs font-bold text-soft-blue">Referrals</span>
+              </div>
+              <p className="text-xs text-warm-600">{pendingReferrals.length} specialist visit{pendingReferrals.length !== 1 ? "s" : ""} to schedule or attend</p>
+            </Link>
+          )}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* My Upcoming Appointments */}
@@ -109,7 +149,7 @@ export default function DashboardPage() {
                 <Calendar size={24} className="text-sand mx-auto mb-2" />
                 <p className="text-sm text-warm-500">No upcoming appointments</p>
                 <Link href="/providers" className="text-xs text-terra font-semibold mt-1 inline-block">
-                  Find a doctor →
+                  Find a doctor &rarr;
                 </Link>
               </div>
             )}
@@ -118,7 +158,7 @@ export default function DashboardPage() {
               return (
                 <div
                   key={apt.id}
-                  className="flex items-center gap-4 px-5 py-3.5 hover:bg-sand/30 transition"
+                  className="flex items-center gap-4 px-5 py-3.5 hover:bg-cream/50 transition"
                 >
                   <div className="text-sm font-semibold text-warm-600 w-16 shrink-0">
                     {formatTime(apt.scheduled_at)}
@@ -151,7 +191,7 @@ export default function DashboardPage() {
                     </div>
                     <p className="text-xs text-warm-500 truncate">
                       {apt.reason}
-                      {apt.copay > 0 ? ` · Est. copay $${apt.copay}` : " · $0 copay"}
+                      {apt.copay > 0 ? ` \u00b7 Est. copay $${apt.copay}` : " \u00b7 $0 copay"}
                     </p>
                   </div>
                   {apt.type === "telehealth" && (
@@ -165,6 +205,49 @@ export default function DashboardPage() {
 
         {/* Right Column */}
         <div className="space-y-4">
+          {/* Latest Vitals */}
+          {latestVital && (
+            <Link href="/vitals" className="block bg-pampas rounded-2xl border border-sand p-4 hover:border-terra/30 transition">
+              <div className="flex items-center gap-2 mb-2">
+                <Activity size={14} className="text-accent" />
+                <span className="text-xs font-bold text-warm-800">Latest Vitals</span>
+                <span className="text-[9px] text-cloudy ml-auto">
+                  {new Date(latestVital.recorded_at).toLocaleDateString()}
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                {latestVital.systolic && (
+                  <div>
+                    <p className={cn("text-sm font-bold", latestVital.systolic >= 140 ? "text-soft-red" : "text-warm-800")}>
+                      {latestVital.systolic}/{latestVital.diastolic}
+                    </p>
+                    <p className="text-[9px] text-cloudy">Blood Pressure</p>
+                  </div>
+                )}
+                {latestVital.heart_rate && (
+                  <div>
+                    <p className="text-sm font-bold text-warm-800">{latestVital.heart_rate} bpm</p>
+                    <p className="text-[9px] text-cloudy">Heart Rate</p>
+                  </div>
+                )}
+                {latestVital.blood_glucose && (
+                  <div>
+                    <p className={cn("text-sm font-bold", latestVital.blood_glucose > 130 ? "text-yellow-600" : "text-warm-800")}>
+                      {latestVital.blood_glucose}
+                    </p>
+                    <p className="text-[9px] text-cloudy">Glucose mg/dL</p>
+                  </div>
+                )}
+                {latestVital.weight_lbs && (
+                  <div>
+                    <p className="text-sm font-bold text-warm-800">{latestVital.weight_lbs} lbs</p>
+                    <p className="text-[9px] text-cloudy">Weight</p>
+                  </div>
+                )}
+              </div>
+            </Link>
+          )}
+
           {/* My Medications */}
           <div className="bg-pampas rounded-2xl border border-sand">
             <div className="flex items-center gap-2 p-4 border-b border-sand">
@@ -196,9 +279,9 @@ export default function DashboardPage() {
             </div>
             <Link
               href="/prescriptions"
-              className="block text-center py-2.5 border-t border-sand text-xs font-semibold text-terra hover:bg-sand/30 transition"
+              className="block text-center py-2.5 border-t border-sand text-xs font-semibold text-terra hover:bg-cream/50 transition"
             >
-              View all →
+              View all &rarr;
             </Link>
           </div>
 
@@ -219,10 +302,10 @@ export default function DashboardPage() {
 
           {/* Pending Prior Auths */}
           {pendingPA.length > 0 && (
-            <div className="bg-yellow-900/20 rounded-2xl border border-yellow-700/30 p-4">
+            <div className="bg-yellow-50 rounded-2xl border border-yellow-200/50 p-4">
               <div className="flex items-center gap-2 mb-2">
-                <CheckCircle2 size={14} className="text-yellow-400" />
-                <span className="text-xs font-bold text-yellow-400">Pending Approvals</span>
+                <CheckCircle2 size={14} className="text-yellow-600" />
+                <span className="text-xs font-bold text-yellow-700">Pending Approvals</span>
               </div>
               {pendingPA.map((pa) => (
                 <p key={pa.id} className="text-xs text-warm-600 mt-1">
@@ -231,6 +314,20 @@ export default function DashboardPage() {
               ))}
             </div>
           )}
+
+          {/* Emergency Card */}
+          <Link
+            href="/emergency-card"
+            className="block bg-soft-red/5 rounded-2xl border border-soft-red/10 p-4 hover:bg-soft-red/10 transition"
+          >
+            <div className="flex items-center gap-2 mb-1">
+              <AlertCircle size={14} className="text-soft-red" />
+              <span className="text-xs font-bold text-warm-800">Emergency Card</span>
+            </div>
+            <p className="text-[10px] text-warm-500">
+              Quick-access card with your allergies, meds, and emergency contacts.
+            </p>
+          </Link>
 
           {/* Ask AI */}
           <Link
@@ -261,12 +358,14 @@ export default function DashboardPage() {
         </div>
         <div className="divide-y divide-sand/50">
           {[
-            { icon: Send, color: "text-soft-blue", bg: "bg-soft-blue/5", action: "Appointment reminder sent", detail: "Your diabetes check is coming up", agent: "Cal", time: "2 min ago" },
-            { icon: Pill, color: "text-yellow-400", bg: "bg-yellow-900/20", action: "Refill checked", detail: "Atorvastatin refill needed soon — 2 refills remaining", agent: "Maya", time: "1 hr ago" },
+            { icon: FlaskConical, color: "text-soft-blue", bg: "bg-soft-blue/5", action: "Lab results reviewed", detail: "A1C improved to 6.8% — great progress!", agent: "Maya", time: "Today" },
+            { icon: Send, color: "text-soft-blue", bg: "bg-soft-blue/5", action: "Appointment reminder", detail: "Dietitian visit with Dr. Nguyen in 3 days", agent: "Cal", time: "2 min ago" },
+            { icon: Pill, color: "text-yellow-600", bg: "bg-yellow-50", action: "Refill checked", detail: "Atorvastatin refill needed soon — 2 refills remaining", agent: "Maya", time: "1 hr ago" },
             { icon: CheckCircle2, color: "text-accent", bg: "bg-accent/5", action: "Bill reviewed", detail: "Your latest claim was paid correctly — no action needed", agent: "Vera", time: "3 hrs ago" },
-            { icon: Heart, color: "text-terra", bg: "bg-terra/5", action: "Screening reminder", detail: "Your cholesterol check is due — want me to book it?", agent: "Ivy", time: "Yesterday" },
+            { icon: Syringe, color: "text-yellow-600", bg: "bg-yellow-50", action: "Vaccine reminder", detail: "Shingrix and pneumococcal vaccines recommended for your age", agent: "Ivy", time: "Yesterday" },
+            { icon: Heart, color: "text-terra", bg: "bg-terra/5", action: "Referral update", detail: "Endocrinology appointment confirmed for next week", agent: "Atlas", time: "Yesterday" },
           ].map((item, i) => (
-            <div key={i} className="flex items-center gap-3 px-4 py-3 hover:bg-sand/20 transition">
+            <div key={i} className="flex items-center gap-3 px-4 py-3 hover:bg-cream/30 transition">
               <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center shrink-0", item.bg)}>
                 <item.icon size={14} className={item.color} />
               </div>
