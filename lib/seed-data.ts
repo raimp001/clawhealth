@@ -708,3 +708,239 @@ export function getTodayAppointments() {
         new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime()
     )
 }
+
+// ── Lab Results ───────────────────────────────────────────
+export interface LabResult {
+  id: string
+  patient_id: string
+  physician_id: string
+  test_name: string
+  category: string
+  ordered_at: string
+  resulted_at: string | null
+  status: "pending" | "resulted" | "reviewed"
+  results: { name: string; value: string; unit: string; reference_range: string; flag: "normal" | "high" | "low" | "critical" }[]
+  notes: string
+  lab_facility: string
+}
+
+export const labResults: LabResult[] = [
+  {
+    id: "lab-001", patient_id: "pt-001", physician_id: "ph-002",
+    test_name: "Comprehensive Metabolic Panel", category: "Chemistry",
+    ordered_at: daysAgo(14), resulted_at: daysAgo(13), status: "reviewed",
+    results: [
+      { name: "Glucose (fasting)", value: "145", unit: "mg/dL", reference_range: "70-100", flag: "high" },
+      { name: "BUN", value: "18", unit: "mg/dL", reference_range: "7-20", flag: "normal" },
+      { name: "Creatinine", value: "1.0", unit: "mg/dL", reference_range: "0.7-1.3", flag: "normal" },
+      { name: "Sodium", value: "140", unit: "mEq/L", reference_range: "136-145", flag: "normal" },
+      { name: "Potassium", value: "4.2", unit: "mEq/L", reference_range: "3.5-5.0", flag: "normal" },
+      { name: "eGFR", value: "85", unit: "mL/min", reference_range: ">60", flag: "normal" },
+    ],
+    notes: "Fasting glucose elevated — consistent with managed T2DM. eGFR stable.",
+    lab_facility: "Quest Diagnostics — Hawthorne",
+  },
+  {
+    id: "lab-002", patient_id: "pt-001", physician_id: "ph-002",
+    test_name: "Hemoglobin A1C", category: "Endocrine",
+    ordered_at: daysAgo(14), resulted_at: daysAgo(13), status: "reviewed",
+    results: [
+      { name: "HbA1c", value: "6.8", unit: "%", reference_range: "<5.7", flag: "high" },
+      { name: "Estimated Average Glucose", value: "148", unit: "mg/dL", reference_range: "<117", flag: "high" },
+    ],
+    notes: "A1C improved from 7.2% to 6.8% — good trend. Continue current regimen.",
+    lab_facility: "Quest Diagnostics — Hawthorne",
+  },
+  {
+    id: "lab-003", patient_id: "pt-001", physician_id: "ph-002",
+    test_name: "Lipid Panel", category: "Chemistry",
+    ordered_at: daysAgo(14), resulted_at: daysAgo(13), status: "reviewed",
+    results: [
+      { name: "Total Cholesterol", value: "198", unit: "mg/dL", reference_range: "<200", flag: "normal" },
+      { name: "LDL Cholesterol", value: "118", unit: "mg/dL", reference_range: "<100", flag: "high" },
+      { name: "HDL Cholesterol", value: "52", unit: "mg/dL", reference_range: ">40", flag: "normal" },
+      { name: "Triglycerides", value: "140", unit: "mg/dL", reference_range: "<150", flag: "normal" },
+    ],
+    notes: "LDL slightly above target for diabetic patient. Atorvastatin adherence is 78% — improving adherence may help.",
+    lab_facility: "Quest Diagnostics — Hawthorne",
+  },
+  {
+    id: "lab-004", patient_id: "pt-001", physician_id: "ph-002",
+    test_name: "CBC with Differential", category: "Hematology",
+    ordered_at: daysAgo(14), resulted_at: daysAgo(12), status: "reviewed",
+    results: [
+      { name: "WBC", value: "7.2", unit: "K/uL", reference_range: "4.5-11.0", flag: "normal" },
+      { name: "RBC", value: "4.8", unit: "M/uL", reference_range: "4.5-5.5", flag: "normal" },
+      { name: "Hemoglobin", value: "14.5", unit: "g/dL", reference_range: "13.5-17.5", flag: "normal" },
+      { name: "Hematocrit", value: "43.2", unit: "%", reference_range: "38.8-50.0", flag: "normal" },
+      { name: "Platelets", value: "245", unit: "K/uL", reference_range: "150-400", flag: "normal" },
+    ],
+    notes: "CBC within normal limits.",
+    lab_facility: "Quest Diagnostics — Hawthorne",
+  },
+  {
+    id: "lab-005", patient_id: "pt-001", physician_id: "ph-002",
+    test_name: "Thyroid Panel", category: "Endocrine",
+    ordered_at: daysAgo(60), resulted_at: daysAgo(58), status: "reviewed",
+    results: [
+      { name: "TSH", value: "2.1", unit: "mIU/L", reference_range: "0.4-4.0", flag: "normal" },
+      { name: "Free T4", value: "1.2", unit: "ng/dL", reference_range: "0.8-1.8", flag: "normal" },
+    ],
+    notes: "Thyroid function normal. Recheck annually.",
+    lab_facility: "OHSU Lab",
+  },
+  {
+    id: "lab-006", patient_id: "pt-001", physician_id: "ph-002",
+    test_name: "Urinalysis", category: "Urinalysis",
+    ordered_at: daysAgo(14), resulted_at: daysAgo(13), status: "reviewed",
+    results: [
+      { name: "Protein", value: "Trace", unit: "", reference_range: "Negative", flag: "high" },
+      { name: "Glucose", value: "Positive", unit: "", reference_range: "Negative", flag: "high" },
+      { name: "Microalbumin/Creatinine Ratio", value: "35", unit: "mg/g", reference_range: "<30", flag: "high" },
+    ],
+    notes: "Trace protein and glucose in urine. Microalbumin slightly elevated — early sign of diabetic nephropathy. Monitor closely.",
+    lab_facility: "Quest Diagnostics — Hawthorne",
+  },
+  {
+    id: "lab-007", patient_id: "pt-001", physician_id: "ph-002",
+    test_name: "Hemoglobin A1C", category: "Endocrine",
+    ordered_at: daysAgo(0), resulted_at: null, status: "pending",
+    results: [],
+    notes: "Ordered at today's visit. Results expected in 1-2 days.",
+    lab_facility: "Quest Diagnostics — Hawthorne",
+  },
+]
+
+export function getPatientLabResults(patientId: string) {
+  return labResults.filter((l) => l.patient_id === patientId)
+    .sort((a, b) => new Date(b.ordered_at).getTime() - new Date(a.ordered_at).getTime())
+}
+
+// ── Vital Signs ───────────────────────────────────────────
+export interface VitalSign {
+  id: string
+  patient_id: string
+  recorded_at: string
+  source: "clinic" | "home" | "device"
+  systolic?: number
+  diastolic?: number
+  heart_rate?: number
+  weight_lbs?: number
+  temperature_f?: number
+  blood_glucose?: number
+  oxygen_saturation?: number
+  respiratory_rate?: number
+}
+
+export const vitalSigns: VitalSign[] = [
+  { id: "vs-001", patient_id: "pt-001", recorded_at: todayAt(8, 30), source: "clinic", systolic: 132, diastolic: 84, heart_rate: 72, weight_lbs: 198, temperature_f: 98.4, oxygen_saturation: 98, respiratory_rate: 16 },
+  { id: "vs-002", patient_id: "pt-001", recorded_at: daysAgo(1), source: "home", systolic: 138, diastolic: 86, heart_rate: 76, blood_glucose: 145 },
+  { id: "vs-003", patient_id: "pt-001", recorded_at: daysAgo(2), source: "home", systolic: 128, diastolic: 82, heart_rate: 70, blood_glucose: 152 },
+  { id: "vs-004", patient_id: "pt-001", recorded_at: daysAgo(3), source: "home", systolic: 135, diastolic: 88, heart_rate: 74, blood_glucose: 138 },
+  { id: "vs-005", patient_id: "pt-001", recorded_at: daysAgo(4), source: "home", systolic: 142, diastolic: 90, heart_rate: 78, blood_glucose: 161 },
+  { id: "vs-006", patient_id: "pt-001", recorded_at: daysAgo(5), source: "home", systolic: 130, diastolic: 84, heart_rate: 68, blood_glucose: 148 },
+  { id: "vs-007", patient_id: "pt-001", recorded_at: daysAgo(6), source: "home", systolic: 136, diastolic: 86, heart_rate: 72, blood_glucose: 155 },
+  { id: "vs-008", patient_id: "pt-001", recorded_at: daysAgo(7), source: "device", systolic: 128, diastolic: 80, heart_rate: 66, blood_glucose: 140 },
+  { id: "vs-009", patient_id: "pt-001", recorded_at: daysAgo(10), source: "home", systolic: 140, diastolic: 88, heart_rate: 74, blood_glucose: 158 },
+  { id: "vs-010", patient_id: "pt-001", recorded_at: daysAgo(14), source: "clinic", systolic: 134, diastolic: 84, heart_rate: 70, weight_lbs: 200, temperature_f: 98.6, oxygen_saturation: 97, blood_glucose: 162, respiratory_rate: 16 },
+  { id: "vs-011", patient_id: "pt-001", recorded_at: daysAgo(21), source: "home", systolic: 138, diastolic: 86, heart_rate: 76, blood_glucose: 170 },
+  { id: "vs-012", patient_id: "pt-001", recorded_at: daysAgo(28), source: "clinic", systolic: 140, diastolic: 90, heart_rate: 78, weight_lbs: 202, blood_glucose: 178 },
+]
+
+export function getPatientVitals(patientId: string) {
+  return vitalSigns.filter((v) => v.patient_id === patientId)
+    .sort((a, b) => new Date(b.recorded_at).getTime() - new Date(a.recorded_at).getTime())
+}
+
+// ── Vaccinations ──────────────────────────────────────────
+export interface Vaccination {
+  id: string
+  patient_id: string
+  vaccine_name: string
+  brand: string
+  dose_number: number
+  total_doses: number
+  administered_at: string
+  administered_by: string
+  lot_number: string
+  site: string
+  next_due: string | null
+  status: "completed" | "due" | "overdue" | "series-incomplete"
+}
+
+export const vaccinations: Vaccination[] = [
+  { id: "vax-001", patient_id: "pt-001", vaccine_name: "Influenza (Flu)", brand: "Fluarix Quadrivalent", dose_number: 1, total_doses: 1, administered_at: daysAgo(45), administered_by: "CVS Pharmacy", lot_number: "FL2025A4821", site: "Left deltoid", next_due: daysFromNow(320), status: "completed" },
+  { id: "vax-002", patient_id: "pt-001", vaccine_name: "COVID-19 Booster", brand: "Pfizer-BioNTech Updated", dose_number: 5, total_doses: 5, administered_at: daysAgo(90), administered_by: "Walgreens on 39th", lot_number: "FN2025X9113", site: "Right deltoid", next_due: daysFromNow(275), status: "completed" },
+  { id: "vax-003", patient_id: "pt-001", vaccine_name: "Tdap (Tetanus/Diphtheria/Pertussis)", brand: "Boostrix", dose_number: 1, total_doses: 1, administered_at: daysAgo(1800), administered_by: "Dr. Chen's Office", lot_number: "TD2020B1104", site: "Left deltoid", next_due: daysFromNow(1845), status: "completed" },
+  { id: "vax-004", patient_id: "pt-001", vaccine_name: "Shingles (Shingrix)", brand: "Shingrix", dose_number: 0, total_doses: 2, administered_at: "", administered_by: "", lot_number: "", site: "", next_due: null, status: "due" },
+  { id: "vax-005", patient_id: "pt-001", vaccine_name: "Pneumococcal (PCV20)", brand: "Prevnar 20", dose_number: 0, total_doses: 1, administered_at: "", administered_by: "", lot_number: "", site: "", next_due: null, status: "due" },
+  { id: "vax-006", patient_id: "pt-001", vaccine_name: "Hepatitis B", brand: "Engerix-B", dose_number: 3, total_doses: 3, administered_at: daysAgo(3650), administered_by: "Providence Health", lot_number: "HB2015C003", site: "Left deltoid", next_due: null, status: "completed" },
+]
+
+export function getPatientVaccinations(patientId: string) {
+  return vaccinations.filter((v) => v.patient_id === patientId)
+}
+
+// ── Referrals ─────────────────────────────────────────────
+export interface Referral {
+  id: string
+  patient_id: string
+  referring_physician_id: string
+  specialist_name: string
+  specialist_specialty: string
+  specialist_phone: string
+  reason: string
+  urgency: "routine" | "urgent" | "stat"
+  status: "pending" | "scheduled" | "completed" | "expired"
+  created_at: string
+  appointment_date: string | null
+  notes: string
+  insurance_authorized: boolean
+}
+
+export const referrals: Referral[] = [
+  {
+    id: "ref-001", patient_id: "pt-001", referring_physician_id: "ph-002",
+    specialist_name: "Dr. Sarah Mitchell", specialist_specialty: "Endocrinology",
+    specialist_phone: "(503) 494-5500",
+    reason: "Diabetes management optimization — A1C not at target despite medication adjustments",
+    urgency: "routine", status: "scheduled", created_at: daysAgo(7),
+    appointment_date: daysFromNow(10),
+    notes: "Patient on metformin 1000mg BID + lisinopril. A1C trending down but still 6.8%.",
+    insurance_authorized: true,
+  },
+  {
+    id: "ref-002", patient_id: "pt-001", referring_physician_id: "ph-002",
+    specialist_name: "Dr. Mark Henderson", specialist_specialty: "Nephrology",
+    specialist_phone: "(503) 494-6100",
+    reason: "Elevated microalbumin — early diabetic nephropathy screening",
+    urgency: "routine", status: "pending", created_at: daysAgo(1),
+    appointment_date: null,
+    notes: "Microalbumin/creatinine ratio 35 mg/g (above 30 threshold). eGFR stable at 85.",
+    insurance_authorized: false,
+  },
+  {
+    id: "ref-003", patient_id: "pt-001", referring_physician_id: "ph-002",
+    specialist_name: "Dr. Emily Park", specialist_specialty: "Ophthalmology",
+    specialist_phone: "(503) 494-7300",
+    reason: "Annual diabetic retinopathy screening",
+    urgency: "routine", status: "completed", created_at: daysAgo(90),
+    appointment_date: daysAgo(60),
+    notes: "No evidence of diabetic retinopathy. Recheck in 12 months.",
+    insurance_authorized: true,
+  },
+  {
+    id: "ref-004", patient_id: "pt-001", referring_physician_id: "ph-002",
+    specialist_name: "Dr. Lisa Nguyen", specialist_specialty: "Registered Dietitian",
+    specialist_phone: "(503) 494-4200",
+    reason: "Medical nutrition therapy for diabetes and weight management",
+    urgency: "routine", status: "scheduled", created_at: daysAgo(14),
+    appointment_date: daysFromNow(3),
+    notes: "BMI 29.4. Goal: weight reduction and carb counting education.",
+    insurance_authorized: true,
+  },
+]
+
+export function getPatientReferrals(patientId: string) {
+  return referrals.filter((r) => r.patient_id === patientId)
+}
