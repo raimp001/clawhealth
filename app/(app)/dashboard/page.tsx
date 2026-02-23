@@ -5,6 +5,7 @@ import {
   ArrowRight, Bot, Send, CheckCircle2, Heart,
   FlaskConical, Activity, Syringe, ArrowRightCircle,
   AlertCircle, Clock, TrendingUp, TrendingDown, Minus,
+  Zap, ShieldCheck, RefreshCw,
 } from "lucide-react"
 import Link from "next/link"
 import { getPhysician, priorAuths, getPatientLabResults, getPatientVitals, getPatientVaccinations, getPatientReferrals } from "@/lib/seed-data"
@@ -69,6 +70,40 @@ export default function DashboardPage() {
           Here&apos;s what&apos;s happening with your health.
         </p>
       </div>
+
+      {/* Proactive AI Nudges */}
+      {(() => {
+        const nudges: { icon: typeof Zap; color: string; bg: string; text: string; href: string; agent: string }[] = []
+        if (lowAdherenceRx.length > 0)
+          nudges.push({ icon: Pill, color: "text-soft-red", bg: "bg-soft-red/10", text: `Log today's ${lowAdherenceRx[0].medication_name} dose — adherence is at ${lowAdherenceRx[0].adherence_pct}%`, href: "/prescriptions", agent: "Maya" })
+        if (pendingPA.length > 0)
+          nudges.push({ icon: ShieldCheck, color: "text-yellow-400", bg: "bg-yellow-900/20", text: `${pendingPA[0].procedure_name} prior auth is ${pendingPA[0].status} — Rex can check the status`, href: "/prior-auth", agent: "Rex" })
+        if (dueVaccines.length > 0)
+          nudges.push({ icon: Syringe, color: "text-terra", bg: "bg-terra/10", text: `${dueVaccines[0].vaccine_name} is due — Ivy can help you schedule it`, href: "/vaccinations", agent: "Ivy" })
+        if (myRx.some((r) => r.refills_remaining <= 2))
+          nudges.push({ icon: RefreshCw, color: "text-accent", bg: "bg-accent/10", text: `${myRx.find((r) => r.refills_remaining <= 2)?.medication_name} needs a refill soon`, href: "/prescriptions", agent: "Maya" })
+        if (nudges.length === 0) return null
+        return (
+          <div className="bg-pampas rounded-2xl border border-terra/20 p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <Zap size={14} className="text-terra" />
+              <span className="text-xs font-bold text-warm-800">Your care team flagged {nudges.length} action{nudges.length !== 1 ? "s" : ""} for today</span>
+            </div>
+            <div className="space-y-2">
+              {nudges.map((n, i) => (
+                <Link key={i} href={n.href} className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-cream/50 transition group">
+                  <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${n.bg}`}>
+                    <n.icon size={13} className={n.color} />
+                  </div>
+                  <p className="text-xs text-warm-700 flex-1 leading-snug">{n.text}</p>
+                  <span className="text-[9px] font-bold text-terra bg-terra/10 px-1.5 py-0.5 rounded shrink-0">{n.agent}</span>
+                  <ArrowRight size={12} className="text-cloudy group-hover:text-terra transition shrink-0" />
+                </Link>
+              ))}
+            </div>
+          </div>
+        )
+      })()}
 
       {/* Quick Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
