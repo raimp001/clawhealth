@@ -523,6 +523,28 @@ export const prescriptions: Prescription[] = [
 // ── Prior Authorizations ───────────────────────────────
 export const priorAuths: PriorAuth[] = [
   {
+    id: "pa-006", patient_id: "pt-001", physician_id: "ph-002",
+    insurance_provider: "Blue Cross Blue Shield", procedure_code: "93000", procedure_name: "Electrocardiogram (EKG)",
+    icd_codes: ["E11.9", "I10"], status: "submitted", urgency: "standard",
+    reference_number: "BCB-PA-8841", submitted_at: daysAgo(4), resolved_at: null,
+    denial_reason: null, clinical_notes: "Routine EKG for patient with Type 2 Diabetes and Hypertension. Annual cardiac screening per ADA guidelines.",
+  },
+  {
+    id: "pa-007", patient_id: "pt-001", physician_id: "ph-002",
+    insurance_provider: "Blue Cross Blue Shield", procedure_code: "70553", procedure_name: "MRI Brain with contrast",
+    icd_codes: ["G43.909", "R51"], status: "pending", urgency: "urgent",
+    reference_number: null, submitted_at: daysAgo(1), resolved_at: null,
+    denial_reason: null, clinical_notes: "Persistent severe headaches with new visual disturbance. Rule out intracranial pathology. Neurologist referral placed.",
+  },
+  {
+    id: "pa-008", patient_id: "pt-001", physician_id: "ph-002",
+    insurance_provider: "Blue Cross Blue Shield", procedure_code: "97802", procedure_name: "Medical Nutrition Therapy",
+    icd_codes: ["E11.9", "Z71.3"], status: "denied", urgency: "standard",
+    reference_number: "BCB-PA-7890", submitted_at: daysAgo(30), resolved_at: daysAgo(25),
+    denial_reason: "Member does not meet criteria for medical nutrition therapy. Benefit requires HbA1c ≥ 8.5%; current HbA1c is 6.8%.",
+    clinical_notes: "Registered dietitian visits for diabetes management and weight loss counseling. Patient motivated for lifestyle intervention.",
+  },
+  {
     id: "pa-001", patient_id: "pt-002", physician_id: "ph-003",
     insurance_provider: "Aetna", procedure_code: "77067", procedure_name: "Screening Mammogram",
     icd_codes: ["Z12.31"], status: "approved", urgency: "standard",
