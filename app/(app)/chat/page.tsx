@@ -36,10 +36,20 @@ import {
   CheckCircle2,
   AlertCircle,
   GitBranch,
+  Trash2,
 } from "lucide-react"
 import { useState, useEffect, useRef, useCallback } from "react"
 
 type AgentId = typeof OPENCLAW_CONFIG.agents[number]["id"]
+
+const QUICK_PROMPTS = [
+  { label: "Next appointment", prompt: "When is my next appointment and what should I bring?", agentId: "scheduling" as AgentId },
+  { label: "Medication refills", prompt: "Which of my medications need refills soon?", agentId: "rx" as AgentId },
+  { label: "Bill questions", prompt: "Do I have any unpaid bills or denied claims I should address?", agentId: "billing" as AgentId },
+  { label: "Prior auth status", prompt: "What is the status of my pending prior authorizations?", agentId: "prior-auth" as AgentId },
+  { label: "Lab results", prompt: "Can you summarize my recent lab results and flag anything abnormal?", agentId: "coordinator" as AgentId },
+  { label: "Wellness tips", prompt: "Based on my health history, what preventive care steps should I take this year?", agentId: "wellness" as AgentId },
+]
 
 interface ChatMessage {
   id: string
@@ -95,6 +105,32 @@ export default function ChatPage() {
   const [activeDemo, setActiveDemo] = useState<string | null>(null)
   const [showImprovements, setShowImprovements] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  const welcomeMessage: ChatMessage = {
+    id: "welcome",
+    role: "agent",
+    content:
+      "Welcome to OpenRx AI. I'm Atlas, your healthcare coordination agent powered by OpenClaw.\n\nI orchestrate a team of 9 specialist agents who collaborate to help you:\n\n" +
+      (isConnected
+        ? "Your wallet is connected. I can see your profile and personalize my responses.\n\n"
+        : "") +
+      "How can I help you today?",
+    agentId: "coordinator",
+    timestamp: new Date(),
+  }
+
+  const clearChat = useCallback(() => {
+    setMessages([welcomeMessage])
+    setActiveDemo(null)
+    inputRef.current?.focus()
+  }, [isConnected]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const sendQuickPrompt = useCallback((prompt: string, agentId: AgentId) => {
+    setInput(prompt)
+    setActiveAgent(agentId)
+    inputRef.current?.focus()
+  }, [])
 
   // Run improvement cycle on mount
   useEffect(() => {
@@ -528,10 +564,26 @@ export default function ChatPage() {
           <div ref={messagesEndRef} />
         </div>
 
+        {/* Quick Prompts */}
+        {messages.length <= 1 && (
+          <div className="px-5 py-3 border-t border-sand/50 flex flex-wrap gap-1.5">
+            {QUICK_PROMPTS.map((qp) => (
+              <button
+                key={qp.label}
+                onClick={() => sendQuickPrompt(qp.prompt, qp.agentId)}
+                className="px-2.5 py-1 text-[10px] font-semibold text-warm-600 bg-sand/30 hover:bg-terra/10 hover:text-terra border border-sand/60 hover:border-terra/20 rounded-lg transition"
+              >
+                {qp.label}
+              </button>
+            ))}
+          </div>
+        )}
+
         {/* Input */}
         <div className="px-5 py-3.5 border-t border-sand bg-cream/30">
           <div className="flex gap-2">
             <input
+              ref={inputRef}
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
@@ -540,6 +592,16 @@ export default function ChatPage() {
               disabled={isLoading}
               className="flex-1 px-4 py-2.5 rounded-xl border border-sand bg-pampas text-sm placeholder:text-cloudy focus:outline-none focus:border-terra/40 focus:ring-1 focus:ring-terra/20 transition disabled:opacity-50"
             />
+            {messages.length > 1 && (
+              <button
+                onClick={clearChat}
+                disabled={isLoading}
+                title="Clear conversation"
+                className="px-3 py-2.5 text-cloudy hover:text-warm-600 rounded-xl hover:bg-sand/30 transition disabled:opacity-50"
+              >
+                <Trash2 size={14} />
+              </button>
+            )}
             <button
               onClick={sendMessage}
               disabled={isLoading || !input.trim()}

@@ -25,6 +25,24 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useState, useEffect } from "react"
+import { getPatientMessages, getPatientPrescriptions, priorAuths, getPatientLabResults } from "@/lib/seed-data"
+import { currentUser } from "@/lib/current-user"
+
+function useSidebarBadges() {
+  const myMessages = getPatientMessages(currentUser.id)
+  const unreadMessages = myMessages.filter((m) => !m.read).length
+
+  const myPrescriptions = getPatientPrescriptions(currentUser.id)
+  const pendingRefills = myPrescriptions.filter((p) => p.status === "pending-refill").length
+
+  const myPA = priorAuths.filter((p) => p.patient_id === currentUser.id)
+  const pendingPA = myPA.filter((p) => p.status === "pending" || p.status === "submitted").length
+
+  const myLabs = getPatientLabResults(currentUser.id)
+  const pendingLabs = myLabs.filter((l) => l.status === "pending").length
+
+  return { unreadMessages, pendingRefills, pendingPA, pendingLabs }
+}
 
 const navSections = [
   {
@@ -38,8 +56,8 @@ const navSections = [
     label: "Health",
     items: [
       { href: "/scheduling", label: "Appointments", icon: Calendar },
-      { href: "/prescriptions", label: "Medications", icon: Pill, matchAlso: ["/pharmacy"] },
-      { href: "/lab-results", label: "Lab Results", icon: FlaskConical },
+      { href: "/prescriptions", label: "Medications", icon: Pill, matchAlso: ["/pharmacy"], badgeKey: "pendingRefills" as const },
+      { href: "/lab-results", label: "Lab Results", icon: FlaskConical, badgeKey: "pendingLabs" as const },
       { href: "/vitals", label: "Vital Signs", icon: Activity },
       { href: "/vaccinations", label: "Vaccinations", icon: Syringe },
       { href: "/referrals", label: "Referrals", icon: ArrowRightCircle },
@@ -50,7 +68,7 @@ const navSections = [
     items: [
       { href: "/billing", label: "Bills & Claims", icon: Receipt },
       { href: "/drug-prices", label: "Drug Prices", icon: DollarSign },
-      { href: "/prior-auth", label: "Prior Auth", icon: ShieldCheck },
+      { href: "/prior-auth", label: "Prior Auth", icon: ShieldCheck, badgeKey: "pendingPA" as const },
       { href: "/wallet", label: "Wallet", icon: WalletIcon },
     ],
   },
@@ -58,16 +76,19 @@ const navSections = [
     label: "More",
     items: [
       { href: "/providers", label: "Find a Doctor", icon: Stethoscope },
-      { href: "/messages", label: "Messages", icon: MessageSquare },
+      { href: "/messages", label: "Messages", icon: MessageSquare, badgeKey: "unreadMessages" as const },
       { href: "/emergency-card", label: "Emergency Card", icon: AlertCircle },
       { href: "/chat", label: "Ask AI", icon: Bot },
     ],
   },
 ]
 
+type BadgeKey = "unreadMessages" | "pendingRefills" | "pendingPA" | "pendingLabs"
+
 export default function Sidebar() {
   const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false)
+  const badges = useSidebarBadges()
 
   useEffect(() => {
     setMobileOpen(false)
@@ -128,6 +149,8 @@ export default function Sidebar() {
                   pathname === item.href ||
                   pathname?.startsWith(item.href + "/") ||
                   matchAlso?.some((m) => pathname === m || pathname?.startsWith(m + "/"))
+                const badgeKey = "badgeKey" in item ? (item.badgeKey as BadgeKey) : undefined
+                const badgeCount = badgeKey ? badges[badgeKey] : 0
                 return (
                   <Link
                     key={item.href}
@@ -143,7 +166,17 @@ export default function Sidebar() {
                       size={14}
                       className={active ? "text-terra" : "text-warm-500"}
                     />
-                    {item.label}
+                    <span className="flex-1">{item.label}</span>
+                    {badgeCount > 0 && (
+                      <span className={cn(
+                        "text-[9px] font-bold rounded-full flex items-center justify-center min-w-[16px] h-[16px] px-1",
+                        active
+                          ? "bg-terra text-white"
+                          : "bg-terra/15 text-terra"
+                      )}>
+                        {badgeCount}
+                      </span>
+                    )}
                   </Link>
                 )
               })}
