@@ -479,7 +479,7 @@ export default function OnboardingPage() {
                 className="flex-1 px-4 py-2.5 rounded-xl border border-sand bg-pampas text-sm placeholder:text-cloudy focus:outline-none focus:border-terra/40 focus:ring-1 focus:ring-terra/20 transition disabled:opacity-50"
               />
               <button
-                onClick={handleSubmit}
+                onClick={() => handleSubmit()}
                 disabled={isTyping || isSearching || !input.trim()}
                 aria-label="Send message"
                 className="px-4 py-2.5 bg-terra text-white rounded-xl hover:bg-terra-dark transition disabled:opacity-50"
