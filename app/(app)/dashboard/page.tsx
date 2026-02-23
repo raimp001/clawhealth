@@ -4,12 +4,12 @@ import {
   Calendar, Receipt, Pill, MessageSquare, AlertTriangle,
   ArrowRight, Bot, Send, CheckCircle2, Heart,
   FlaskConical, Activity, Syringe, ArrowRightCircle,
-  AlertCircle, Clock,
+  AlertCircle, Clock, TrendingUp, TrendingDown, Minus,
 } from "lucide-react"
 import Link from "next/link"
 import { getPhysician, priorAuths, getPatientLabResults, getPatientVitals, getPatientVaccinations, getPatientReferrals } from "@/lib/seed-data"
 import { currentUser, getMyAppointments, getMyClaims, getMyPrescriptions, getMyMessages } from "@/lib/current-user"
-import { cn, formatCurrency, formatTime, getStatusColor } from "@/lib/utils"
+import { cn, formatCurrency, formatTime, formatDate, getStatusColor } from "@/lib/utils"
 
 export default function DashboardPage() {
   const myApts = getMyAppointments().sort(
@@ -41,6 +41,16 @@ export default function DashboardPage() {
   const dueVaccines = myVaccinations.filter((v) => v.status === "due" || v.status === "overdue")
   const myReferrals = getPatientReferrals(currentUser.id)
   const pendingReferrals = myReferrals.filter((r) => r.status === "pending" || r.status === "scheduled")
+
+  // Health engagement score (0-100) based on adherence, lab alerts, pending items
+  const avgAdherence = myRx.length > 0
+    ? Math.round(myRx.reduce((s, rx) => s + rx.adherence_pct, 0) / myRx.length)
+    : 100
+  const deductions = (abnormalLabCount * 5) + (dueVaccines.filter(v => v.status === "overdue").length * 8) + (lowAdherenceRx.length * 10)
+  const healthScore = Math.max(0, Math.min(100, avgAdherence - deductions))
+  const healthScoreLabel = healthScore >= 80 ? "Good" : healthScore >= 60 ? "Fair" : "Needs Attention"
+  const healthScoreColor = healthScore >= 80 ? "text-accent" : healthScore >= 60 ? "text-yellow-600" : "text-soft-red"
+  const healthScoreBg = healthScore >= 80 ? "bg-accent" : healthScore >= 60 ? "bg-yellow-400" : "bg-soft-red"
 
   return (
     <div className="animate-slide-up space-y-6">
@@ -96,6 +106,45 @@ export default function DashboardPage() {
           <div className="text-lg font-bold text-warm-800">{unreadCount}</div>
           <div className="text-xs text-warm-500">Unread Messages</div>
         </Link>
+      </div>
+
+      {/* Health Engagement Score */}
+      <div className="bg-pampas rounded-2xl border border-sand p-4">
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
+            <Activity size={14} className="text-terra" />
+            <span className="text-xs font-bold text-warm-800">Health Engagement Score</span>
+          </div>
+          <span className={cn("text-xs font-bold", healthScoreColor)}>{healthScoreLabel}</span>
+        </div>
+        <div className="flex items-center gap-4">
+          <div className="flex-1">
+            <div className="w-full h-2 bg-sand/40 rounded-full overflow-hidden">
+              <div
+                className={cn("h-full rounded-full transition-all duration-700", healthScoreBg)}
+                style={{ width: `${healthScore}%` }}
+              />
+            </div>
+            <div className="flex justify-between mt-1">
+              <span className="text-[9px] text-cloudy">Based on adherence, labs & vaccines</span>
+              <span className={cn("text-sm font-bold", healthScoreColor)}>{healthScore}/100</span>
+            </div>
+          </div>
+          <div className="flex gap-3 shrink-0 text-center">
+            <div>
+              <p className={cn("text-base font-bold", avgAdherence >= 80 ? "text-accent" : "text-soft-red")}>{avgAdherence}%</p>
+              <p className="text-[9px] text-cloudy">Adherence</p>
+            </div>
+            {myVaccinations.length > 0 && (
+              <div>
+                <p className={cn("text-base font-bold", dueVaccines.length === 0 ? "text-accent" : "text-yellow-600")}>
+                  {myVaccinations.length - dueVaccines.length}/{myVaccinations.length}
+                </p>
+                <p className="text-[9px] text-cloudy">Vaccines</p>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Urgent Alerts Row */}
@@ -193,6 +242,7 @@ export default function DashboardPage() {
                       {apt.reason}
                       {apt.copay > 0 ? ` \u00b7 Est. copay $${apt.copay}` : " \u00b7 $0 copay"}
                     </p>
+                    <p className="text-[10px] text-cloudy mt-0.5">{formatDate(apt.scheduled_at)}</p>
                   </div>
                   {apt.type === "telehealth" && (
                     <span className="text-[10px] font-bold text-soft-blue">VIRTUAL</span>

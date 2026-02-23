@@ -3,9 +3,10 @@
 import { getMyAppointments } from "@/lib/current-user"
 import { getPhysician } from "@/lib/seed-data"
 import { cn, formatTime, formatDate, getStatusColor } from "@/lib/utils"
-import { Video, AlertTriangle } from "lucide-react"
+import { Video, AlertTriangle, Stethoscope, Bot, Calendar } from "lucide-react"
 import { useState, useMemo } from "react"
 import AIAction from "@/components/ai-action"
+import Link from "next/link"
 
 type ViewMode = "today" | "upcoming" | "past"
 
@@ -106,8 +107,31 @@ export default function SchedulingPage() {
       {/* Appointment List */}
       <div className="bg-pampas rounded-2xl border border-sand divide-y divide-sand/50">
         {activeList.length === 0 && (
-          <div className="text-center py-12 text-sm text-warm-500">
-            No appointments to display.
+          <div className="flex flex-col items-center py-14 gap-3">
+            <div className="w-12 h-12 rounded-full bg-sand/40 flex items-center justify-center">
+              <Calendar size={22} className="text-cloudy" />
+            </div>
+            <p className="text-sm font-semibold text-warm-600">
+              {view === "today" ? "No appointments today" : view === "upcoming" ? "No upcoming appointments" : "No past appointments"}
+            </p>
+            {view !== "past" && (
+              <div className="flex gap-2 mt-1">
+                <Link
+                  href="/providers"
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-terra border border-terra/20 hover:bg-terra/5 transition"
+                >
+                  <Stethoscope size={13} />
+                  Find a Doctor
+                </Link>
+                <Link
+                  href="/chat"
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-warm-600 border border-sand hover:bg-sand/30 transition"
+                >
+                  <Bot size={13} />
+                  Ask AI to Schedule
+                </Link>
+              </div>
+            )}
           </div>
         )}
         {activeList.map((apt) => {
