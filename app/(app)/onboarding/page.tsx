@@ -148,10 +148,10 @@ export default function OnboardingPage() {
     completeOnboarding()
   }, [isConnected, walletAddress, patient, updateProfile, completeOnboarding])
 
-  const handleSubmit = useCallback(async () => {
-    const val = input.trim()
+  const handleSubmit = useCallback(async (directValue?: string) => {
+    const val = (directValue !== undefined ? directValue : input).trim()
     if (!val && step !== "med-more") return
-    setInput("")
+    if (directValue === undefined) setInput("")
 
     switch (step) {
       case "has-pcp":
@@ -372,10 +372,7 @@ export default function OnboardingPage() {
   }, [input, step, patient, searchResults, addUser, addAgent, addSystem, isConnected, saveToWallet])
 
   const handleOption = useCallback((value: string) => {
-    setInput(value)
-    Promise.resolve().then(() => {
-      handleSubmit()
-    })
+    handleSubmit(value)
   }, [handleSubmit])
 
   return (
