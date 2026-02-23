@@ -10,33 +10,113 @@ import {
   Stethoscope,
   Bell,
   Circle,
+  Send,
+  Loader2,
 } from "lucide-react"
-import { useState, useMemo } from "react"
+import { useState, useMemo, useRef, useEffect } from "react"
 import AIAction from "@/components/ai-action"
+import type { Message } from "@/lib/seed-data"
+
+type LocalMessage = Message | {
+  id: string
+  patient_id: string
+  physician_id: null
+  sender_type: "patient" | "agent"
+  content: string
+  channel: "portal"
+  read: boolean
+  created_at: string
+}
 
 export default function MessagesPage() {
   const [channelFilter, setChannelFilter] = useState("")
   const [newMessage, setNewMessage] = useState("")
   const [isSending, setIsSending] = useState(false)
+  const [sendError, setSendError] = useState("")
+  const [extraMessages, setExtraMessages] = useState<LocalMessage[]>([])
+  const bottomRef = useRef<HTMLDivElement>(null)
 
-  const myMessages = getMyMessages()
+  const seedMessages = getMyMessages()
 
-  const channels = useMemo(
-    () => Array.from(new Set(myMessages.map((m) => m.channel))),
-    [myMessages]
+  const allMessages: LocalMessage[] = useMemo(
+    () => [...seedMessages, ...extraMessages],
+    [seedMessages, extraMessages]
   )
 
-  const unreadCount = myMessages.filter((m) => !m.read).length
+  const channels = useMemo(
+    () => Array.from(new Set(allMessages.map((m) => m.channel))),
+    [allMessages]
+  )
+
+  const unreadCount = seedMessages.filter((m) => !m.read).length
 
   const activeMessages = useMemo(() => {
-    let msgs = [...myMessages]
+    let msgs = [...allMessages]
     if (channelFilter) {
       msgs = msgs.filter((m) => m.channel === channelFilter)
     }
     return msgs.sort(
       (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
     )
-  }, [myMessages, channelFilter])
+  }, [allMessages, channelFilter])
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" })
+  }, [activeMessages.length])
+
+  const sendMessage = async () => {
+    const text = newMessage.trim()
+    if (!text || isSending) return
+
+    setSendError("")
+    setIsSending(true)
+    setNewMessage("")
+
+    const userMsg: LocalMessage = {
+      id: `local-user-${Date.now()}`,
+      patient_id: currentUser.id,
+      physician_id: null,
+      sender_type: "patient",
+      content: text,
+      channel: "portal",
+      read: true,
+      created_at: new Date().toISOString(),
+    }
+    setExtraMessages((prev) => [...prev, userMsg])
+
+    try {
+      const res = await fetch("/api/openclaw/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: text,
+          agentId: "coordinator",
+          patientId: currentUser.id,
+          channel: "portal",
+        }),
+      })
+      const data = await res.json()
+      const reply = data.response || data.error
+      if (reply) {
+        const agentMsg: LocalMessage = {
+          id: `local-agent-${Date.now()}`,
+          patient_id: currentUser.id,
+          physician_id: null,
+          sender_type: "agent",
+          content: reply,
+          channel: "portal",
+          read: true,
+          created_at: new Date().toISOString(),
+        }
+        setExtraMessages((prev) => [...prev, agentMsg])
+      }
+    } catch {
+      setSendError("Failed to send — please try again.")
+      setExtraMessages((prev) => prev.filter((m) => m.id !== userMsg.id))
+    } finally {
+      setIsSending(false)
+    }
+  }
 
   const getSenderIcon = (type: string) => {
     switch (type) {
@@ -74,7 +154,7 @@ export default function MessagesPage() {
         <div>
           <h1 className="text-2xl font-serif text-warm-800">My Messages</h1>
           <p className="text-sm text-warm-500 mt-1">
-            {unreadCount} unread &middot; {myMessages.length} total messages
+            {unreadCount} unread &middot; {allMessages.length} total messages
           </p>
         </div>
         <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-terra/5 border border-terra/10">
@@ -93,7 +173,7 @@ export default function MessagesPage() {
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-3 border-b border-sand">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-terra/10 to-terra/5 flex items-center justify-center text-terra text-sm font-bold font-serif">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-terra/10 to-terra/5 flex items-center justify-center text-terra">
               <User size={18} />
             </div>
             <div>
@@ -168,10 +248,7 @@ export default function MessagesPage() {
                     via {msg.channel}
                   </span>
                   {!msg.read && (
-                    <Circle
-                      size={6}
-                      className="text-terra fill-terra"
-                    />
+                    <Circle size={6} className="text-terra fill-terra" />
                   )}
                 </div>
                 <p className="text-xs text-warm-700 leading-relaxed whitespace-pre-line">
@@ -180,60 +257,41 @@ export default function MessagesPage() {
               </div>
             )
           })}
+
+          {isSending && (
+            <div className="flex items-center gap-2 text-xs text-warm-500 pl-1">
+              <Loader2 size={12} className="animate-spin text-terra" />
+              AI is responding...
+            </div>
+          )}
+          <div ref={bottomRef} />
         </div>
 
         {/* Input */}
         <div className="px-5 py-3 border-t border-sand space-y-2">
+          {sendError && (
+            <p className="text-xs text-soft-red">{sendError}</p>
+          )}
           <div className="flex gap-2">
             <input
               type="text"
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
-              onKeyDown={async (e) => {
-                if (e.key === "Enter" && newMessage.trim() && !isSending) {
-                  setIsSending(true)
-                  try {
-                    await fetch("/api/openclaw/chat", {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({
-                        message: newMessage,
-                        agentId: "coordinator",
-                        patientId: currentUser.id,
-                        channel: "portal",
-                      }),
-                    })
-                  } catch {}
-                  setNewMessage("")
-                  setIsSending(false)
-                }
-              }}
+              onKeyDown={(e) => e.key === "Enter" && sendMessage()}
               placeholder="Type a message..."
               disabled={isSending}
               className="flex-1 px-4 py-2.5 rounded-xl border border-sand bg-sand/20 text-sm placeholder:text-cloudy focus:outline-none focus:border-terra/40 transition disabled:opacity-50"
             />
             <button
-              onClick={async () => {
-                if (!newMessage.trim() || isSending) return
-                setIsSending(true)
-                try {
-                  await fetch("/api/openclaw/chat", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                      message: newMessage,
-                      agentId: "coordinator",
-                      patientId: currentUser.id,
-                      channel: "portal",
-                    }),
-                  })
-                } catch {}
-                setNewMessage("")
-                setIsSending(false)
-              }}
+              onClick={sendMessage}
               disabled={isSending || !newMessage.trim()}
-              className="px-4 py-2.5 bg-terra text-white text-sm font-semibold rounded-xl hover:bg-terra-dark transition disabled:opacity-50"
+              className="px-4 py-2.5 bg-terra text-white text-sm font-semibold rounded-xl hover:bg-terra-dark transition disabled:opacity-50 flex items-center gap-1.5"
             >
+              {isSending ? (
+                <Loader2 size={14} className="animate-spin" />
+              ) : (
+                <Send size={14} />
+              )}
               Send
             </button>
           </div>
@@ -242,14 +300,14 @@ export default function MessagesPage() {
               agentId="coordinator"
               label="AI Draft Reply"
               prompt="Help me draft a reply to the most recent message in my conversation."
-              context={`Last message: "${myMessages[myMessages.length - 1]?.content.slice(0, 200)}"`}
+              context={`Last message: "${allMessages[allMessages.length - 1]?.content.slice(0, 200)}"`}
               variant="compact"
             />
             <AIAction
               agentId="triage"
               label="AI Triage"
               prompt="Help me assess if my recent messages indicate something urgent that needs immediate attention."
-              context={`Recent messages: ${myMessages.slice(-3).map(m => m.content.slice(0, 100)).join(" | ")}`}
+              context={`Recent messages: ${allMessages.slice(-3).map(m => m.content.slice(0, 100)).join(" | ")}`}
               variant="compact"
             />
           </div>
