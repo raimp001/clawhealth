@@ -2,10 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import OpenAI from 'openai'
 import { prisma } from '@/lib/db'
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-})
-
 // Healthcare AI system prompts for different agent types
 const SYSTEM_PROMPTS: Record<string, string> = {
   triage: `You are a compassionate and knowledgeable medical triage AI assistant for OpenRx, a healthcare platform.
@@ -95,6 +91,17 @@ export async function POST(request: NextRequest) {
 - Current Medications: ${patientContext.currentMedications?.join(', ') || 'None recorded'}
 - Recent Vitals: ${patientContext.recentVitals ? JSON.stringify(patientContext.recentVitals) : 'No recent data'}`
     }
+
+    const apiKey = process.env.OPENAI_API_KEY
+    if (!apiKey) {
+      return NextResponse.json({
+        message:
+          'AI service is running in demo mode. Set OPENAI_API_KEY to enable live model responses for this endpoint.',
+        sessionId,
+      })
+    }
+
+    const openai = new OpenAI({ apiKey })
 
     const response = await openai.chat.completions.create({
       model: 'gpt-4o-mini',

@@ -25,6 +25,8 @@ import {
   Sparkles,
   User,
   Stethoscope,
+  Heart,
+  FlaskConical,
   Loader2,
   Wifi,
   WifiOff,
@@ -49,6 +51,9 @@ const QUICK_PROMPTS = [
   { label: "Prior auth status", prompt: "What is the status of my pending prior authorizations?", agentId: "prior-auth" as AgentId },
   { label: "Lab results", prompt: "Can you summarize my recent lab results and flag anything abnormal?", agentId: "coordinator" as AgentId },
   { label: "Wellness tips", prompt: "Based on my health history, what preventive care steps should I take this year?", agentId: "wellness" as AgentId },
+  { label: "Screening risk", prompt: "Run my preventive risk screening and prioritize top actions for this month.", agentId: "screening" as AgentId },
+  { label: "Second opinion", prompt: "Review my diabetes care plan and give me key clinician questions for a second opinion.", agentId: "second-opinion" as AgentId },
+  { label: "Find trials", prompt: "Find recruiting clinical trials relevant to my health profile and explain likely fit.", agentId: "trials" as AgentId },
 ]
 
 interface ChatMessage {
@@ -70,6 +75,9 @@ const agentMeta: Record<string, { label: string; icon: typeof Bot; color: string
   rx: { label: "Maya (Rx)", icon: Pill, color: "text-yellow-600" },
   "prior-auth": { label: "Rex (PA)", icon: ShieldCheck, color: "text-terra" },
   wellness: { label: "Ivy (Wellness)", icon: Stethoscope, color: "text-accent" },
+  screening: { label: "Quinn (Screening)", icon: Heart, color: "text-terra" },
+  "second-opinion": { label: "Orion (Second Opinion)", icon: ShieldCheck, color: "text-soft-blue" },
+  trials: { label: "Lyra (Trials)", icon: FlaskConical, color: "text-accent" },
   devops: { label: "Bolt (DevOps)", icon: Bot, color: "text-warm-600" },
 }
 
@@ -82,7 +90,7 @@ const iconMap: Record<string, typeof Calendar> = {
 }
 
 export default function ChatPage() {
-  const { isConnected, profile, walletAddress } = useWalletIdentity()
+  const { isConnected, walletAddress } = useWalletIdentity()
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: "welcome",
@@ -738,6 +746,15 @@ function getCollaboratorResponse(agentId: AgentId, userMessage: string): string 
 
     case "wellness":
       return "I'll check if this relates to any of your pending screenings or preventive care recommendations."
+
+    case "screening":
+      return "I'll run a risk stratification pass across your recent labs, vitals, and chronic conditions and send prioritized actions."
+
+    case "second-opinion":
+      return "I'll produce a structured second-opinion brief with key clinician questions and potential blind spots."
+
+    case "trials":
+      return "I'll search recruiting trial pathways, score likely fit, and flag what eligibility questions to ask first."
 
     case "triage":
       return "I'm standing by for any symptom assessment needs."

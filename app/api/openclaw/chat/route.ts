@@ -10,7 +10,20 @@ export async function POST(req: NextRequest) {
       sessionId?: string
     }
 
-    const validAgents = ["coordinator", "triage", "scheduling", "billing", "rx", "prior-auth", "onboarding", "wellness", "devops"]
+    const validAgents = [
+      "coordinator",
+      "triage",
+      "scheduling",
+      "billing",
+      "rx",
+      "prior-auth",
+      "onboarding",
+      "wellness",
+      "screening",
+      "second-opinion",
+      "trials",
+      "devops",
+    ]
 
     if (!message || typeof message !== "string" || !message.trim()) {
       return NextResponse.json(

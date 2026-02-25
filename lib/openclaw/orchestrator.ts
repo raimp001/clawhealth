@@ -278,11 +278,50 @@ export function routeUserMessage(message: string): {
     }
   }
 
-  if (lower.includes("screening") || lower.includes("wellness") || lower.includes("preventive") || lower.includes("vaccine") || lower.includes("checkup") || lower.includes("health goal")) {
+  if (
+    lower.includes("screening") ||
+    lower.includes("risk score") ||
+    lower.includes("risk assessment") ||
+    lower.includes("preventive screening")
+  ) {
+    return {
+      primaryAgent: "screening",
+      collaborators: ["wellness", "scheduling"],
+      reasoning: "Preventive screening request. Screening agent leads with wellness and scheduling support.",
+    }
+  }
+
+  if (
+    lower.includes("second opinion") ||
+    lower.includes("another opinion") ||
+    lower.includes("review my diagnosis") ||
+    lower.includes("treatment plan review")
+  ) {
+    return {
+      primaryAgent: "second-opinion",
+      collaborators: ["triage", "coordinator"],
+      reasoning: "Second-opinion request. Clinical review with triage safety monitoring.",
+    }
+  }
+
+  if (
+    lower.includes("clinical trial") ||
+    lower.includes("clinical trials") ||
+    lower.includes("research study") ||
+    lower.includes("trial match")
+  ) {
+    return {
+      primaryAgent: "trials",
+      collaborators: ["screening", "billing"],
+      reasoning: "Clinical trial matching request. Screening validates fit, billing checks logistics.",
+    }
+  }
+
+  if (lower.includes("wellness") || lower.includes("preventive") || lower.includes("vaccine") || lower.includes("checkup") || lower.includes("health goal")) {
     return {
       primaryAgent: "wellness",
-      collaborators: ["scheduling"],
-      reasoning: "Wellness inquiry. Scheduler for appointment booking.",
+      collaborators: ["screening", "scheduling"],
+      reasoning: "Wellness inquiry with screening and scheduling collaboration.",
     }
   }
 

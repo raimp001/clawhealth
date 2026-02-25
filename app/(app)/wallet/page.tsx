@@ -23,6 +23,7 @@ import {
   UserCircle,
   Settings,
   Sparkles,
+  BookText,
 } from "lucide-react"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
@@ -172,6 +173,26 @@ export default function WalletPage() {
                 Transparent pricing for lab work and diagnostics.
               </p>
             </div>
+          </div>
+        </div>
+      )}
+
+      {isConnected && (
+        <div className="bg-pampas rounded-2xl border border-sand p-6">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h2 className="text-base font-serif text-warm-800">Compliance Controls</h2>
+              <p className="text-xs text-warm-500 mt-1">
+                Base Pay-aligned verification, receipts, attestations, refunds, and ledger entries.
+              </p>
+            </div>
+            <Link
+              href="/compliance-ledger"
+              className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-sand text-xs font-semibold text-warm-700 hover:border-terra/30 transition"
+            >
+              <BookText size={12} />
+              Open Ledger
+            </Link>
           </div>
         </div>
       )}

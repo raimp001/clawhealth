@@ -231,9 +231,15 @@ function getFallbackResponse(agentId: string, message: string): string {
         return `Routing to Maya (Rx manager). She can see your active medications...`
       if (lowerMsg.includes("prior auth") || lowerMsg.includes("authorization"))
         return `Rex (PA specialist) is on it. He'll check your authorization status...`
+      if (lowerMsg.includes("screening") || lowerMsg.includes("risk score"))
+        return `Routing to Quinn (screening specialist). Quinn will prioritize your preventive risks and next steps.`
+      if (lowerMsg.includes("second opinion") || lowerMsg.includes("review my diagnosis"))
+        return `Connecting you with Orion (second-opinion specialist) for a structured plan review.`
+      if (lowerMsg.includes("clinical trial") || lowerMsg.includes("trial match"))
+        return `Lyra (clinical trials agent) will search recruiting studies that fit your profile.`
       if (lowerMsg.includes("pain") || lowerMsg.includes("fever") || lowerMsg.includes("symptom") || lowerMsg.includes("sick"))
         return `Routing to Nova (triage). Please describe your symptoms and she'll assess urgency...`
-      return `Hey ${currentUser.full_name.split(" ")[0]}, I'm Atlas — your coordinator. I can help with appointments, medications, bills, prior auths, or symptoms. What do you need?`
+      return `Hey ${currentUser.full_name.split(" ")[0]}, I'm Atlas — your coordinator. I can help with appointments, medications, bills, screening, second opinions, clinical trials, prior auths, or symptoms. What do you need?`
 
     case "scheduling":
       return `I've checked your insurance (${currentUser.insurance_provider}) and found some openings. Would you like morning or afternoon?`
@@ -257,6 +263,15 @@ function getFallbackResponse(agentId: string, message: string): string {
 
     case "wellness":
       return `Hi, I'm Ivy! Based on your profile, I'd love to check your preventive screening schedule. Want me to run your USPSTF recommendations?`
+
+    case "screening":
+      return `I'm Quinn, your screening specialist. I can run a preventive risk profile from your labs, vitals, and history, then prioritize the top actions.`
+
+    case "second-opinion":
+      return `I'm Orion. Share your diagnosis and care plan, and I'll prepare a structured second-opinion summary with key clinician questions.`
+
+    case "trials":
+      return `I'm Lyra. I can match you to recruiting clinical trials based on condition, age, and location, and explain likely fit.`
 
     case "devops":
       return `Bolt here. All systems operational. 20+ routes healthy, API latency nominal.`

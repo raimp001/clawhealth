@@ -88,10 +88,35 @@ export async function POST(req: NextRequest) {
       primaryAgent = "onboarding"
       collaborators = ["rx", "scheduling", "wellness"]
       reasoning = "New patient flow with full team."
-    } else if (lower.includes("screening") || lower.includes("wellness") || lower.includes("preventive")) {
+    } else if (
+      lower.includes("screening") ||
+      lower.includes("risk score") ||
+      lower.includes("risk assessment")
+    ) {
+      primaryAgent = "screening"
+      collaborators = ["wellness", "scheduling"]
+      reasoning = "Preventive screening flow."
+    } else if (
+      lower.includes("second opinion") ||
+      lower.includes("another opinion") ||
+      lower.includes("review my diagnosis")
+    ) {
+      primaryAgent = "second-opinion"
+      collaborators = ["triage", "coordinator"]
+      reasoning = "Second-opinion clinical review."
+    } else if (
+      lower.includes("clinical trial") ||
+      lower.includes("clinical trials") ||
+      lower.includes("trial match") ||
+      lower.includes("research study")
+    ) {
+      primaryAgent = "trials"
+      collaborators = ["screening", "billing"]
+      reasoning = "Clinical trial matching with fit and logistics support."
+    } else if (lower.includes("wellness") || lower.includes("preventive")) {
       primaryAgent = "wellness"
-      collaborators = ["scheduling"]
-      reasoning = "Wellness inquiry with scheduler."
+      collaborators = ["screening", "scheduling"]
+      reasoning = "Wellness inquiry with screening and scheduler."
     }
 
     return NextResponse.json({

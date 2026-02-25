@@ -13,6 +13,7 @@ import {
   Users,
   TrendingUp,
 } from "lucide-react"
+import { OPENCLAW_CONFIG } from "@/lib/openclaw/config"
 
 export default function LandingPage() {
   return (
@@ -116,9 +117,8 @@ export default function LandingPage() {
               Meet Your Care Team
             </h2>
             <p className="text-sm text-warm-600 mt-3 leading-relaxed max-w-xl mx-auto">
-              9 AI specialists work together behind the scenes — booking appointments,
-              managing your meds, fighting billing errors, and keeping you on track
-              with preventive care. You just chat naturally.
+              {OPENCLAW_CONFIG.agents.length} AI specialists work together behind the scenes - booking appointments,
+              managing medications, reviewing care plans, and keeping preventive care on track.
             </p>
             <div className="grid grid-cols-3 lg:grid-cols-3 gap-3 mt-8">
               {[
@@ -130,6 +130,9 @@ export default function LandingPage() {
                 { name: "Maya", role: "Rx Manager", desc: "Manages medications" },
                 { name: "Rex", role: "Prior Auth", desc: "Fights denials" },
                 { name: "Ivy", role: "Wellness Coach", desc: "Preventive care" },
+                { name: "Quinn", role: "Screening", desc: "Risk prioritization" },
+                { name: "Orion", role: "Second Opinion", desc: "Plan review" },
+                { name: "Lyra", role: "Clinical Trials", desc: "Trial matching" },
                 { name: "Bolt", role: "DevOps", desc: "Keeps it running" },
               ].map((agent) => (
                 <div
@@ -192,7 +195,7 @@ export default function LandingPage() {
             {
               icon: Bot,
               title: "Your AI Care Team",
-              desc: "9 AI specialists working behind the scenes — scheduling, billing, meds, wellness, and more.",
+              desc: `${OPENCLAW_CONFIG.agents.length} AI specialists working behind the scenes - scheduling, billing, meds, screening, and more.`,
               href: "/chat",
             },
           ].map((f) => (

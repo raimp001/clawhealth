@@ -1,9 +1,26 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Progress } from '@/components/ui/progress'
+import { useState, useEffect, type ReactNode } from 'react'
+
+function Card({ className, children }: { className?: string; children: ReactNode }) {
+  return <div className={className}>{children}</div>
+}
+
+function CardHeader({ className, children }: { className?: string; children: ReactNode }) {
+  return <div className={className}>{children}</div>
+}
+
+function CardTitle({ className, children }: { className?: string; children: ReactNode }) {
+  return <h3 className={className}>{children}</h3>
+}
+
+function CardContent({ className, children }: { className?: string; children: ReactNode }) {
+  return <div className={className}>{children}</div>
+}
+
+function Badge({ className, children }: { className?: string; children: ReactNode }) {
+  return <span className={`inline-flex items-center rounded px-2 py-0.5 ${className || ''}`}>{children}</span>
+}
 
 interface VitalSign {
   id: string

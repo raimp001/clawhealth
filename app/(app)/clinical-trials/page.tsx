@@ -1,0 +1,170 @@
+"use client"
+
+import { useEffect, useState } from "react"
+import { ExternalLink, FlaskConical, Loader2, Search, Sparkles } from "lucide-react"
+import AIAction from "@/components/ai-action"
+import type { TrialMatch } from "@/lib/basehealth"
+
+export default function ClinicalTrialsPage() {
+  const [condition, setCondition] = useState("type 2 diabetes")
+  const [location, setLocation] = useState("Portland")
+  const [loading, setLoading] = useState(false)
+  const [matches, setMatches] = useState<TrialMatch[]>([])
+  const [hasSearched, setHasSearched] = useState(false)
+
+  async function searchTrials(nextCondition = condition, nextLocation = location) {
+    setLoading(true)
+    setHasSearched(true)
+    try {
+      const params = new URLSearchParams()
+      if (nextCondition.trim()) params.set("condition", nextCondition.trim())
+      if (nextLocation.trim()) params.set("location", nextLocation.trim())
+      const response = await fetch(`/api/clinical-trials/match?${params}`)
+      const data = (await response.json()) as { matches: TrialMatch[] }
+      setMatches(data.matches || [])
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    void searchTrials()
+  }, [])
+
+  return (
+    <div className="animate-slide-up space-y-6">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-serif text-warm-800">Clinical Trial Matching</h1>
+          <p className="text-sm text-warm-500 mt-1">
+            BaseHealth-style trial discovery connected to OpenRx patient context.
+          </p>
+        </div>
+        <AIAction
+          agentId="trials"
+          label="Trial Strategy"
+          prompt="Find clinical trial opportunities that match my conditions and explain what to ask before enrolling."
+        />
+      </div>
+
+      <div className="bg-pampas rounded-2xl border border-sand p-5">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <label className="text-xs text-warm-600">
+            Condition
+            <input
+              value={condition}
+              onChange={(event) => setCondition(event.target.value)}
+              className="mt-1 w-full px-3 py-2.5 rounded-xl border border-sand bg-cream/30 text-sm text-warm-800 placeholder:text-cloudy focus:outline-none focus:border-terra/40"
+            />
+          </label>
+          <label className="text-xs text-warm-600">
+            Preferred location
+            <input
+              value={location}
+              onChange={(event) => setLocation(event.target.value)}
+              className="mt-1 w-full px-3 py-2.5 rounded-xl border border-sand bg-cream/30 text-sm text-warm-800 placeholder:text-cloudy focus:outline-none focus:border-terra/40"
+            />
+          </label>
+          <div className="flex items-end">
+            <button
+              onClick={() => searchTrials()}
+              disabled={loading}
+              className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-terra text-white text-sm font-semibold hover:bg-terra-dark disabled:opacity-60 transition"
+            >
+              {loading ? <Loader2 size={14} className="animate-spin" /> : <Search size={14} />}
+              Match Trials
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {loading && (
+        <div className="bg-pampas rounded-2xl border border-sand p-8 text-center text-sm text-cloudy">
+          <Loader2 size={16} className="animate-spin inline mr-2" />
+          Matching eligible clinical studies...
+        </div>
+      )}
+
+      {!loading && hasSearched && (
+        <>
+          {matches.length > 0 ? (
+            <div className="space-y-3">
+              {matches.map((trial) => (
+                <div
+                  key={trial.id}
+                  className="bg-pampas rounded-2xl border border-sand p-5 hover:border-terra/30 transition"
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <h2 className="text-base font-semibold text-warm-800">{trial.title}</h2>
+                        <span
+                          className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${
+                            trial.fit === "strong"
+                              ? "bg-accent/10 text-accent"
+                              : "bg-yellow-100/20 text-yellow-500"
+                          }`}
+                        >
+                          {trial.fit}
+                        </span>
+                      </div>
+                      <p className="text-sm text-warm-600 mt-1">{trial.summary}</p>
+                      <div className="flex flex-wrap gap-2 mt-2 text-[11px] text-warm-500">
+                        <span className="px-2 py-0.5 rounded-full bg-cream/50 border border-sand">{trial.phase}</span>
+                        <span className="px-2 py-0.5 rounded-full bg-cream/50 border border-sand">{trial.condition}</span>
+                        <span className="px-2 py-0.5 rounded-full bg-cream/50 border border-sand">{trial.location}</span>
+                        <span className="px-2 py-0.5 rounded-full bg-cream/50 border border-sand">{trial.sponsor}</span>
+                        {trial.remoteEligible && (
+                          <span className="px-2 py-0.5 rounded-full bg-terra/10 text-terra border border-terra/20">
+                            Remote eligible
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <div className="text-2xl font-bold text-terra">{trial.matchScore}</div>
+                      <div className="text-[11px] text-cloudy">fit score</div>
+                    </div>
+                  </div>
+                  <div className="mt-3 grid grid-cols-1 lg:grid-cols-2 gap-2">
+                    {trial.reasons.map((reason) => (
+                      <div key={reason} className="text-xs text-warm-600 rounded-lg border border-sand/70 bg-cream/30 p-2.5">
+                        {reason}
+                      </div>
+                    ))}
+                  </div>
+                  <a
+                    href={trial.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-terra hover:text-terra-dark transition"
+                  >
+                    View study details <ExternalLink size={11} />
+                  </a>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="bg-pampas rounded-2xl border border-sand p-8 text-center">
+              <FlaskConical size={24} className="text-sand mx-auto mb-2" />
+              <p className="text-sm text-warm-600">No strong trial matches found with this query.</p>
+              <p className="text-xs text-cloudy mt-1">
+                Try broader condition terms or a nearby metro area.
+              </p>
+            </div>
+          )}
+        </>
+      )}
+
+      <div className="bg-terra/10 rounded-2xl border border-terra/20 p-4">
+        <div className="flex items-center gap-2 mb-1">
+          <Sparkles size={14} className="text-terra" />
+          <span className="text-xs font-bold text-terra">Enrollment Reminder</span>
+        </div>
+        <p className="text-xs text-warm-600">
+          Trial matching is directional. Final eligibility must be confirmed directly with the study site.
+        </p>
+      </div>
+    </div>
+  )
+}

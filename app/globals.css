@@ -6,6 +6,11 @@
   box-sizing: border-box;
 }
 
+:root {
+  --font-sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-serif: Georgia, "Times New Roman", serif;
+}
+
 body {
   font-family: var(--font-sans), system-ui, sans-serif;
   background: #060D1B;

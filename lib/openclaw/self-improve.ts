@@ -271,6 +271,54 @@ export function runImprovementCycle(): Improvement[] {
     )
   }
 
+  // Quinn (Screening) suggests preventive risk improvements
+  const hasScreeningImprovement = improvements.some(
+    (i) => i.suggestedBy === "screening" && i.status !== "deployed" && i.status !== "rejected"
+  )
+  if (!hasScreeningImprovement) {
+    newSuggestions.push(
+      suggestImprovement({
+        agentId: "screening",
+        category: "feature",
+        title: "Personalized risk trajectory forecasting",
+        description: "Forecast 90-day risk movement using vitals, labs, and adherence trends.",
+        impact: "Helps patients act before risk moves from moderate to high",
+      })
+    )
+  }
+
+  // Orion (Second Opinion) suggests care-plan explainability improvements
+  const hasSecondOpinionImprovement = improvements.some(
+    (i) => i.suggestedBy === "second-opinion" && i.status !== "deployed" && i.status !== "rejected"
+  )
+  if (!hasSecondOpinionImprovement) {
+    newSuggestions.push(
+      suggestImprovement({
+        agentId: "second-opinion",
+        category: "ux",
+        title: "Clinician-ready second-opinion brief export",
+        description: "Generate concise visit briefs with risks, key questions, and open decisions.",
+        impact: "Improves specialist visit efficiency and shared decision-making",
+      })
+    )
+  }
+
+  // Lyra (Trials) suggests enrollment-readiness automation
+  const hasTrialsImprovement = improvements.some(
+    (i) => i.suggestedBy === "trials" && i.status !== "deployed" && i.status !== "rejected"
+  )
+  if (!hasTrialsImprovement) {
+    newSuggestions.push(
+      suggestImprovement({
+        agentId: "trials",
+        category: "integration",
+        title: "Trial eligibility packet automation",
+        description: "Auto-assemble medication lists, labs, and diagnosis summaries for trial coordinators.",
+        impact: "Cuts trial pre-screening prep time for patients and staff",
+      })
+    )
+  }
+
   return newSuggestions
 }
 

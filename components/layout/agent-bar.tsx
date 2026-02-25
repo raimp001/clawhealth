@@ -1,7 +1,6 @@
 "use client"
 
 import { OPENCLAW_CONFIG } from "@/lib/openclaw/config"
-import { cn } from "@/lib/utils"
 import { Bot, Wifi, WifiOff, Zap, ChevronDown, ChevronUp, ArrowRight, TrendingUp, CheckCircle2 } from "lucide-react"
 import Link from "next/link"
 import { useState, useEffect } from "react"
@@ -45,6 +44,9 @@ export default function AgentBar() {
       { text: "Rex submitted prior auth — awaiting response" },
       { text: "Bolt deployed performance improvement" },
       { text: "Nova triaged symptom report — routine" },
+      { text: "Quinn published preventive screening priorities" },
+      { text: "Orion completed a second-opinion review" },
+      { text: "Lyra ranked 4 clinical trial matches" },
     ]
     let idx = 0
     const interval = setInterval(() => {
@@ -169,7 +171,7 @@ export default function AgentBar() {
               <div className="flex items-center gap-2 mt-1.5 text-[9px] text-white/40">
                 <span>Atlas orchestrates all routing</span>
                 <span className="text-white/20">|</span>
-                <span>9 agents can cross-communicate</span>
+                <span>{OPENCLAW_CONFIG.agents.length} agents can cross-communicate</span>
               </div>
             </div>
 

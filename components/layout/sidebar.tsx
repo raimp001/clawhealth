@@ -22,6 +22,8 @@ import {
   ArrowRightCircle,
   AlertCircle,
   ShieldCheck,
+  UserPlus,
+  ClipboardCheck,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useState, useEffect } from "react"
@@ -56,6 +58,7 @@ const navSections = [
     label: "Health",
     items: [
       { href: "/scheduling", label: "Appointments", icon: Calendar },
+      { href: "/screening", label: "AI Screening", icon: Heart },
       { href: "/prescriptions", label: "Medications", icon: Pill, matchAlso: ["/pharmacy"], badgeKey: "pendingRefills" as const },
       { href: "/lab-results", label: "Lab Results", icon: FlaskConical, badgeKey: "pendingLabs" as const },
       { href: "/vitals", label: "Vital Signs", icon: Activity },
@@ -67,6 +70,7 @@ const navSections = [
     label: "Finance",
     items: [
       { href: "/billing", label: "Bills & Claims", icon: Receipt },
+      { href: "/compliance-ledger", label: "Compliance Ledger", icon: ShieldCheck },
       { href: "/drug-prices", label: "Drug Prices", icon: DollarSign },
       { href: "/prior-auth", label: "Prior Auth", icon: ShieldCheck, badgeKey: "pendingPA" as const },
       { href: "/wallet", label: "Wallet", icon: WalletIcon },
@@ -76,6 +80,10 @@ const navSections = [
     label: "More",
     items: [
       { href: "/providers", label: "Find a Doctor", icon: Stethoscope },
+      { href: "/join-network", label: "Join Network", icon: UserPlus },
+      { href: "/admin-review", label: "Admin Review", icon: ClipboardCheck },
+      { href: "/second-opinion", label: "Second Opinion", icon: ShieldCheck },
+      { href: "/clinical-trials", label: "Clinical Trials", icon: FlaskConical },
       { href: "/messages", label: "Messages", icon: MessageSquare, badgeKey: "unreadMessages" as const },
       { href: "/emergency-card", label: "Emergency Card", icon: AlertCircle },
       { href: "/chat", label: "Ask AI", icon: Bot },

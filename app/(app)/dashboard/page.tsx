@@ -2,7 +2,7 @@
 
 import {
   Calendar, Receipt, Pill, MessageSquare, AlertTriangle,
-  ArrowRight, Bot, Send, CheckCircle2, Heart,
+  ArrowRight, Bot, Send, CheckCircle2, Heart, ShieldCheck,
   FlaskConical, Activity, Syringe, ArrowRightCircle,
   AlertCircle, Clock, TrendingUp, TrendingDown, Minus,
 } from "lucide-react"
@@ -105,6 +105,46 @@ export default function DashboardPage() {
           <MessageSquare size={20} className="text-yellow-600 mb-2" />
           <div className="text-lg font-bold text-warm-800">{unreadCount}</div>
           <div className="text-xs text-warm-500">Unread Messages</div>
+        </Link>
+      </div>
+
+      {/* Precision Care Tools */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+        <Link
+          href="/screening"
+          className="bg-pampas rounded-2xl border border-sand p-4 hover:border-terra/30 transition"
+        >
+          <div className="flex items-center gap-2 mb-1">
+            <Heart size={14} className="text-terra" />
+            <span className="text-xs font-bold text-warm-800">AI Screening</span>
+          </div>
+          <p className="text-xs text-warm-500">
+            Preventive risk scoring based on your labs, vitals, and conditions.
+          </p>
+        </Link>
+        <Link
+          href="/second-opinion"
+          className="bg-pampas rounded-2xl border border-sand p-4 hover:border-terra/30 transition"
+        >
+          <div className="flex items-center gap-2 mb-1">
+            <ShieldCheck size={14} className="text-terra" />
+            <span className="text-xs font-bold text-warm-800">Second Opinion</span>
+          </div>
+          <p className="text-xs text-warm-500">
+            Structured plan review with key clinician questions and safety flags.
+          </p>
+        </Link>
+        <Link
+          href="/clinical-trials"
+          className="bg-pampas rounded-2xl border border-sand p-4 hover:border-terra/30 transition"
+        >
+          <div className="flex items-center gap-2 mb-1">
+            <FlaskConical size={14} className="text-soft-blue" />
+            <span className="text-xs font-bold text-warm-800">Clinical Trials</span>
+          </div>
+          <p className="text-xs text-warm-500">
+            Discover recruiting studies that align with your risk profile.
+          </p>
         </Link>
       </div>
 
