@@ -112,45 +112,37 @@ export default function Sidebar() {
 
   const sidebarContent = (
     <>
-      {/* Logo */}
-      <div className="flex items-center gap-3 px-5 py-5 border-b border-sand">
-        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-terra to-terra-dark flex items-center justify-center">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-            <path
-              d="M12 4v16M4 12h16"
-              stroke="#060D1B"
-              strokeWidth="3"
-              strokeLinecap="round"
-            />
-          </svg>
+      <div className="border-b border-sand/70 px-4 pb-3 pt-4">
+        <div className="flex items-start gap-3">
+          <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-terra via-terra-light to-accent shadow-lg shadow-terra/20">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <path d="M12 4v16M4 12h16" stroke="#11221D" strokeWidth="3" strokeLinecap="round" />
+            </svg>
+          </div>
+          <div className="min-w-0">
+            <h1 className="truncate text-base font-bold text-warm-800">OpenRx Care OS</h1>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-cloudy">patient-first command center</p>
+          </div>
+          <button
+            onClick={() => setMobileOpen(false)}
+            aria-label="Close navigation"
+            className="ml-auto rounded-lg p-1 text-warm-500 transition hover:bg-cream lg:hidden"
+          >
+            <X size={16} />
+          </button>
         </div>
-        <div>
-          <h1 className="text-base font-bold text-warm-800 font-serif tracking-wide">
-            OpenRx
-          </h1>
-          <p className="text-[8px] font-semibold text-cloudy uppercase tracking-[2px]">
-            Powered by OpenClaw
-          </p>
+
+        <div className="mt-3 rounded-xl border border-sand/80 bg-cream/60 px-3 py-2">
+          <p className="text-[9px] font-bold uppercase tracking-[0.14em] text-cloudy">Signed in</p>
+          <p className="mt-0.5 truncate text-sm font-semibold text-warm-800">{currentUser.full_name}</p>
         </div>
-        <button
-          onClick={() => setMobileOpen(false)}
-          aria-label="Close navigation"
-          className="ml-auto lg:hidden p-1 rounded-lg hover:bg-pampas transition"
-        >
-          <X size={18} className="text-warm-600" />
-        </button>
       </div>
 
-      {/* Nav */}
-      <nav className="flex-1 px-3 py-2 overflow-y-auto" aria-label="Main navigation">
+      <nav className="flex-1 overflow-y-auto px-3 py-3" aria-label="Main navigation">
         {navSections.map((section, si) => (
-          <div key={si} className={si > 0 ? "mt-3" : ""}>
-            {section.label && (
-              <p className="px-3 py-1 text-[9px] font-bold text-cloudy uppercase tracking-[1.5px]">
-                {section.label}
-              </p>
-            )}
-            <div className="space-y-0.5">
+          <div key={si} className={si > 0 ? "mt-4" : ""}>
+            {section.label && <p className="section-title px-3 pb-1">{section.label}</p>}
+            <div className="space-y-1">
               {section.items.map((item) => {
                 const matchAlso = "matchAlso" in item ? (item.matchAlso as string[]) : undefined
                 const active =
@@ -159,29 +151,27 @@ export default function Sidebar() {
                   matchAlso?.some((m) => pathname === m || pathname?.startsWith(m + "/"))
                 const badgeKey = "badgeKey" in item ? (item.badgeKey as BadgeKey) : undefined
                 const badgeCount = badgeKey ? badges[badgeKey] : 0
+
                 return (
                   <Link
                     key={item.href}
                     href={item.href}
                     className={cn(
-                      "flex items-center gap-3 px-3 py-1.5 rounded-xl text-[12px] font-medium transition-all",
+                      "group flex items-center gap-3 rounded-xl border px-3 py-2 text-[12px] font-medium transition-all",
                       active
-                        ? "bg-terra/8 text-terra font-semibold"
-                        : "text-warm-600 hover:text-warm-800 hover:bg-pampas"
+                        ? "border-terra/25 bg-terra/10 text-terra shadow-sm"
+                        : "border-transparent text-warm-600 hover:border-sand/70 hover:bg-pampas hover:text-warm-800"
                     )}
                   >
-                    <item.icon
-                      size={14}
-                      className={active ? "text-terra" : "text-warm-500"}
-                    />
-                    <span className="flex-1">{item.label}</span>
+                    <item.icon size={15} className={cn("shrink-0", active ? "text-terra" : "text-warm-500 group-hover:text-warm-700")} />
+                    <span className="flex-1 truncate">{item.label}</span>
                     {badgeCount > 0 && (
-                      <span className={cn(
-                        "text-[9px] font-bold rounded-full flex items-center justify-center min-w-[16px] h-[16px] px-1",
-                        active
-                          ? "bg-terra text-white"
-                          : "bg-terra/15 text-terra"
-                      )}>
+                      <span
+                        className={cn(
+                          "flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1 text-[9px] font-bold",
+                          active ? "bg-terra text-white" : "bg-terra/15 text-terra"
+                        )}
+                      >
                         {badgeCount}
                       </span>
                     )}
@@ -193,55 +183,52 @@ export default function Sidebar() {
         ))}
       </nav>
 
-      {/* Bottom */}
-      <div className="px-3 py-3 border-t border-sand">
+      <div className="border-t border-sand/70 px-3 py-3">
+        <Link
+          href="/chat"
+          className="flex items-center justify-between rounded-xl border border-terra/20 bg-terra/10 px-3 py-2 text-xs font-semibold text-terra transition hover:bg-terra/15"
+        >
+          AI Concierge
+          <Bot size={13} />
+        </Link>
         <Link
           href="/"
-          className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-medium text-cloudy hover:text-terra hover:bg-terra/5 transition-all"
+          className="mt-2 flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-medium text-cloudy transition hover:bg-cream hover:text-warm-700"
         >
           <ExternalLink size={13} />
-          Home
+          Open Marketing Site
         </Link>
-        <div className="mt-2 mx-3 px-3 py-1.5 rounded-lg bg-terra/10 border border-terra/20">
-          <p className="text-[9px] font-bold text-terra uppercase tracking-wider">
-            Demo Account
-          </p>
-        </div>
       </div>
     </>
   )
 
   return (
     <>
-      {/* Mobile hamburger */}
       <button
         onClick={() => setMobileOpen(true)}
-        className="fixed top-4 left-4 z-50 lg:hidden p-2 bg-pampas rounded-xl border border-sand shadow-sm hover:shadow-md transition"
+        className="fixed left-4 top-4 z-50 rounded-xl border border-sand bg-pampas p-2 text-warm-700 shadow-soft-card transition hover:bg-cream lg:hidden"
         aria-label="Open navigation"
       >
-        <Menu size={20} className="text-warm-700" />
+        <Menu size={20} />
       </button>
 
-      {/* Mobile overlay */}
       {mobileOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm lg:hidden"
+          className="fixed inset-0 z-40 bg-[#0d1e18]/30 backdrop-blur-sm lg:hidden"
           onClick={() => setMobileOpen(false)}
         />
       )}
 
-      {/* Mobile sidebar */}
       <aside
         className={cn(
-          "fixed left-0 top-0 z-50 h-screen w-[260px] border-r border-sand bg-pampas flex flex-col transition-transform duration-300 lg:hidden",
+          "fixed left-0 top-0 z-50 flex h-screen w-[286px] flex-col border-r border-sand/80 bg-pampas/95 shadow-2xl backdrop-blur-sm transition-transform duration-300 lg:hidden",
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
         {sidebarContent}
       </aside>
 
-      {/* Desktop sidebar */}
-      <aside className="hidden lg:flex fixed left-0 top-0 z-40 h-screen w-[220px] border-r border-sand bg-pampas flex-col">
+      <aside className="fixed left-0 top-0 z-40 hidden h-screen w-[248px] flex-col border-r border-sand/70 bg-pampas/90 backdrop-blur-md lg:flex">
         {sidebarContent}
       </aside>
     </>

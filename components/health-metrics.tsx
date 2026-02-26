@@ -52,15 +52,15 @@ interface MetricCardProps {
 
 function MetricCard({ label, value, unit, normalRange, status = 'normal', icon }: MetricCardProps) {
   const statusColors = {
-    normal: 'bg-green-500/10 border-green-500/20 text-green-400',
-    warning: 'bg-yellow-500/10 border-yellow-500/20 text-yellow-400',
-    critical: 'bg-red-500/10 border-red-500/20 text-red-400',
+    normal: 'bg-accent/10 border-accent/20 text-accent',
+    warning: 'bg-yellow-50 border-yellow-200/70 text-yellow-700',
+    critical: 'bg-soft-red/10 border-soft-red/20 text-soft-red',
   }
 
   const badgeColors = {
-    normal: 'bg-green-500/20 text-green-300',
-    warning: 'bg-yellow-500/20 text-yellow-300',
-    critical: 'bg-red-500/20 text-red-300',
+    normal: 'bg-accent/15 text-accent',
+    warning: 'bg-yellow-200/60 text-yellow-700',
+    critical: 'bg-soft-red/15 text-soft-red',
   }
 
   return (
@@ -72,13 +72,13 @@ function MetricCard({ label, value, unit, normalRange, status = 'normal', icon }
         </Badge>
       </div>
       <div className="mt-2">
-        <p className="text-sm text-gray-400">{label}</p>
-        <p className="text-2xl font-bold text-white mt-1">
+        <p className="text-sm text-warm-500">{label}</p>
+        <p className="mt-1 text-2xl font-bold text-warm-800">
           {value ?? '--'}
-          <span className="text-sm font-normal text-gray-400 ml-1">{unit}</span>
+          <span className="ml-1 text-sm font-normal text-cloudy">{unit}</span>
         </p>
         {normalRange && (
-          <p className="text-xs text-gray-500 mt-1">Normal: {normalRange}</p>
+          <p className="mt-1 text-xs text-cloudy">Normal: {normalRange}</p>
         )}
       </div>
     </div>
@@ -151,16 +151,16 @@ export function HealthMetrics({ patientId, vitalSigns: initialVitals }: HealthMe
 
   if (loading) {
     return (
-      <Card className="bg-gray-900 border-gray-800">
+      <Card className="surface-card">
         <CardHeader>
-          <CardTitle className="text-white">Health Metrics</CardTitle>
+          <CardTitle className="text-warm-800">Health Metrics</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             {[1, 2, 3, 4, 5, 6].map((i) => (
-              <div key={i} className="rounded-lg border border-gray-700 p-4 animate-pulse">
-                <div className="h-4 bg-gray-700 rounded w-3/4 mb-2" />
-                <div className="h-8 bg-gray-700 rounded w-1/2" />
+              <div key={i} className="animate-pulse rounded-lg border border-sand/70 bg-cream/60 p-4">
+                <div className="mb-2 h-4 w-3/4 rounded bg-sand/70" />
+                <div className="h-8 w-1/2 rounded bg-sand/70" />
               </div>
             ))}
           </div>
@@ -171,12 +171,12 @@ export function HealthMetrics({ patientId, vitalSigns: initialVitals }: HealthMe
 
   if (error) {
     return (
-      <Card className="bg-gray-900 border-gray-800">
+      <Card className="surface-card">
         <CardHeader>
-          <CardTitle className="text-white">Health Metrics</CardTitle>
+          <CardTitle className="text-warm-800">Health Metrics</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-red-400">{error}</p>
+          <p className="text-soft-red">{error}</p>
         </CardContent>
       </Card>
     )
@@ -184,12 +184,12 @@ export function HealthMetrics({ patientId, vitalSigns: initialVitals }: HealthMe
 
   if (!latest) {
     return (
-      <Card className="bg-gray-900 border-gray-800">
+      <Card className="surface-card">
         <CardHeader>
-          <CardTitle className="text-white">Health Metrics</CardTitle>
+          <CardTitle className="text-warm-800">Health Metrics</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-gray-400 text-center py-8">
+          <p className="py-8 text-center text-warm-500">
             No vital signs recorded yet. Schedule an appointment to get your health metrics tracked.
           </p>
         </CardContent>
@@ -206,10 +206,10 @@ export function HealthMetrics({ patientId, vitalSigns: initialVitals }: HealthMe
   })
 
   return (
-    <Card className="bg-gray-900 border-gray-800">
+    <Card className="surface-card">
       <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle className="text-white">Health Metrics</CardTitle>
-        <span className="text-sm text-gray-400">Last recorded: {recordedDate}</span>
+        <CardTitle className="text-warm-800">Health Metrics</CardTitle>
+        <span className="text-sm text-warm-500">Last recorded: {recordedDate}</span>
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -265,17 +265,17 @@ export function HealthMetrics({ patientId, vitalSigns: initialVitals }: HealthMe
 
         {vitalSigns.length > 1 && (
           <div className="mt-6">
-            <h4 className="text-sm font-medium text-gray-300 mb-3">Recent Trend (Last 5 readings)</h4>
+            <h4 className="mb-3 text-sm font-medium text-warm-600">Recent Trend (Last 5 readings)</h4>
             <div className="space-y-2">
               {vitalSigns.slice(0, 5).map((vs) => (
                 <div
                   key={vs.id}
-                  className="flex items-center justify-between text-sm p-2 rounded bg-gray-800/50"
+                  className="flex items-center justify-between rounded-lg border border-sand/60 bg-cream/60 p-2 text-sm"
                 >
-                  <span className="text-gray-400">
+                  <span className="text-warm-500">
                     {new Date(vs.recordedAt).toLocaleDateString()}
                   </span>
-                  <div className="flex gap-4 text-gray-300">
+                  <div className="flex gap-4 text-warm-600">
                     {vs.bloodPressure && <span>BP: {vs.bloodPressure}</span>}
                     {vs.heartRate && <span>HR: {vs.heartRate}</span>}
                     {vs.oxygenSaturation && <span>SpO₂: {vs.oxygenSaturation}%</span>}

@@ -9,35 +9,39 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // TrumpRx-matched palette — very dark navy + gold
+        // OpenRx 2026 UI system — bright, trusted, high-contrast
         terra: {
-          DEFAULT: "#C5A04E",  // Gold accent
-          light: "#D9B96B",
-          dark: "#A8883B",
-          50: "#1A1610",
-          100: "#2A2315",
-          200: "#3D321D",
-          500: "#C5A04E",
-          600: "#A8883B",
-          700: "#8A702F",
+          DEFAULT: "#F05A3D",
+          light: "#F47F5C",
+          dark: "#CF4326",
+          50: "#FFF2EE",
+          100: "#FFE5DD",
+          200: "#FFC7B7",
+          500: "#F05A3D",
+          600: "#CF4326",
+          700: "#A7351D",
         },
-        cream: "#060D1B",      // Main background — near black navy
-        pampas: "#0C1628",     // Card/surface background
-        sand: "#162040",       // Borders
-        cloudy: "#5A6B84",     // Muted text
+        cream: "#F3F8F6",
+        pampas: "#FFFFFF",
+        sand: "#DCE9E4",
+        cloudy: "#6C7D75",
         warm: {
-          800: "#FFFFFF",      // Primary text — pure white
-          700: "#E2E7EF",      // Secondary text
-          600: "#B0BAC9",      // Tertiary text
-          500: "#7E8CA2",      // Quaternary text
+          800: "#14231F",
+          700: "#243530",
+          600: "#3E524A",
+          500: "#677A72",
         },
-        accent: "#4CAF7D",     // Green for success
-        "soft-red": "#E05A4F", // Red for errors/alerts
-        "soft-blue": "#5B9BD5",// Blue for info
+        accent: "#1FA971",
+        "soft-red": "#D1495B",
+        "soft-blue": "#1E88B6",
       },
       fontFamily: {
-        serif: ["var(--font-serif)", "Georgia", "serif"],
-        sans: ["var(--font-sans)", "system-ui", "sans-serif"],
+        serif: ["var(--font-serif)", "serif"],
+        sans: ["var(--font-sans)", "sans-serif"],
+      },
+      boxShadow: {
+        "soft-card": "0 10px 28px rgba(20, 35, 31, 0.08)",
+        "topbar": "0 8px 20px rgba(20, 35, 31, 0.06)",
       },
       keyframes: {
         "fade-in": {
@@ -48,10 +52,15 @@ const config: Config = {
           from: { opacity: "0", transform: "translateY(16px)" },
           to: { opacity: "1", transform: "translateY(0)" },
         },
+        "float-slow": {
+          "0%, 100%": { transform: "translateY(0px)" },
+          "50%": { transform: "translateY(-8px)" },
+        },
       },
       animation: {
         "fade-in": "fade-in 0.3s ease",
         "slide-up": "slide-up 0.5s ease",
+        "float-slow": "float-slow 8s ease-in-out infinite",
       },
     },
   },

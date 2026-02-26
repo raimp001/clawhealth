@@ -24,7 +24,6 @@ export default function AgentBar() {
       .catch(() => setStatus("demo"))
   }, [])
 
-  // Load improvement metrics and run improvement cycle
   useEffect(() => {
     runImprovementCycle()
     setMetrics(getImprovementMetrics())
@@ -32,7 +31,6 @@ export default function AgentBar() {
     setInterAgentMessages(getRecentMessages(100).length)
   }, [])
 
-  // Simulate periodic agent activity with real collaboration context
   useEffect(() => {
     if (status !== "demo") return
     const actions = [
@@ -61,149 +59,115 @@ export default function AgentBar() {
   const approvedImprovements = getImprovements({ status: "approved" })
 
   return (
-    <div className="bg-[#050A15] text-white/90">
-      {/* Compact bar */}
-      <div className="flex items-center justify-between px-4 lg:px-6 h-9">
+    <div className="border-b border-sand/70 bg-gradient-to-r from-pampas via-pampas to-cream/80 text-warm-700">
+      <div className="flex h-10 items-center justify-between px-4 lg:px-8">
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1.5">
-            <Bot size={12} className="text-terra-light" />
-            <span className="text-[10px] font-bold uppercase tracking-wider text-terra-light">
-              OpenClaw
-            </span>
+          <div className="inline-flex items-center gap-1.5 rounded-full border border-terra/20 bg-terra/10 px-2 py-0.5">
+            <Bot size={11} className="text-terra" />
+            <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-terra">OpenClaw</span>
           </div>
-          <div className="flex items-center gap-1.5">
+
+          <div className="flex items-center gap-1 text-[11px] text-warm-500">
             {status === "online" ? (
-              <Wifi size={9} className="text-accent" />
+              <Wifi size={10} className="text-accent" />
             ) : status === "demo" ? (
-              <WifiOff size={9} className="text-terra-light" />
+              <WifiOff size={10} className="text-terra" />
             ) : (
-              <div className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse" />
+              <div className="h-2 w-2 animate-pulse rounded-full bg-yellow-500" />
             )}
-            <span className="text-[10px] text-white/50">
-              {status === "online" ? "Live" : status === "demo" ? "Demo" : "..."}
+            <span className="font-medium">
+              {status === "online" ? "Live agents" : status === "demo" ? "Demo simulation" : "Checking connection"}
             </span>
           </div>
 
-          {/* Inter-agent activity count */}
-          <div className="hidden lg:flex items-center gap-1.5 text-[10px] text-white/40">
-            <Zap size={8} className="text-yellow-400" />
-            <span>{interAgentMessages} agent messages</span>
-            {activeTasks > 0 && (
-              <>
-                <span className="text-white/20">|</span>
-                <span>{activeTasks} active tasks</span>
-              </>
-            )}
+          <div className="hidden items-center gap-2 text-[11px] text-cloudy lg:flex">
+            <Zap size={10} className="text-yellow-600" />
+            <span>{interAgentMessages} messages</span>
+            <span>·</span>
+            <span>{activeTasks} active tasks</span>
           </div>
 
           {recentAction && (
-            <div className="hidden xl:flex items-center gap-1.5 ml-2 animate-fade-in">
-              <ArrowRight size={8} className="text-terra-light" />
-              <span className="text-[10px] text-white/60 truncate max-w-md">
-                {recentAction}
-              </span>
+            <div className="hidden items-center gap-1 text-[11px] text-warm-500 xl:flex animate-fade-in">
+              <ArrowRight size={10} className="text-terra" />
+              <span className="max-w-md truncate">{recentAction}</span>
             </div>
           )}
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Self-improvement badge */}
           {metrics && metrics.totalDeployed > 0 && (
-            <div className="hidden lg:flex items-center gap-1 px-2 py-0.5 rounded bg-accent/10 text-[9px] text-accent font-semibold">
-              <TrendingUp size={8} />
-              {metrics.totalDeployed} improvements deployed
+            <div className="hidden items-center gap-1 rounded-full border border-accent/20 bg-accent/10 px-2 py-0.5 text-[10px] font-semibold text-accent lg:flex">
+              <TrendingUp size={9} />
+              {metrics.totalDeployed} deployed
             </div>
           )}
 
-          <Link
-            href="/chat"
-            className="text-[10px] font-semibold text-terra-light hover:text-white transition"
-          >
-            Open Agent
+          <Link href="/chat" className="text-[11px] font-semibold text-terra transition hover:text-terra-dark">
+            Open agent
           </Link>
           <button
             onClick={() => setExpanded(!expanded)}
             aria-label={expanded ? "Collapse agent panel" : "Expand agent panel"}
-            className="p-0.5 hover:bg-white/10 rounded transition"
+            className="rounded-md p-0.5 text-cloudy transition hover:bg-cream hover:text-warm-700"
           >
-            {expanded ? (
-              <ChevronUp size={12} className="text-white/50" />
-            ) : (
-              <ChevronDown size={12} className="text-white/50" />
-            )}
+            {expanded ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
           </button>
         </div>
       </div>
 
-      {/* Expanded panel */}
       {expanded && (
-        <div className="px-4 lg:px-6 pb-3 border-t border-white/5 animate-fade-in">
-          {/* Agent grid */}
-          <div className="grid grid-cols-3 lg:grid-cols-9 gap-2 mt-2">
+        <div className="border-t border-sand/70 px-4 pb-3 lg:px-8 animate-fade-in">
+          <div className="mt-2 grid grid-cols-3 gap-2 lg:grid-cols-9">
             {OPENCLAW_CONFIG.agents.map((agent) => (
               <div
                 key={agent.id}
-                className="flex flex-col items-center gap-1 px-2 py-2 rounded-lg bg-white/5 hover:bg-white/10 transition"
+                className="rounded-xl border border-sand/70 bg-pampas px-2 py-2 text-center transition hover:border-terra/25"
               >
-                <div className="w-1.5 h-1.5 rounded-full bg-accent" />
-                <span className="text-[10px] font-medium text-white/70">
-                  {agent.name}
-                </span>
-                <span className="text-[8px] text-white/40">{agent.role}</span>
+                <div className="mx-auto mb-1 h-1.5 w-1.5 rounded-full bg-accent" />
+                <p className="text-[11px] font-semibold text-warm-700">{agent.name}</p>
+                <p className="text-[9px] text-cloudy">{agent.role}</p>
               </div>
             ))}
           </div>
 
-          {/* Collaboration & Improvements row */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mt-3">
-            {/* Agent collaboration info */}
-            <div className="rounded-lg bg-white/5 p-2.5">
-              <span className="text-[9px] font-bold text-white/50 uppercase tracking-wider">
-                Agent Collaboration
-              </span>
-              <div className="flex items-center gap-4 mt-1.5 text-[10px] text-white/60">
+          <div className="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-2">
+            <div className="rounded-xl border border-sand/70 bg-pampas p-3">
+              <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-cloudy">Agent Collaboration</p>
+              <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-warm-500">
                 <span>{OPENCLAW_CONFIG.cronJobs.length} automations active</span>
-                <span>
-                  {Object.values(OPENCLAW_CONFIG.channels).filter((c) => c.enabled).length} channels
-                </span>
-                <span>Multi-agent routing enabled</span>
+                <span>{Object.values(OPENCLAW_CONFIG.channels).filter((c) => c.enabled).length} channels</span>
+                <span>multi-agent routing enabled</span>
               </div>
-              <div className="flex items-center gap-2 mt-1.5 text-[9px] text-white/40">
-                <span>Atlas orchestrates all routing</span>
-                <span className="text-white/20">|</span>
-                <span>{OPENCLAW_CONFIG.agents.length} agents can cross-communicate</span>
-              </div>
+              <p className="mt-1.5 text-[10px] text-cloudy">
+                Atlas orchestrates cross-agent routing across {OPENCLAW_CONFIG.agents.length} specialist agents.
+              </p>
             </div>
 
-            {/* Self-improvement status */}
-            <div className="rounded-lg bg-white/5 p-2.5">
-              <span className="text-[9px] font-bold text-white/50 uppercase tracking-wider">
-                Self-Improvement Pipeline
-              </span>
-              <div className="flex items-center gap-3 mt-1.5">
+            <div className="rounded-xl border border-sand/70 bg-pampas p-3">
+              <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-cloudy">Self-Improvement Pipeline</p>
+              <div className="mt-1.5 flex flex-wrap items-center gap-3">
                 {inProgressImprovements.length > 0 && (
-                  <div className="flex items-center gap-1 text-[10px] text-yellow-400">
-                    <Zap size={8} />
+                  <div className="flex items-center gap-1 text-[11px] text-yellow-600">
+                    <Zap size={9} />
                     <span>{inProgressImprovements.length} in progress</span>
                   </div>
                 )}
                 {approvedImprovements.length > 0 && (
-                  <div className="flex items-center gap-1 text-[10px] text-accent">
-                    <CheckCircle2 size={8} />
+                  <div className="flex items-center gap-1 text-[11px] text-accent">
+                    <CheckCircle2 size={9} />
                     <span>{approvedImprovements.length} approved</span>
                   </div>
                 )}
                 {metrics && (
-                  <div className="flex items-center gap-1 text-[10px] text-white/40">
-                    <TrendingUp size={8} />
+                  <div className="flex items-center gap-1 text-[11px] text-cloudy">
+                    <TrendingUp size={9} />
                     <span>{metrics.totalSuggested} total suggestions</span>
                   </div>
                 )}
               </div>
               {inProgressImprovements.length > 0 && (
-                <p className="text-[9px] text-white/40 mt-1 truncate">
-                  Working on: {inProgressImprovements[0].title}
-                </p>
+                <p className="mt-1.5 truncate text-[10px] text-cloudy">Working on: {inProgressImprovements[0].title}</p>
               )}
             </div>
           </div>

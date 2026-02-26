@@ -1,10 +1,10 @@
 "use client"
 
 import {
-  Calendar, Pill, MessageSquare, AlertTriangle,
+  Calendar, Pill, MessageSquare, AlertTriangle, Receipt,
   ArrowRight, Bot, Send, CheckCircle2, Heart, ShieldCheck,
   FlaskConical, Activity, Syringe, ArrowRightCircle,
-  AlertCircle,
+  AlertCircle, Search,
 } from "lucide-react"
 import Link from "next/link"
 import { getPhysician, priorAuths, getPatientLabResults, getPatientVitals, getPatientVaccinations, getPatientReferrals } from "@/lib/seed-data"
@@ -50,27 +50,51 @@ export default function DashboardPage() {
 
   return (
     <div className="animate-slide-up space-y-6">
-      {/* Welcome */}
-      <div>
-        <h1 className="text-2xl font-serif text-warm-800">
-          Good{" "}
-          {new Date().getHours() < 12
-            ? "morning"
-            : new Date().getHours() < 17
-            ? "afternoon"
-            : "evening"}
-          , {currentUser.full_name.split(" ")[0]}
-        </h1>
-        <p className="text-sm text-warm-500 mt-1">
-          Here&apos;s what&apos;s happening with your health.
-        </p>
-      </div>
+      <section className="surface-card overflow-hidden">
+        <div className="px-5 py-5 lg:px-6 lg:py-6">
+          <h1 className="text-3xl text-warm-800">
+            Good{" "}
+            {new Date().getHours() < 12
+              ? "morning"
+              : new Date().getHours() < 17
+              ? "afternoon"
+              : "evening"}
+            , {currentUser.full_name.split(" ")[0]}
+          </h1>
+          <p className="mt-1 text-sm text-warm-500">
+            Your care plan is organized and ready. Use natural language to book, search, and resolve tasks quickly.
+          </p>
 
-      {/* Quick Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="mt-4 flex flex-wrap gap-2 text-xs">
+            <span className="rounded-full border border-sand bg-cream/60 px-3 py-1.5 text-warm-600">
+              Try: &ldquo;Find a lab near me for A1C this week&rdquo;
+            </span>
+            <span className="rounded-full border border-sand bg-cream/60 px-3 py-1.5 text-warm-600">
+              Try: &ldquo;Show claims with denied status&rdquo;
+            </span>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-2 border-t border-sand/70 bg-cream/60 p-3 sm:grid-cols-3">
+          <Link href="/providers" className="surface-muted flex items-center gap-2 px-3 py-2 text-xs font-semibold text-warm-700 hover:border-terra/25 hover:text-terra transition">
+            <Search size={13} className="text-terra" />
+            Find Care Near Me
+          </Link>
+          <Link href="/screening" className="surface-muted flex items-center gap-2 px-3 py-2 text-xs font-semibold text-warm-700 hover:border-terra/25 hover:text-terra transition">
+            <Heart size={13} className="text-terra" />
+            Personalized Screening
+          </Link>
+          <Link href="/billing" className="surface-muted flex items-center gap-2 px-3 py-2 text-xs font-semibold text-warm-700 hover:border-terra/25 hover:text-terra transition">
+            <Receipt size={13} className="text-terra" />
+            Review Billing & Receipts
+          </Link>
+        </div>
+      </section>
+
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Link
           href="/scheduling"
-          className="bg-pampas rounded-2xl p-4 border border-sand hover:border-terra/30 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-terra/5 transition-all"
+          className="surface-card p-4 transition-all hover:-translate-y-0.5 hover:border-terra/30"
         >
           <Calendar size={20} className="text-terra mb-2" />
           <div className="text-lg font-bold text-warm-800">{upcomingApts.length}</div>
@@ -78,7 +102,7 @@ export default function DashboardPage() {
         </Link>
         <Link
           href="/prescriptions"
-          className="bg-pampas rounded-2xl p-4 border border-sand hover:border-terra/30 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-terra/5 transition-all"
+          className="surface-card p-4 transition-all hover:-translate-y-0.5 hover:border-terra/30"
         >
           <Pill size={20} className="text-accent mb-2" />
           <div className="text-lg font-bold text-warm-800">{myRx.length}</div>
@@ -86,7 +110,7 @@ export default function DashboardPage() {
         </Link>
         <Link
           href="/lab-results"
-          className="bg-pampas rounded-2xl p-4 border border-sand hover:border-terra/30 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-terra/5 transition-all"
+          className="surface-card p-4 transition-all hover:-translate-y-0.5 hover:border-terra/30"
         >
           <FlaskConical size={20} className="text-soft-blue mb-2" />
           <div className="text-lg font-bold text-warm-800">{myLabs.length}</div>
@@ -96,7 +120,7 @@ export default function DashboardPage() {
         </Link>
         <Link
           href="/messages"
-          className="bg-pampas rounded-2xl p-4 border border-sand hover:border-terra/30 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-terra/5 transition-all"
+          className="surface-card p-4 transition-all hover:-translate-y-0.5 hover:border-terra/30"
         >
           <MessageSquare size={20} className="text-yellow-600 mb-2" />
           <div className="text-lg font-bold text-warm-800">{unreadCount}</div>
@@ -111,7 +135,7 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
         <Link
           href="/screening"
-          className="bg-pampas rounded-2xl border border-sand p-4 hover:border-terra/30 transition"
+          className="surface-card p-4 hover:border-terra/30 transition"
         >
           <div className="flex items-center gap-2 mb-1">
             <Heart size={14} className="text-terra" />
@@ -123,7 +147,7 @@ export default function DashboardPage() {
         </Link>
         <Link
           href="/second-opinion"
-          className="bg-pampas rounded-2xl border border-sand p-4 hover:border-terra/30 transition"
+          className="surface-card p-4 hover:border-terra/30 transition"
         >
           <div className="flex items-center gap-2 mb-1">
             <ShieldCheck size={14} className="text-terra" />
@@ -135,7 +159,7 @@ export default function DashboardPage() {
         </Link>
         <Link
           href="/clinical-trials"
-          className="bg-pampas rounded-2xl border border-sand p-4 hover:border-terra/30 transition"
+          className="surface-card p-4 hover:border-terra/30 transition"
         >
           <div className="flex items-center gap-2 mb-1">
             <FlaskConical size={14} className="text-soft-blue" />
@@ -148,7 +172,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Health Engagement Score */}
-      <div className="bg-pampas rounded-2xl border border-sand p-4">
+      <div className="surface-card p-4">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
             <Activity size={14} className="text-terra" />
@@ -221,7 +245,7 @@ export default function DashboardPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* My Upcoming Appointments */}
-        <div className="lg:col-span-2 bg-pampas rounded-2xl border border-sand">
+        <div className="lg:col-span-2 surface-card">
           <div className="flex items-center justify-between p-5 border-b border-sand">
             <h2 className="text-base font-serif text-warm-800">My Upcoming Visits</h2>
             <Link
@@ -296,7 +320,7 @@ export default function DashboardPage() {
         <div className="space-y-4">
           {/* Latest Vitals */}
           {latestVital && (
-            <Link href="/vitals" className="block bg-pampas rounded-2xl border border-sand p-4 hover:border-terra/30 transition">
+            <Link href="/vitals" className="block surface-card p-4 hover:border-terra/30 transition">
               <div className="flex items-center gap-2 mb-2">
                 <Activity size={14} className="text-accent" />
                 <span className="text-xs font-bold text-warm-800">Latest Vitals</span>
@@ -338,7 +362,7 @@ export default function DashboardPage() {
           )}
 
           {/* My Medications */}
-          <div className="bg-pampas rounded-2xl border border-sand">
+          <div className="surface-card">
             <div className="flex items-center gap-2 p-4 border-b border-sand">
               <Pill size={16} className="text-accent" />
               <h3 className="text-sm font-bold text-warm-800">My Medications</h3>
@@ -435,7 +459,7 @@ export default function DashboardPage() {
       </div>
 
       {/* AI Care Team Activity */}
-      <div className="bg-pampas rounded-2xl border border-sand">
+      <div className="surface-card">
         <div className="flex items-center justify-between p-4 border-b border-sand">
           <div className="flex items-center gap-2">
             <Bot size={14} className="text-terra" />
