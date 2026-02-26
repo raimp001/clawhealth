@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+import { fetchWithTimeout, isAbortError } from "@/lib/fetch-with-timeout"
 
 const NPPES_BASE = "https://npiregistry.cms.hhs.gov/api/?version=2.1"
 export const dynamic = "force-dynamic"
@@ -261,13 +262,21 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url)
     const nlQuery = (searchParams.get("q") || "").trim()
-    const limit = searchParams.get("limit") || "20"
-    const skip = searchParams.get("skip") || "0"
+    const limitRaw = Number.parseInt(searchParams.get("limit") || "20", 10)
+    const skipRaw = Number.parseInt(searchParams.get("skip") || "0", 10)
+    const limit = String(Number.isFinite(limitRaw) ? Math.min(Math.max(limitRaw, 1), 50) : 20)
+    const skip = String(Number.isFinite(skipRaw) ? Math.min(Math.max(skipRaw, 0), 500) : 0)
 
     let params: URLSearchParams
     let parsed: ParsedPharmacyQuery | undefined
 
     if (nlQuery) {
+      if (nlQuery.length > 220) {
+        return NextResponse.json(
+          { error: "Search query is too long. Keep it under 220 characters." },
+          { status: 400 }
+        )
+      }
       parsed = parseNaturalLanguageQuery(nlQuery)
       if (!parsed.ready) {
         return NextResponse.json({
@@ -307,9 +316,11 @@ export async function GET(req: NextRequest) {
       params = buildPharmacyParams({ city, state, zip, name, limit, skip })
     }
 
-    const response = await fetch(`${NPPES_BASE}&${params.toString()}`, {
-      next: { revalidate: 300 },
-    })
+    const response = await fetchWithTimeout(
+      `${NPPES_BASE}&${params.toString()}`,
+      { next: { revalidate: 300 } },
+      9000
+    )
     if (!response.ok) {
       return NextResponse.json(
         { error: "NPI Registry unavailable." },
@@ -331,6 +342,12 @@ export async function GET(req: NextRequest) {
       pharmacies,
     })
   } catch (error) {
+    if (isAbortError(error)) {
+      return NextResponse.json(
+        { error: "Pharmacy search timed out. Please try again." },
+        { status: 504 }
+      )
+    }
     console.error("Pharmacy search error:", error)
     return NextResponse.json(
       { error: "Failed to search pharmacies." },

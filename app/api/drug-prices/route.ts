@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+import { fetchWithTimeout } from "@/lib/fetch-with-timeout"
 
 const OPENFDA_BASE = "https://api.fda.gov/drug/ndc.json"
 const PRICE_PROVIDER_BASE = process.env.OPENRX_DRUG_PRICE_PROVIDER_URL
@@ -71,9 +72,11 @@ async function fetchDrugInfo(query: string): Promise<Array<{
 
   for (const expression of expressions) {
     try {
-      const response = await fetch(`${OPENFDA_BASE}?search=${encodeURIComponent(expression)}&limit=5`, {
-        next: { revalidate: 3600 },
-      })
+      const response = await fetchWithTimeout(
+        `${OPENFDA_BASE}?search=${encodeURIComponent(expression)}&limit=5`,
+        { next: { revalidate: 3600 } },
+        9000
+      )
       if (!response.ok) continue
       const payload = (await response.json()) as FdaResponse
       const rows = (payload.results || []).map((record) => ({
@@ -106,11 +109,15 @@ async function fetchLivePricing(query: string): Promise<{ retail: string; option
       headers.Authorization = `Bearer ${PRICE_PROVIDER_API_KEY}`
     }
 
-    const response = await fetch(`${PRICE_PROVIDER_BASE}?q=${encodeURIComponent(query)}`, {
-      method: "GET",
-      headers,
-      next: { revalidate: 300 },
-    })
+    const response = await fetchWithTimeout(
+      `${PRICE_PROVIDER_BASE}?q=${encodeURIComponent(query)}`,
+      {
+        method: "GET",
+        headers,
+        next: { revalidate: 300 },
+      },
+      9000
+    )
 
     if (!response.ok) return null
 
@@ -143,6 +150,9 @@ export async function GET(req: NextRequest) {
 
     if (!query) {
       return NextResponse.json({ error: "Please enter a drug name" }, { status: 400 })
+    }
+    if (query.length > 120) {
+      return NextResponse.json({ error: "Drug query is too long. Keep it under 120 characters." }, { status: 400 })
     }
 
     const [drugInfo, directPricing] = await Promise.all([

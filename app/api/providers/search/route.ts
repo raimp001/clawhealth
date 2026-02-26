@@ -45,6 +45,13 @@ export async function GET(req: NextRequest) {
     })
   } catch (error) {
     console.error("Care search error:", error)
+    const message = error instanceof Error ? error.message : ""
+    if (message.toLowerCase().includes("npi registry unavailable")) {
+      return NextResponse.json(
+        { error: "NPI Registry is temporarily unavailable. Please try again." },
+        { status: 502 }
+      )
+    }
     return NextResponse.json(
       { error: "Failed to search NPI care directory." },
       { status: 500 }

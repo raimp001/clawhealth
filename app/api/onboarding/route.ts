@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+import { fetchWithTimeout, isAbortError } from "@/lib/fetch-with-timeout"
 
 interface NpiTaxonomy {
   primary?: boolean
@@ -102,7 +103,14 @@ export async function POST(req: NextRequest) {
       case "verify-provider": {
         const npi = String(data.npi || "")
         if (!npi) return NextResponse.json({ error: "NPI required" }, { status: 400 })
-        const res = await fetch(`https://npiregistry.cms.hhs.gov/api/?version=2.1&number=${npi}`)
+        if (!/^\d{10}$/.test(npi)) {
+          return NextResponse.json({ error: "NPI must be a 10-digit number." }, { status: 400 })
+        }
+        const res = await fetchWithTimeout(
+          `https://npiregistry.cms.hhs.gov/api/?version=2.1&number=${npi}`,
+          {},
+          9000
+        )
         const result = (await res.json()) as NpiVerifyResponse
         const provider = result.results?.[0]
         if (!provider) return NextResponse.json({ found: false })
@@ -120,6 +128,9 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "Unknown step" }, { status: 400 })
     }
   } catch (error) {
+    if (isAbortError(error)) {
+      return NextResponse.json({ error: "Provider verification timed out. Please try again." }, { status: 504 })
+    }
     console.error("Onboarding API error:", error)
     return NextResponse.json({ error: "Processing failed" }, { status: 500 })
   }

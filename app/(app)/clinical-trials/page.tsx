@@ -11,8 +11,17 @@ export default function ClinicalTrialsPage() {
   const [loading, setLoading] = useState(false)
   const [matches, setMatches] = useState<TrialMatch[]>([])
   const [hasSearched, setHasSearched] = useState(false)
+  const [error, setError] = useState("")
 
   const searchTrials = useCallback(async (nextCondition = condition, nextLocation = location) => {
+    if (!nextCondition.trim() && !nextLocation.trim()) {
+      setError("Enter a condition, location, or both before searching.")
+      setHasSearched(false)
+      setMatches([])
+      return
+    }
+
+    setError("")
     setLoading(true)
     setHasSearched(true)
     try {
@@ -20,8 +29,14 @@ export default function ClinicalTrialsPage() {
       if (nextCondition.trim()) params.set("condition", nextCondition.trim())
       if (nextLocation.trim()) params.set("location", nextLocation.trim())
       const response = await fetch(`/api/clinical-trials/match?${params}`)
-      const data = (await response.json()) as { matches: TrialMatch[] }
+      const data = (await response.json()) as { matches?: TrialMatch[]; error?: string }
+      if (!response.ok || data.error) {
+        throw new Error(data.error || "Failed to match trials.")
+      }
       setMatches(data.matches || [])
+    } catch (issue) {
+      setMatches([])
+      setError(issue instanceof Error ? issue.message : "Failed to match trials.")
     } finally {
       setLoading(false)
     }
@@ -72,6 +87,7 @@ export default function ClinicalTrialsPage() {
             </button>
           </div>
         </div>
+        {error && <p className="text-xs text-soft-red mt-3">{error}</p>}
       </div>
 
       {loading && (

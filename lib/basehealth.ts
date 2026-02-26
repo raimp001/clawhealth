@@ -1,3 +1,5 @@
+import { fetchWithTimeout } from "@/lib/fetch-with-timeout"
+
 interface BasePatientProfile {
   id: string
   date_of_birth: string
@@ -479,9 +481,11 @@ export async function matchClinicalTrials(input: TrialMatchInput = {}): Promise<
   if (locationQuery) params.set("query.locn", input.location!.trim())
 
   try {
-    const response = await fetch(`https://clinicaltrials.gov/api/v2/studies?${params.toString()}`, {
-      next: { revalidate: 900 },
-    })
+    const response = await fetchWithTimeout(
+      `https://clinicaltrials.gov/api/v2/studies?${params.toString()}`,
+      { next: { revalidate: 900 } },
+      10000
+    )
     if (!response.ok) return []
 
     const payload = (await response.json()) as CtGovResponse

@@ -1,3 +1,5 @@
+import { fetchWithTimeout } from "@/lib/fetch-with-timeout"
+
 export const CARE_SEARCH_PROMPT_ID = "openrx.npi-care-search.v1" as const
 export const CARE_SEARCH_PROMPT_IMAGE_PATH = "/prompts/npi-care-search-prompt.svg" as const
 
@@ -441,29 +443,50 @@ export async function searchNpiCareDirectory(
   const plan = buildSearchPlan(parsed, limit)
   const results: CareDirectoryMatch[] = []
   const dedupe = new Set<string>()
+  let successfulResponses = 0
 
-  for (const searchStep of plan) {
-    const response = await fetch(`${NPPES_BASE}&${searchStep.params.toString()}`, {
-      next: { revalidate: 300 },
+  const payloads = await Promise.all(
+    plan.map(async (searchStep) => {
+      try {
+        const response = await fetchWithTimeout(
+          `${NPPES_BASE}&${searchStep.params.toString()}`,
+          { next: { revalidate: 300 } },
+          9000
+        )
+        if (!response.ok) return null
+        successfulResponses += 1
+        const payload = (await response.json()) as NppesResponse
+        return {
+          serviceType: searchStep.serviceType,
+          list: payload.results || [],
+        }
+      } catch {
+        return null
+      }
     })
-    if (!response.ok) continue
-    const payload = (await response.json()) as NppesResponse
-    const list = payload.results || []
-    list.forEach((entry) => {
-      const mapped = mapResult(entry, searchStep.serviceType, parsed)
+  )
+
+  payloads.forEach((payload) => {
+    if (!payload) return
+    payload.list.forEach((entry) => {
+      const mapped = mapResult(entry, payload.serviceType, parsed)
       if (!mapped) return
       const key = `${mapped.kind}:${mapped.npi}`
       if (dedupe.has(key)) return
       dedupe.add(key)
       results.push(mapped)
     })
-  }
+  })
 
   const sorted = results.sort((a, b) => {
     if (a.confidence !== b.confidence) return a.confidence === "high" ? -1 : 1
     if (a.status !== b.status) return a.status === "Active" ? -1 : 1
     return a.name.localeCompare(b.name)
   })
+
+  if (successfulResponses === 0) {
+    throw new Error("NPI registry unavailable")
+  }
 
   return {
     ready: true,
