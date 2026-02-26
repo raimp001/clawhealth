@@ -4,7 +4,6 @@ import { currentUser } from "@/lib/current-user"
 import { priorAuths, getPhysician } from "@/lib/seed-data"
 import { cn, formatDate, getStatusColor } from "@/lib/utils"
 import {
-  ShieldCheck,
   AlertTriangle,
   CheckCircle2,
   XCircle,

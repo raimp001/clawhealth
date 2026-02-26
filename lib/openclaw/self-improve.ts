@@ -46,7 +46,7 @@ function persistImprovements(items: Improvement[]): void {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(items))
 }
 
-let improvements: Improvement[] = loadImprovements()
+const improvements: Improvement[] = loadImprovements()
 
 function generateId(): string {
   return `imp-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`

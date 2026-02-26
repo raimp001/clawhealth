@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 
 const NPPES_BASE = "https://npiregistry.cms.hhs.gov/api/?version=2.1"
+export const dynamic = "force-dynamic"
 const PHARMACY_SEARCH_PROMPT_ID = "openrx.pharmacy-search.v1"
 const PHARMACY_SEARCH_PROMPT_IMAGE = "/prompts/pharmacy-search-prompt.svg"
 const PHARMACY_SEARCH_PROMPT_TEXT = `You are OpenRx Pharmacy Search.

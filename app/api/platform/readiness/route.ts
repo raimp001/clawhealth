@@ -7,6 +7,8 @@ import {
   listNetworkApplications,
 } from "@/lib/provider-applications"
 
+export const dynamic = "force-dynamic"
+
 type ReadinessStatus = "ready" | "attention"
 
 function toStatus(ok: boolean): ReadinessStatus {

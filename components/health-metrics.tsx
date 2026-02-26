@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, type ReactNode } from 'react'
+import { useState, useEffect, useCallback, type ReactNode } from 'react'
 
 function Card({ className, children }: { className?: string; children: ReactNode }) {
   return <div className={className}>{children}</div>
@@ -127,13 +127,7 @@ export function HealthMetrics({ patientId, vitalSigns: initialVitals }: HealthMe
   const [loading, setLoading] = useState(!initialVitals)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    if (!initialVitals && patientId) {
-      fetchVitalSigns()
-    }
-  }, [patientId, initialVitals])
-
-  const fetchVitalSigns = async () => {
+  const fetchVitalSigns = useCallback(async () => {
     try {
       setLoading(true)
       const response = await fetch(`/api/patients?patientId=${patientId}`)
@@ -145,7 +139,13 @@ export function HealthMetrics({ patientId, vitalSigns: initialVitals }: HealthMe
     } finally {
       setLoading(false)
     }
-  }
+  }, [patientId])
+
+  useEffect(() => {
+    if (!initialVitals && patientId) {
+      void fetchVitalSigns()
+    }
+  }, [patientId, initialVitals, fetchVitalSigns])
 
   const latest = vitalSigns[0]
 

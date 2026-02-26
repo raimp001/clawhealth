@@ -2,9 +2,8 @@
 
 import { currentUser } from "@/lib/current-user"
 import { getPatientVaccinations } from "@/lib/seed-data"
-import { cn } from "@/lib/utils"
 import {
-  Syringe, CheckCircle2, AlertTriangle, Clock, Calendar,
+  Syringe, CheckCircle2, AlertTriangle, Calendar,
   Bot, Shield, ArrowRight,
 } from "lucide-react"
 import Link from "next/link"
@@ -14,7 +13,6 @@ export default function VaccinationsPage() {
 
   const completed = vaccinations.filter((v) => v.status === "completed")
   const due = vaccinations.filter((v) => v.status === "due" || v.status === "overdue")
-  const incomplete = vaccinations.filter((v) => v.status === "series-incomplete")
 
   return (
     <div className="animate-slide-up space-y-6">

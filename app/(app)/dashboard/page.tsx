@@ -1,15 +1,15 @@
 "use client"
 
 import {
-  Calendar, Receipt, Pill, MessageSquare, AlertTriangle,
+  Calendar, Pill, MessageSquare, AlertTriangle,
   ArrowRight, Bot, Send, CheckCircle2, Heart, ShieldCheck,
   FlaskConical, Activity, Syringe, ArrowRightCircle,
-  AlertCircle, Clock, TrendingUp, TrendingDown, Minus,
+  AlertCircle,
 } from "lucide-react"
 import Link from "next/link"
 import { getPhysician, priorAuths, getPatientLabResults, getPatientVitals, getPatientVaccinations, getPatientReferrals } from "@/lib/seed-data"
-import { currentUser, getMyAppointments, getMyClaims, getMyPrescriptions, getMyMessages } from "@/lib/current-user"
-import { cn, formatCurrency, formatTime, formatDate, getStatusColor } from "@/lib/utils"
+import { currentUser, getMyAppointments, getMyPrescriptions, getMyMessages } from "@/lib/current-user"
+import { cn, formatTime, formatDate, getStatusColor } from "@/lib/utils"
 import PlatformReadiness from "@/components/platform-readiness"
 
 export default function DashboardPage() {
@@ -20,16 +20,11 @@ export default function DashboardPage() {
     (a) => new Date(a.scheduled_at) >= new Date() && a.status !== "completed" && a.status !== "no-show"
   )
   const myRx = getMyPrescriptions().filter((p) => p.status === "active")
-  const myClaims = getMyClaims()
   const myMessages = getMyMessages()
   const unreadCount = myMessages.filter((m) => !m.read).length
   const lowAdherenceRx = myRx.filter((p) => p.adherence_pct < 80)
   const myPA = priorAuths.filter((p) => p.patient_id === currentUser.id)
   const pendingPA = myPA.filter((p) => p.status === "pending" || p.status === "submitted")
-  const owedAmount = myClaims
-    .filter((c) => ["paid", "submitted", "processing", "appealed"].includes(c.status))
-    .reduce((sum, c) => sum + c.patient_responsibility, 0)
-
   // New healthcare data
   const myLabs = getPatientLabResults(currentUser.id)
   const pendingLabs = myLabs.filter((l) => l.status === "pending")

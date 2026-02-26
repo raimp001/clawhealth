@@ -5,7 +5,7 @@ import { getPatientReferrals, getPhysician } from "@/lib/seed-data"
 import { cn } from "@/lib/utils"
 import {
   ArrowRightCircle, Clock, CheckCircle2, Calendar, Phone,
-  AlertTriangle, Bot, ArrowRight, MapPin,
+  AlertTriangle, Bot,
 } from "lucide-react"
 
 export default function ReferralsPage() {

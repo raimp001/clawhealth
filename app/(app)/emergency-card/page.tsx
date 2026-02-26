@@ -4,7 +4,7 @@ import { currentUser } from "@/lib/current-user"
 import { getPhysician, getPatientPrescriptions } from "@/lib/seed-data"
 import {
   AlertCircle, Heart, Pill, Phone, User, Shield,
-  MapPin, Droplets, Copy, CheckCircle2,
+  Droplets, Copy, CheckCircle2,
 } from "lucide-react"
 import { useState } from "react"
 import { cn } from "@/lib/utils"

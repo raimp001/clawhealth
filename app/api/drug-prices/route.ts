@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 
 // ── OpenFDA Drug NDC API (free, no key) ──────────────────
 const OPENFDA_BASE = "https://api.fda.gov/drug/ndc.json"
+export const dynamic = "force-dynamic"
 
 // ── Known direct pricing data (PBM bypass options) ───────
 // Sources: TrumpRx.gov MFN prices, Cost Plus Drugs formula,
@@ -13,6 +14,27 @@ interface DirectPrice {
   savings: string
   url: string
   note: string
+}
+
+interface FdaActiveIngredient {
+  name?: string
+  strength?: string
+}
+
+interface FdaRecord {
+  brand_name?: string
+  generic_name?: string
+  dosage_form?: string
+  route?: string[]
+  labeler_name?: string
+  active_ingredients?: FdaActiveIngredient[]
+  dea_schedule?: string
+  product_ndc?: string
+  pharm_class?: string[]
+}
+
+interface FdaResponse {
+  results?: FdaRecord[]
 }
 
 const DIRECT_PRICING: Record<string, { retail: string; options: DirectPrice[] }> = {
@@ -116,15 +138,15 @@ export async function GET(req: NextRequest) {
         { next: { revalidate: 3600 } }
       )
       if (fdaRes.ok) {
-        const fdaData = await fdaRes.json()
+        const fdaData = (await fdaRes.json()) as FdaResponse
         const results = fdaData.results || []
-        drugInfo = results.map((r: any) => ({
+        drugInfo = results.map((r) => ({
           brandName: r.brand_name || "",
           genericName: r.generic_name || "",
           dosageForm: r.dosage_form || "",
           route: r.route?.join(", ") || "",
           manufacturer: r.labeler_name || "",
-          activeIngredients: r.active_ingredients?.map((a: any) => `${a.name} ${a.strength}`).join(", ") || "",
+          activeIngredients: r.active_ingredients?.map((a) => `${a.name} ${a.strength}`).join(", ") || "",
           deaSchedule: r.dea_schedule || "Non-controlled",
           productNdc: r.product_ndc || "",
           pharm_class: r.pharm_class || [],

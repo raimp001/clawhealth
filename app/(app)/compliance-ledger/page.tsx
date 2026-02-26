@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import {
   BookText,
   CheckCircle2,
@@ -111,7 +111,7 @@ export default function ComplianceLedgerPage() {
     URL.revokeObjectURL(href)
   }
 
-  async function loadSnapshot() {
+  const loadSnapshot = useCallback(async () => {
     setLoading(true)
     setError("")
     try {
@@ -120,22 +120,18 @@ export default function ComplianceLedgerPage() {
       )
       const data = (await response.json()) as SnapshotPayload
       setSnapshot(data)
-      if (!selectedPaymentId && data.payments.length > 0) {
-        setSelectedPaymentId(data.payments[0].id)
-      }
-      if (!selectedRefundId && data.refunds.length > 0) {
-        setSelectedRefundId(data.refunds[0].id)
-      }
+      setSelectedPaymentId((prev) => prev || data.payments[0]?.id || "")
+      setSelectedRefundId((prev) => prev || data.refunds[0]?.id || "")
     } catch {
       setError("Unable to load compliance ledger data.")
     } finally {
       setLoading(false)
     }
-  }
+  }, [activeWallet])
 
   useEffect(() => {
     void loadSnapshot()
-  }, [activeWallet])
+  }, [loadSnapshot])
 
   async function createIntent() {
     setBusy(true)

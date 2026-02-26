@@ -3,8 +3,8 @@
 import { cn } from "@/lib/utils"
 import { useWalletIdentity } from "@/lib/wallet-context"
 import {
-  Bot, User, Heart, Pill, Stethoscope, MapPin, Shield,
-  CheckCircle2, Loader2, Search, Building2, Smartphone,
+  Bot, User, Heart, Pill, Stethoscope,
+  CheckCircle2,
   Activity, ArrowRight, Sparkles, Wallet as WalletIcon,
 } from "lucide-react"
 import { useState, useRef, useEffect, useCallback } from "react"
@@ -60,7 +60,7 @@ const AGENT_NAMES: Record<string, { name: string; icon: typeof Bot; color: strin
 }
 
 export default function OnboardingPage() {
-  const { isConnected, walletAddress, profile, updateProfile, completeOnboarding } = useWalletIdentity()
+  const { isConnected, walletAddress, updateProfile, completeOnboarding } = useWalletIdentity()
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState("")
   const [step, setStep] = useState<Step>("welcome")
@@ -172,22 +172,50 @@ export default function OnboardingPage() {
         setIsSearching(true)
         addSystem("Searching NPI Registry...")
         try {
-          const res = await fetch(`/api/providers/search?q=${encodeURIComponent(val + " internal medicine")}&limit=5`)
-          const data = await res.json()
-          setSearchResults(data.providers || [])
-          if (data.providers?.length > 0) {
-            const list = data.providers.slice(0, 3).map((p: { name: string; credential?: string; specialty?: string; fullAddress?: string; phone?: string; npi: string }, i: number) =>
-              `${i + 1}. **${p.name}**${p.credential ? `, ${p.credential}` : ""} — ${p.specialty}\n   ${p.fullAddress}${p.phone ? `\n   ${p.phone}` : ""}\n   NPI: ${p.npi}`
+          const res = await fetch(`/api/providers/search?q=${encodeURIComponent(`${val} internal medicine provider`)}&limit=5`)
+          const data = (await res.json()) as {
+            ready?: boolean
+            clarificationQuestion?: string
+            matches?: Array<{
+              kind: "provider" | "caregiver" | "lab" | "radiology"
+              name: string
+              specialty?: string
+              fullAddress?: string
+              phone?: string
+              npi: string
+            }>
+          }
+          const providerMatches = (data.matches || []).filter((item) => item.kind === "provider")
+          const mapped = providerMatches.map((item) => ({
+            name: item.name,
+            npi: item.npi,
+            specialty: item.specialty,
+            fullAddress: item.fullAddress,
+            phone: item.phone,
+          }))
+
+          if (data.ready === false) {
+            addAgent(data.clarificationQuestion || "Tell me the city/state or ZIP so I can find PCP options.")
+            setStep("pcp-search")
+            break
+          }
+
+          setSearchResults(mapped)
+          if (mapped.length > 0) {
+            const list = mapped.slice(0, 3).map((p, i) =>
+              `${i + 1}. **${p.name}** — ${p.specialty}\n   ${p.fullAddress}${p.phone ? `\n   ${p.phone}` : ""}\n   NPI: ${p.npi}`
             ).join("\n\n")
             addAgent(`Found some options for you!\n\n${list}\n\nWhich one would you like? (Just say the number, or tell me to search again)`)
+            setStep("pcp-confirm")
           } else {
             addAgent("I couldn't find anyone matching that. Try a different name, city, or ZIP code?")
+            setStep("pcp-search")
           }
         } catch {
           addAgent("Had trouble searching — can you try again with a city and state?")
+          setStep("pcp-search")
         }
         setIsSearching(false)
-        setStep("pcp-confirm")
         break
 
       case "pcp-confirm":
@@ -233,10 +261,21 @@ export default function OnboardingPage() {
         setIsSearching(true)
         addSystem("Searching pharmacies...")
         try {
-          const res = await fetch(`/api/pharmacy/search?name=${encodeURIComponent(val)}&limit=3`)
-          const data = await res.json()
-          if (data.pharmacies?.length > 0) {
-            const p = data.pharmacies[0]
+          const res = await fetch(`/api/pharmacy/search?q=${encodeURIComponent(val)}&limit=3`)
+          const data = (await res.json()) as {
+            ready?: boolean
+            clarificationQuestion?: string
+            pharmacies?: Array<{ name: string; npi: string; fullAddress?: string }>
+          }
+          if (data.ready === false) {
+            addAgent(data.clarificationQuestion || "What city/state or ZIP should I use for pharmacy search?")
+            setStep("pharmacy-search")
+            setIsSearching(false)
+            break
+          }
+          const pharmacies = data.pharmacies || []
+          if (pharmacies.length > 0) {
+            const p = pharmacies[0]
             setPatient(prev => ({ ...prev, pharmacy: p.name, pharmacyNpi: p.npi }))
             addAgent(`Found it! **${p.name}**\n${p.fullAddress}\nNPI: ${p.npi}\n\nI've set this as your default pharmacy.\n\nNow the important part — let's go through your medications. I'm handing you to Maya, our Rx specialist.`)
             setTimeout(() => {

@@ -1,5 +1,24 @@
 import { NextRequest, NextResponse } from "next/server"
 
+interface NpiTaxonomy {
+  primary?: boolean
+  desc?: string
+}
+
+interface NpiVerifyResult {
+  number?: string
+  basic?: {
+    first_name?: string
+    last_name?: string
+    organization_name?: string
+  }
+  taxonomies?: NpiTaxonomy[]
+}
+
+interface NpiVerifyResponse {
+  results?: NpiVerifyResult[]
+}
+
 // USPSTF Screening Recommendations
 function getScreenings(age: number, gender: string, riskFactors: string[]) {
   const screenings: { name: string; frequency: string; due: boolean; reason: string }[] = []
@@ -84,11 +103,11 @@ export async function POST(req: NextRequest) {
         const npi = String(data.npi || "")
         if (!npi) return NextResponse.json({ error: "NPI required" }, { status: 400 })
         const res = await fetch(`https://npiregistry.cms.hhs.gov/api/?version=2.1&number=${npi}`)
-        const result = await res.json()
+        const result = (await res.json()) as NpiVerifyResponse
         const provider = result.results?.[0]
         if (!provider) return NextResponse.json({ found: false })
         const basic = provider.basic || {}
-        const taxonomy = provider.taxonomies?.find((t: any) => t.primary) || provider.taxonomies?.[0] || {}
+        const taxonomy = provider.taxonomies?.find((t) => t.primary) || provider.taxonomies?.[0] || {}
         return NextResponse.json({
           found: true,
           name: `${basic.first_name || ""} ${basic.last_name || ""}`.trim() || basic.organization_name || "",

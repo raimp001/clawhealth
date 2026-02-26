@@ -169,10 +169,14 @@ IMPORTANT RULES:
     logAction(agentId, "responded", `${message.slice(0, 60)}...`, "portal")
 
     return { response, agentId, handoff }
-  } catch (error: any) {
-    console.error(`Agent ${agentId} error:`, error?.message || error)
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error)
+    const status = typeof error === "object" && error !== null && "status" in error
+      ? Number((error as { status?: unknown }).status)
+      : undefined
+    console.error(`Agent ${agentId} error:`, message || error)
 
-    if (error?.status === 401) {
+    if (status === 401) {
       return { response: "API key is invalid. Please check your OpenAI API key in the environment variables.", agentId }
     }
 

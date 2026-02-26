@@ -4,8 +4,8 @@ import { currentUser } from "@/lib/current-user"
 import { getPatientVitals } from "@/lib/seed-data"
 import { cn } from "@/lib/utils"
 import {
-  Activity, Heart, Thermometer, Weight, Droplets,
-  Wind, TrendingDown, TrendingUp, Minus, Bot, Clock,
+  Activity, Heart, Weight, Droplets,
+  TrendingDown, TrendingUp, Minus, Bot, Clock,
 } from "lucide-react"
 import { useState } from "react"
 

@@ -4,7 +4,7 @@ import { currentUser } from "@/lib/current-user"
 import { getPatientLabResults, getPhysician } from "@/lib/seed-data"
 import { cn } from "@/lib/utils"
 import {
-  FlaskConical, AlertTriangle, CheckCircle2, Clock, ArrowRight,
+  FlaskConical, AlertTriangle, CheckCircle2, Clock,
   ChevronDown, ChevronUp, Bot, FileText,
 } from "lucide-react"
 import { useState } from "react"

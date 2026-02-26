@@ -21,7 +21,6 @@ import {
   Bot,
   CheckCircle2,
   UserCircle,
-  Settings,
   Sparkles,
   BookText,
 } from "lucide-react"
@@ -33,7 +32,6 @@ export default function WalletPage() {
     isConnected,
     walletAddress,
     profile,
-    isNewUser,
     setAgentAutoPay,
     setAgentRxAutoPay,
   } = useWalletIdentity()

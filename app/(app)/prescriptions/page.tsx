@@ -3,7 +3,7 @@
 import { getMyPrescriptions } from "@/lib/current-user"
 import { getPhysician } from "@/lib/seed-data"
 import { cn, formatDate, getStatusColor } from "@/lib/utils"
-import { Pill, Search, AlertTriangle, RefreshCw, CheckCircle2 } from "lucide-react"
+import { Pill, Search, AlertTriangle, RefreshCw } from "lucide-react"
 import { useState, useMemo } from "react"
 import Link from "next/link"
 import AIAction from "@/components/ai-action"

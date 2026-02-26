@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { ExternalLink, FlaskConical, Loader2, Search, Sparkles } from "lucide-react"
 import AIAction from "@/components/ai-action"
 import type { TrialMatch } from "@/lib/basehealth"
@@ -12,7 +12,7 @@ export default function ClinicalTrialsPage() {
   const [matches, setMatches] = useState<TrialMatch[]>([])
   const [hasSearched, setHasSearched] = useState(false)
 
-  async function searchTrials(nextCondition = condition, nextLocation = location) {
+  const searchTrials = useCallback(async (nextCondition = condition, nextLocation = location) => {
     setLoading(true)
     setHasSearched(true)
     try {
@@ -25,11 +25,11 @@ export default function ClinicalTrialsPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [condition, location])
 
   useEffect(() => {
     void searchTrials()
-  }, [])
+  }, [searchTrials])
 
   return (
     <div className="animate-slide-up space-y-6">
