@@ -314,7 +314,9 @@ export function parseCareSearchQuery(query: string): ParsedCareQuery {
     serviceTypes.push("provider")
   }
 
-  const uniqueTypes = Array.from(new Set(serviceTypes))
+  const uniqueTypes: CareSearchType[] = Array.from(
+    new Set<CareSearchType>(serviceTypes.length > 0 ? serviceTypes : ["provider"])
+  )
   const specialty = extractMappedValue(lowered, SPECIALTY_MAP)
   const caregiverRole = extractMappedValue(lowered, CAREGIVER_ROLE_MAP)
 
@@ -322,7 +324,6 @@ export function parseCareSearchQuery(query: string): ParsedCareQuery {
   working = location.cleaned
 
   const missingInfo: string[] = []
-  if (uniqueTypes.length === 0) missingInfo.push("service")
   if (!location.zip && !location.city) missingInfo.push("location")
 
   const ready = missingInfo.length === 0

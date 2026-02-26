@@ -4,6 +4,8 @@ import path from "node:path"
 
 const DEFAULT_TREASURY_WALLET = "0x09aeac8822F72AD49676c4DfA38519C98484730c"
 const DEFAULT_CURRENCY = "USDC" as const
+const FALLBACK_LEDGER_FILE = path.join("/tmp", "openrx-ledger.json")
+let hasWarnedEphemeralLedgerFallback = false
 
 export type PaymentCategory =
   | "copay"
@@ -139,10 +141,16 @@ interface LedgerStore {
 }
 
 function resolveLedgerFile(): string {
-  const configured = process.env.OPENRX_LEDGER_PATH
+  const configured = process.env.OPENRX_LEDGER_PATH?.trim()
   if (configured) return configured
   if (process.env.NODE_ENV === "production") {
-    throw new Error("OPENRX_LEDGER_PATH is required in production for durable compliance ledger storage.")
+    if (!hasWarnedEphemeralLedgerFallback) {
+      hasWarnedEphemeralLedgerFallback = true
+      console.warn(
+        "OPENRX_LEDGER_PATH is not set in production. Falling back to /tmp/openrx-ledger.json (ephemeral storage). Set OPENRX_LEDGER_PATH for durable compliance records."
+      )
+    }
+    return FALLBACK_LEDGER_FILE
   }
   return path.join(process.cwd(), ".openrx-ledger.json")
 }

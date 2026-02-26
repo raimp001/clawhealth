@@ -4,7 +4,7 @@ import {
   type PaymentRecord,
 } from "@/lib/payments-ledger"
 
-export const DEFAULT_SCREENING_FEE_USDC = "1.00"
+export const DEFAULT_SCREENING_FEE_USDC = "0.50"
 export const SCREENING_PAYMENT_CATEGORY = "screening" as const
 
 function toAmountNumber(value: string | undefined): number {
