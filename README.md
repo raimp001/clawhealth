@@ -59,6 +59,25 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
+## End-to-End Testing (Playwright)
+
+```bash
+npx playwright install chromium
+npm run test:e2e
+```
+
+Useful variants:
+
+```bash
+npm run test:e2e:headed
+npm run test:e2e:ui
+```
+
+Included E2E coverage:
+
+- Codebase visualizer map flow, interactive node inspection, exports, Ask Mapper, and Improve Diagram
+- Provider search regression checks for `hillsboro internal medicine provider`, `hillsboro`, and `97123`
+
 ## OpenClaw Gateway (optional)
 
 To connect the live AI gateway:
