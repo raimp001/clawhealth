@@ -5,6 +5,7 @@ import {
   type ScreeningInput,
   type ScreeningRecommendation,
 } from "@/lib/basehealth"
+import { buildScreeningEvidence, type ScreeningEvidenceCitation } from "@/lib/screening-evidence"
 import {
   CARE_SEARCH_PROMPT_ID,
   CARE_SEARCH_PROMPT_IMAGE_PATH,
@@ -16,6 +17,7 @@ import {
 } from "@/lib/npi-care-search"
 import { getLiveSnapshotByWallet } from "@/lib/live-data.server"
 import { prisma } from "@/lib/db"
+import { verifyScreeningAccess } from "@/lib/screening-access"
 
 interface ScreeningLocalCareConnection {
   recommendationId: string
@@ -36,6 +38,7 @@ interface ScreeningLocalCareConnection {
 
 type ScreeningAssessmentPayload = ScreeningAssessment & {
   localCareConnections: ScreeningLocalCareConnection[]
+  evidenceCitations: ScreeningEvidenceCitation[]
 }
 
 const CARE_MATCH_LIMIT = 10
@@ -224,16 +227,49 @@ async function buildAssessmentPayload(
 
   const patientAddress = livePatient?.address || process.env.OPENRX_DEFAULT_PATIENT_LOCATION || ""
   const localCareConnections = await buildLocalCareConnections(assessment, patientAddress)
+  const evidenceCitations = await buildScreeningEvidence({
+    assessment,
+    symptoms: input.symptoms,
+    familyHistory: input.familyHistory,
+  })
   return {
     ...assessment,
     localCareConnections,
+    evidenceCitations,
   }
+}
+
+function paymentRequiredResponse(input: {
+  reason?: string
+  fee: string
+  recipientAddress: string
+}) {
+  return NextResponse.json(
+    {
+      error: input.reason || "Personalized screening payment is required.",
+      requiresPayment: true,
+      fee: input.fee,
+      currency: "USDC",
+      recipientAddress: input.recipientAddress,
+    },
+    { status: 402 }
+  )
 }
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const patientId = searchParams.get("patientId") || undefined
   const walletAddress = searchParams.get("walletAddress") || undefined
+  const paymentId = searchParams.get("paymentId") || undefined
+
+  const access = verifyScreeningAccess({ walletAddress, paymentId })
+  if (!access.ok) {
+    return paymentRequiredResponse({
+      reason: access.reason,
+      fee: access.fee,
+      recipientAddress: access.recipientAddress,
+    })
+  }
 
   const assessment = await buildAssessmentPayload({ patientId, walletAddress })
   return NextResponse.json(assessment)
@@ -241,7 +277,21 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const body = (await request.json()) as ScreeningInput & { walletAddress?: string }
+    const body = (await request.json()) as ScreeningInput & {
+      walletAddress?: string
+      paymentId?: string
+    }
+    const access = verifyScreeningAccess({
+      walletAddress: body.walletAddress,
+      paymentId: body.paymentId,
+    })
+    if (!access.ok) {
+      return paymentRequiredResponse({
+        reason: access.reason,
+        fee: access.fee,
+        recipientAddress: access.recipientAddress,
+      })
+    }
     const assessment = await buildAssessmentPayload(body)
     return NextResponse.json(assessment)
   } catch {

@@ -9,6 +9,7 @@ export type PaymentCategory =
   | "copay"
   | "prescription"
   | "lab"
+  | "screening"
   | "subscription"
   | "other"
 

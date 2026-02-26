@@ -44,6 +44,7 @@ const PAYMENT_CATEGORIES: PaymentCategory[] = [
   "copay",
   "prescription",
   "lab",
+  "screening",
   "subscription",
   "other",
 ]

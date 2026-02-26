@@ -1,21 +1,27 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useMemo, useState } from "react"
 import Image from "next/image"
 import {
   Activity,
   AlertTriangle,
+  CreditCard,
+  ExternalLink,
   HeartPulse,
   Loader2,
   MapPin,
   Phone,
   Search,
   ShieldCheck,
+  Wallet,
 } from "lucide-react"
 import AIAction from "@/components/ai-action"
 import { cn } from "@/lib/utils"
 import type { ScreeningAssessment } from "@/lib/basehealth"
 import type { CareDirectoryMatch, CareSearchType } from "@/lib/npi-care-search"
+import type { ScreeningEvidenceCitation } from "@/lib/screening-evidence"
+import type { ScreeningIntakeResult } from "@/lib/screening-intake"
+import type { PaymentRecord } from "@/lib/payments-ledger"
 import { useLiveSnapshot } from "@/lib/hooks/use-live-snapshot"
 import { useWalletIdentity } from "@/lib/wallet-context"
 
@@ -38,19 +44,45 @@ interface LocalCareConnection {
 
 type ScreeningResponse = ScreeningAssessment & {
   localCareConnections?: LocalCareConnection[]
+  evidenceCitations?: ScreeningEvidenceCitation[]
+  requiresPayment?: boolean
+  fee?: string
+  currency?: string
+  recipientAddress?: string
+  error?: string
+}
+
+type ScreeningIntakeResponse = ScreeningIntakeResult & {
+  error?: string
 }
 
 export default function ScreeningPage() {
   const { snapshot } = useLiveSnapshot()
-  const { walletAddress } = useWalletIdentity()
+  const { walletAddress, isConnected } = useWalletIdentity()
   const [assessment, setAssessment] = useState<ScreeningAssessment | null>(null)
   const [localCareConnections, setLocalCareConnections] = useState<LocalCareConnection[]>([])
-  const [loading, setLoading] = useState(true)
+  const [evidenceCitations, setEvidenceCitations] = useState<ScreeningEvidenceCitation[]>([])
   const [running, setRunning] = useState(false)
+  const [age, setAge] = useState("")
   const [symptoms, setSymptoms] = useState("")
   const [familyHistory, setFamilyHistory] = useState("")
+  const [conditions, setConditions] = useState("")
   const [bmi, setBmi] = useState("")
   const [smoker, setSmoker] = useState(false)
+  const [narrative, setNarrative] = useState("")
+  const [parsingNarrative, setParsingNarrative] = useState(false)
+  const [intakeFeedback, setIntakeFeedback] = useState("")
+
+  const [paymentIntent, setPaymentIntent] = useState<PaymentRecord | null>(null)
+  const [paymentId, setPaymentId] = useState("")
+  const [verifyTxHash, setVerifyTxHash] = useState("")
+  const [fee, setFee] = useState("1.00")
+  const [recipientAddress, setRecipientAddress] = useState("")
+  const [paymentReady, setPaymentReady] = useState(false)
+  const [creatingIntent, setCreatingIntent] = useState(false)
+  const [launchingPay, setLaunchingPay] = useState(false)
+  const [verifyingPayment, setVerifyingPayment] = useState(false)
+  const [error, setError] = useState("")
 
   const riskStyle = useMemo(() => {
     if (!assessment) return "bg-sand text-warm-500"
@@ -71,24 +103,176 @@ export default function ScreeningPage() {
     [localCareConnections]
   )
 
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const params = new URLSearchParams()
-        if (walletAddress) params.set("walletAddress", walletAddress)
-        const response = await fetch(`/api/screening/assess?${params.toString()}`)
-        const data = (await response.json()) as ScreeningResponse
-        setAssessment(data)
-        setLocalCareConnections(data.localCareConnections || [])
-      } finally {
-        setLoading(false)
-      }
+  function applyPaymentRequired(data: ScreeningResponse) {
+    setPaymentReady(false)
+    if (data.fee) setFee(data.fee)
+    if (data.recipientAddress) setRecipientAddress(data.recipientAddress)
+    setError(data.error || "Payment is required before personalized recommendations are generated.")
+  }
+
+  async function createScreeningPaymentIntent() {
+    if (!walletAddress) {
+      setError("Connect your wallet before creating a screening payment intent.")
+      return
     }
-    void load()
-  }, [walletAddress])
+
+    setCreatingIntent(true)
+    setError("")
+    try {
+      const response = await fetch("/api/screening/payment-intent", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ walletAddress }),
+      })
+      const data = (await response.json()) as {
+        error?: string
+        payment?: PaymentRecord
+        fee?: string
+        recipientAddress?: string
+      }
+      if (!response.ok || data.error || !data.payment) {
+        throw new Error(data.error || "Failed to create screening payment intent.")
+      }
+
+      setPaymentIntent(data.payment)
+      setPaymentId(data.payment.id)
+      setFee(data.fee || fee)
+      setRecipientAddress(data.recipientAddress || data.payment.recipientAddress)
+      setVerifyTxHash("")
+      setPaymentReady(false)
+    } catch (issue) {
+      setError(issue instanceof Error ? issue.message : "Failed to create screening payment intent.")
+    } finally {
+      setCreatingIntent(false)
+    }
+  }
+
+  async function launchBasePay() {
+    if (!paymentIntent) {
+      setError("Create a screening payment intent first.")
+      return
+    }
+
+    setLaunchingPay(true)
+    setError("")
+    try {
+      const { pay } = await import("@base-org/account")
+      const result = await pay({
+        amount: paymentIntent.expectedAmount,
+        to: paymentIntent.recipientAddress,
+      })
+      setVerifyTxHash(result.id)
+    } catch (issue) {
+      setError(issue instanceof Error ? issue.message : "Failed to launch Base Pay.")
+    } finally {
+      setLaunchingPay(false)
+    }
+  }
+
+  async function verifyScreeningPayment() {
+    if (!walletAddress) {
+      setError("Connect your wallet before verification.")
+      return
+    }
+    if (!paymentIntent || !paymentId) {
+      setError("Create a payment intent first.")
+      return
+    }
+    if (!verifyTxHash.trim()) {
+      setError("Paste a transaction hash to verify payment.")
+      return
+    }
+
+    setVerifyingPayment(true)
+    setError("")
+    try {
+      const response = await fetch("/api/payments/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          paymentId,
+          txHash: verifyTxHash.trim(),
+          walletAddress,
+          expectedAmount: paymentIntent.expectedAmount,
+          expectedRecipient: paymentIntent.recipientAddress,
+        }),
+      })
+      const data = (await response.json()) as { error?: string }
+      if (!response.ok || data.error) {
+        throw new Error(data.error || "Payment verification failed.")
+      }
+      setPaymentReady(true)
+    } catch (issue) {
+      setPaymentReady(false)
+      setError(issue instanceof Error ? issue.message : "Payment verification failed.")
+    } finally {
+      setVerifyingPayment(false)
+    }
+  }
+
+  async function parseNarrativeIntake() {
+    if (!narrative.trim()) {
+      setIntakeFeedback("Describe your health history so intake can parse the details.")
+      return
+    }
+
+    setParsingNarrative(true)
+    setError("")
+    setIntakeFeedback("")
+    try {
+      const response = await fetch("/api/screening/intake", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ narrative }),
+      })
+      const data = (await response.json()) as ScreeningIntakeResponse
+      if (!response.ok || data.error) {
+        throw new Error(data.error || "Failed to parse screening narrative intake.")
+      }
+
+      if (typeof data.extracted.age === "number") {
+        setAge(String(data.extracted.age))
+      }
+      if (typeof data.extracted.bmi === "number") {
+        setBmi(String(data.extracted.bmi))
+      }
+      if (typeof data.extracted.smoker === "boolean") {
+        setSmoker(data.extracted.smoker)
+      }
+      if (data.extracted.symptoms.length > 0) {
+        setSymptoms(data.extracted.symptoms.join(", "))
+      }
+      if (data.extracted.familyHistory.length > 0) {
+        setFamilyHistory(data.extracted.familyHistory.join(", "))
+      }
+      if (data.extracted.conditions.length > 0) {
+        setConditions(data.extracted.conditions.join(", "))
+      }
+
+      if (data.ready) {
+        setIntakeFeedback("Intake parsed. You can review the auto-filled fields and run screening.")
+      } else {
+        setIntakeFeedback(
+          data.clarificationQuestion ||
+            "Intake parsed partially. Add missing risk details and parse again."
+        )
+      }
+    } catch (issue) {
+      setIntakeFeedback("")
+      setError(issue instanceof Error ? issue.message : "Failed to parse screening narrative intake.")
+    } finally {
+      setParsingNarrative(false)
+    }
+  }
 
   async function runScreening() {
+    if (!paymentReady || !paymentId) {
+      setError("Verify screening payment before running personalized recommendations.")
+      return
+    }
+
     setRunning(true)
+    setError("")
     try {
       const response = await fetch("/api/screening/assess", {
         method: "POST",
@@ -96,6 +280,8 @@ export default function ScreeningPage() {
         body: JSON.stringify({
           patientId: snapshot.patient?.id,
           walletAddress,
+          paymentId,
+          age: age ? Number(age) : undefined,
           bmi: bmi ? Number(bmi) : undefined,
           smoker,
           symptoms: symptoms
@@ -106,11 +292,27 @@ export default function ScreeningPage() {
             .split(",")
             .map((item) => item.trim())
             .filter(Boolean),
+          conditions: conditions
+            .split(",")
+            .map((item) => item.trim())
+            .filter(Boolean),
         }),
       })
+
       const data = (await response.json()) as ScreeningResponse
+      if (response.status === 402 || data.requiresPayment) {
+        applyPaymentRequired(data)
+        return
+      }
+      if (!response.ok || data.error) {
+        throw new Error(data.error || "Failed to compute screening assessment.")
+      }
+
       setAssessment(data)
       setLocalCareConnections(data.localCareConnections || [])
+      setEvidenceCitations(data.evidenceCitations || [])
+    } catch (issue) {
+      setError(issue instanceof Error ? issue.message : "Failed to compute screening assessment.")
     } finally {
       setRunning(false)
     }
@@ -122,28 +324,125 @@ export default function ScreeningPage() {
         <div>
           <h1 className="text-2xl font-serif text-warm-800">AI Health Screening</h1>
           <p className="text-sm text-warm-500 mt-1">
-            BaseHealth-style risk triage layered onto your OpenRx profile.
+            Personalized screening recommendations with evidence links and nearby care routing.
           </p>
         </div>
         <AIAction
           agentId="screening"
           label="Explain My Risk"
-          prompt="Summarize my screening risk score, key drivers, and what I should do first."
+          prompt="Summarize my screening risk score, key drivers, evidence links, and what I should do first."
         />
       </div>
 
       <div className="bg-terra/10 rounded-2xl border border-terra/20 p-4 flex items-start gap-3">
         <HeartPulse size={18} className="text-terra shrink-0 mt-0.5" />
         <p className="text-xs text-warm-600 leading-relaxed">
-          This screen prioritizes prevention and routing only. It does not diagnose disease.
-          For severe symptoms, use triage immediately.
+          Personalized screening requires a verified payment of {fee} USDC to prevent abuse and preserve model capacity.
+          This workflow does not diagnose disease. For severe symptoms, use triage immediately.
         </p>
+      </div>
+
+      {!isConnected && (
+        <div className="bg-yellow-100/20 border border-yellow-300/30 rounded-xl p-3 text-xs text-warm-600">
+          Connect a wallet to unlock personalized screening.
+        </div>
+      )}
+
+      {error && (
+        <div className="bg-soft-red/5 border border-soft-red/20 rounded-xl p-3 text-xs text-soft-red">
+          {error}
+        </div>
+      )}
+
+      <div className="bg-pampas rounded-2xl border border-sand p-5 space-y-3">
+        <div className="flex items-center gap-2">
+          <CreditCard size={14} className="text-terra" />
+          <h2 className="text-sm font-bold text-warm-800">Payment Gate</h2>
+          {paymentReady && (
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-accent/10 text-accent uppercase">
+              verified
+            </span>
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+          <div className="rounded-xl border border-sand/70 bg-cream/30 p-3 text-xs text-warm-600">
+            <p><span className="font-semibold text-warm-800">Fee:</span> {fee} USDC</p>
+            <p className="mt-1 break-all"><span className="font-semibold text-warm-800">Recipient:</span> {recipientAddress || "Set after intent creation"}</p>
+            {paymentIntent && <p className="mt-1"><span className="font-semibold text-warm-800">Payment ID:</span> {paymentIntent.id}</p>}
+          </div>
+
+          <div className="space-y-2">
+            <button
+              onClick={() => void createScreeningPaymentIntent()}
+              disabled={!walletAddress || creatingIntent}
+              className="w-full px-3 py-2 rounded-lg bg-terra text-white text-xs font-semibold hover:bg-terra-dark transition disabled:opacity-60"
+            >
+              {creatingIntent ? "Creating intent..." : "1) Create Intent"}
+            </button>
+            <button
+              onClick={() => void launchBasePay()}
+              disabled={!paymentIntent || launchingPay}
+              className="w-full px-3 py-2 rounded-lg border border-sand text-xs font-semibold text-warm-700 hover:border-terra/30 transition disabled:opacity-60"
+            >
+              {launchingPay ? "Launching..." : "2) Launch Base Pay"}
+            </button>
+          </div>
+
+          <div className="space-y-2">
+            <input
+              value={verifyTxHash}
+              onChange={(event) => setVerifyTxHash(event.target.value)}
+              placeholder="Paste transaction hash"
+              className="w-full px-3 py-2 rounded-lg border border-sand bg-cream/30 text-xs text-warm-800 focus:outline-none focus:border-terra/40"
+            />
+            <button
+              onClick={() => void verifyScreeningPayment()}
+              disabled={!paymentIntent || verifyingPayment}
+              className="w-full px-3 py-2 rounded-lg bg-accent text-white text-xs font-semibold hover:opacity-90 transition disabled:opacity-60"
+            >
+              {verifyingPayment ? "Verifying..." : "3) Verify Payment"}
+            </button>
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 bg-pampas rounded-2xl border border-sand p-5">
-          <h2 className="text-sm font-bold text-warm-800 mb-3">Run Screening</h2>
+          <h2 className="text-sm font-bold text-warm-800 mb-3">Run Personalized Screening</h2>
+          <div className="rounded-xl border border-sand/70 bg-cream/30 p-3 mb-3 space-y-2">
+            <label className="text-xs text-warm-600 block">
+              Natural-language intake
+              <textarea
+                value={narrative}
+                onChange={(event) => setNarrative(event.target.value)}
+                rows={4}
+                placeholder="Example: I am a 62-year-old woman with BRCA2 mutation, prior hypertension, former smoker, and family history of breast cancer."
+                className="mt-1 w-full px-3 py-2 rounded-lg border border-sand bg-pampas text-sm text-warm-800 placeholder:text-cloudy focus:outline-none focus:border-terra/40 resize-y"
+              />
+            </label>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                onClick={() => void parseNarrativeIntake()}
+                disabled={parsingNarrative}
+                className="px-3 py-2 rounded-lg border border-sand text-xs font-semibold text-warm-700 hover:border-terra/30 transition disabled:opacity-60"
+              >
+                {parsingNarrative ? "Parsing intake..." : "Parse Intake"}
+              </button>
+              {intakeFeedback && <p className="text-[11px] text-warm-500">{intakeFeedback}</p>}
+            </div>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <label className="text-xs text-warm-600">
+              Age (optional)
+              <input
+                value={age}
+                onChange={(event) => setAge(event.target.value)}
+                inputMode="numeric"
+                placeholder="62"
+                className="mt-1 w-full px-3 py-2 rounded-lg border border-sand bg-cream/30 text-sm text-warm-800 placeholder:text-cloudy focus:outline-none focus:border-terra/40"
+              />
+            </label>
             <label className="text-xs text-warm-600">
               Symptoms (comma separated)
               <input
@@ -159,6 +458,15 @@ export default function ScreeningPage() {
                 value={familyHistory}
                 onChange={(event) => setFamilyHistory(event.target.value)}
                 placeholder="heart disease, stroke, diabetes"
+                className="mt-1 w-full px-3 py-2 rounded-lg border border-sand bg-cream/30 text-sm text-warm-800 placeholder:text-cloudy focus:outline-none focus:border-terra/40"
+              />
+            </label>
+            <label className="text-xs text-warm-600 md:col-span-2">
+              Conditions / mutations (comma separated)
+              <input
+                value={conditions}
+                onChange={(event) => setConditions(event.target.value)}
+                placeholder="diabetes, hypertension, BRCA2 mutation carrier"
                 className="mt-1 w-full px-3 py-2 rounded-lg border border-sand bg-cream/30 text-sm text-warm-800 placeholder:text-cloudy focus:outline-none focus:border-terra/40"
               />
             </label>
@@ -185,13 +493,16 @@ export default function ScreeningPage() {
             </label>
           </div>
           <button
-            onClick={runScreening}
-            disabled={running}
+            onClick={() => void runScreening()}
+            disabled={running || !paymentReady}
             className="mt-4 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-terra text-white text-sm font-semibold hover:bg-terra-dark disabled:opacity-60 transition"
           >
             {running ? <Loader2 size={14} className="animate-spin" /> : <Activity size={14} />}
-            Recalculate Screening Risk
+            Generate Personalized Recommendations
           </button>
+          {!paymentReady && (
+            <p className="text-[11px] text-cloudy mt-2">Complete and verify payment to unlock screening output.</p>
+          )}
         </div>
 
         <div className="bg-pampas rounded-2xl border border-sand p-5">
@@ -203,9 +514,9 @@ export default function ScreeningPage() {
               </span>
             )}
           </div>
-          {loading || !assessment ? (
+          {!assessment ? (
             <div className="h-24 flex items-center justify-center text-xs text-cloudy">
-              <Loader2 size={14} className="animate-spin mr-2" /> Loading screening profile...
+              <Wallet size={14} className="mr-2" /> Complete payment and run screening.
             </div>
           ) : (
             <>
@@ -276,6 +587,40 @@ export default function ScreeningPage() {
                 </li>
               ))}
             </ul>
+          </div>
+        </div>
+      )}
+
+      {assessment && evidenceCitations.length > 0 && (
+        <div className="bg-pampas rounded-2xl border border-sand p-5 space-y-3">
+          <div className="flex items-center gap-2">
+            <Search size={14} className="text-terra" />
+            <h2 className="text-sm font-bold text-warm-800">Evidence Sources</h2>
+          </div>
+          <p className="text-xs text-warm-500">Guideline and literature links used to support this recommendation set.</p>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
+            {evidenceCitations.map((citation) => (
+              <a
+                key={citation.id}
+                href={citation.url}
+                target="_blank"
+                rel="noreferrer"
+                className="rounded-lg border border-sand/70 bg-cream/30 p-3 hover:border-terra/30 transition"
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-xs font-semibold text-warm-800">{citation.title}</p>
+                  <span className="text-[9px] uppercase font-bold px-2 py-0.5 rounded-full bg-terra/10 text-terra">
+                    {citation.type}
+                  </span>
+                </div>
+                <p className="text-[11px] text-warm-500 mt-1">{citation.source}</p>
+                {citation.publishedAt && <p className="text-[10px] text-cloudy mt-0.5">{citation.publishedAt}</p>}
+                <p className="text-[11px] text-warm-600 mt-1">{citation.summary}</p>
+                <span className="inline-flex items-center gap-1 text-[11px] text-terra font-semibold mt-2">
+                  Open source <ExternalLink size={11} />
+                </span>
+              </a>
+            ))}
           </div>
         </div>
       )}
@@ -358,19 +703,12 @@ export default function ScreeningPage() {
                             {match.phone}
                           </p>
                         )}
-                        <p className="text-[10px] font-mono text-cloudy mt-1">NPI {match.npi}</p>
                       </div>
                     ))}
                   </div>
                 )}
               </div>
             ))}
-
-            {localCareConnections.length === 0 && (
-              <p className="text-xs text-cloudy">
-                Nearby matching will appear after screening recommendations are generated.
-              </p>
-            )}
           </div>
         </div>
       )}
