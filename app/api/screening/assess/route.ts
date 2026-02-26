@@ -20,6 +20,7 @@ import {
   type CareSearchType,
 } from "@/lib/npi-care-search"
 import { getLiveSnapshotByWallet } from "@/lib/live-data.server"
+import { createEmptyLiveSnapshot } from "@/lib/live-data-types"
 import { prisma } from "@/lib/db"
 import { verifyScreeningAccess } from "@/lib/screening-access"
 
@@ -296,20 +297,25 @@ async function loadSnapshotForRequest(params: {
   walletAddress?: string
   patientId?: string
 }) {
-  if (params.walletAddress) {
-    return getLiveSnapshotByWallet(params.walletAddress)
-  }
+  try {
+    if (params.walletAddress) {
+      return getLiveSnapshotByWallet(params.walletAddress)
+    }
 
-  if (params.patientId) {
-    const patient = await prisma.patientProfile.findUnique({
-      where: { id: params.patientId },
-      include: { user: { select: { walletAddress: true } } },
-    })
-    const wallet = patient?.user.walletAddress || undefined
-    return getLiveSnapshotByWallet(wallet)
-  }
+    if (params.patientId) {
+      const patient = await prisma.patientProfile.findUnique({
+        where: { id: params.patientId },
+        include: { user: { select: { walletAddress: true } } },
+      })
+      const wallet = patient?.user.walletAddress || undefined
+      return getLiveSnapshotByWallet(wallet)
+    }
 
-  return getLiveSnapshotByWallet(undefined)
+    return getLiveSnapshotByWallet(undefined)
+  } catch (error) {
+    console.error("Screening snapshot fallback engaged:", error)
+    return createEmptyLiveSnapshot(params.walletAddress || null)
+  }
 }
 
 async function buildAssessmentPayload(
@@ -405,28 +411,38 @@ function paymentRequiredResponse(input: {
 }
 
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url)
-  const patientId = searchParams.get("patientId") || undefined
-  const walletAddress = searchParams.get("walletAddress") || undefined
-  const paymentId = searchParams.get("paymentId") || undefined
-  const analysisLevel = resolveAnalysisLevel(searchParams.get("analysisLevel"))
+  try {
+    const { searchParams } = new URL(request.url)
+    const patientId = searchParams.get("patientId") || undefined
+    const walletAddress = searchParams.get("walletAddress") || undefined
+    const paymentId = searchParams.get("paymentId") || undefined
+    const analysisLevel = resolveAnalysisLevel(searchParams.get("analysisLevel"))
 
-  if (analysisLevel === "deep") {
-    const access = verifyScreeningAccess({ walletAddress, paymentId })
-    if (!access.ok) {
-      return paymentRequiredResponse({
-        reason: access.reason,
-        fee: access.fee,
-        recipientAddress: access.recipientAddress,
-      })
+    if (analysisLevel === "deep") {
+      const access = verifyScreeningAccess({ walletAddress, paymentId })
+      if (!access.ok) {
+        return paymentRequiredResponse({
+          reason: access.reason,
+          fee: access.fee,
+          recipientAddress: access.recipientAddress,
+        })
+      }
     }
-  }
 
-  const assessment = await buildAssessmentPayload(
-    { patientId, walletAddress },
-    { analysisLevel }
-  )
-  return NextResponse.json(assessment)
+    const assessment = await buildAssessmentPayload(
+      { patientId, walletAddress },
+      { analysisLevel }
+    )
+    return NextResponse.json(assessment)
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to compute screening assessment."
+    return NextResponse.json(
+      {
+        error: message || "Failed to compute screening assessment.",
+      },
+      { status: 500 }
+    )
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -452,10 +468,11 @@ export async function POST(request: NextRequest) {
     }
     const assessment = await buildAssessmentPayload(body, { analysisLevel })
     return NextResponse.json(assessment)
-  } catch {
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to compute screening assessment."
     return NextResponse.json(
-      { error: "Failed to compute screening assessment." },
-      { status: 400 }
+      { error: message || "Failed to compute screening assessment." },
+      { status: 500 }
     )
   }
 }

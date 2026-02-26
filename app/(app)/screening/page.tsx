@@ -93,8 +93,8 @@ export default function ScreeningPage() {
   const [conditions, setConditions] = useState("")
   const [bmi, setBmi] = useState("")
   const [smoker, setSmoker] = useState(false)
+  const [smokerTouched, setSmokerTouched] = useState(false)
   const [narrative, setNarrative] = useState("")
-  const [parsingNarrative, setParsingNarrative] = useState(false)
   const [intakeFeedback, setIntakeFeedback] = useState("")
 
   const [paymentIntent, setPaymentIntent] = useState<PaymentRecord | null>(null)
@@ -297,15 +297,25 @@ export default function ScreeningPage() {
     }
   }
 
-  async function parseNarrativeIntake() {
+  function parseTerms(value: string): string[] {
+    return value
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean)
+  }
+
+  function parseOptionalNumber(value: string): number | undefined {
+    if (!value.trim()) return undefined
+    const numeric = Number(value.trim())
+    return Number.isFinite(numeric) ? numeric : undefined
+  }
+
+  async function parseNarrativeIntakeIfPresent(): Promise<ScreeningIntakeResult["extracted"] | null> {
     if (!narrative.trim()) {
-      setIntakeFeedback("Describe your health history so intake can parse the details.")
-      return
+      setIntakeFeedback("")
+      return null
     }
 
-    setParsingNarrative(true)
-    setError("")
-    setIntakeFeedback("")
     try {
       const response = await fetch("/api/screening/intake", {
         method: "POST",
@@ -314,41 +324,17 @@ export default function ScreeningPage() {
       })
       const data = (await response.json()) as ScreeningIntakeResponse
       if (!response.ok || data.error) {
-        throw new Error(data.error || "Failed to parse screening narrative intake.")
+        throw new Error(data.error || "Could not parse screening history.")
       }
-
-      if (typeof data.extracted.age === "number") {
-        setAge(String(data.extracted.age))
-      }
-      if (typeof data.extracted.bmi === "number") {
-        setBmi(String(data.extracted.bmi))
-      }
-      if (typeof data.extracted.smoker === "boolean") {
-        setSmoker(data.extracted.smoker)
-      }
-      if (data.extracted.symptoms.length > 0) {
-        setSymptoms(data.extracted.symptoms.join(", "))
-      }
-      if (data.extracted.familyHistory.length > 0) {
-        setFamilyHistory(data.extracted.familyHistory.join(", "))
-      }
-      if (data.extracted.conditions.length > 0) {
-        setConditions(data.extracted.conditions.join(", "))
-      }
-
-      if (data.ready) {
-        setIntakeFeedback("Intake parsed. You can review the auto-filled fields and run screening.")
-      } else {
-        setIntakeFeedback(
-          data.clarificationQuestion ||
-            "Intake parsed partially. Add missing risk details and parse again."
-        )
-      }
-    } catch (issue) {
-      setIntakeFeedback("")
-      setError(issue instanceof Error ? issue.message : "Failed to parse screening narrative intake.")
-    } finally {
-      setParsingNarrative(false)
+      setIntakeFeedback(
+        data.ready
+          ? "History captured from your message."
+          : data.clarificationQuestion || "History parsed partially; recommendations will use available details."
+      )
+      return data.extracted
+    } catch {
+      setIntakeFeedback("Could not auto-parse your message; using available details.")
+      return null
     }
   }
 
@@ -368,6 +354,19 @@ export default function ScreeningPage() {
     setRunning(true)
     setError("")
     try {
+      const extracted = await parseNarrativeIntakeIfPresent()
+      const manualSymptoms = parseTerms(symptoms)
+      const manualFamilyHistory = parseTerms(familyHistory)
+      const manualConditions = parseTerms(conditions)
+
+      const resolvedAge = parseOptionalNumber(age) ?? extracted?.age
+      const resolvedBmi = parseOptionalNumber(bmi) ?? extracted?.bmi
+      const resolvedSmoker = smokerTouched ? smoker : extracted?.smoker ?? smoker
+      const resolvedSymptoms = manualSymptoms.length > 0 ? manualSymptoms : extracted?.symptoms || []
+      const resolvedFamilyHistory =
+        manualFamilyHistory.length > 0 ? manualFamilyHistory : extracted?.familyHistory || []
+      const resolvedConditions = manualConditions.length > 0 ? manualConditions : extracted?.conditions || []
+
       const response = await fetch("/api/screening/assess", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -376,21 +375,12 @@ export default function ScreeningPage() {
           walletAddress,
           paymentId: level === "deep" ? paymentId : undefined,
           analysisLevel: level,
-          age: age ? Number(age) : undefined,
-          bmi: bmi ? Number(bmi) : undefined,
-          smoker,
-          symptoms: symptoms
-            .split(",")
-            .map((item) => item.trim())
-            .filter(Boolean),
-          familyHistory: familyHistory
-            .split(",")
-            .map((item) => item.trim())
-            .filter(Boolean),
-          conditions: conditions
-            .split(",")
-            .map((item) => item.trim())
-            .filter(Boolean),
+          age: resolvedAge,
+          bmi: resolvedBmi,
+          smoker: resolvedSmoker,
+          symptoms: resolvedSymptoms,
+          familyHistory: resolvedFamilyHistory,
+          conditions: resolvedConditions,
         }),
       })
 
@@ -410,7 +400,14 @@ export default function ScreeningPage() {
         setShowPaymentGate(false)
       }
     } catch (issue) {
-      setError(issue instanceof Error ? issue.message : "Failed to compute screening assessment.")
+      const message = issue instanceof Error ? issue.message : ""
+      if (!message || message.toLowerCase().includes("failed to compute screening assessment")) {
+        setError(
+          "Couldn’t generate recommendations yet. Try a short summary like: 'I am 58, smoker, family history of stroke, diabetes.'"
+        )
+      } else {
+        setError(message)
+      }
     } finally {
       setRunning(false)
     }
@@ -422,7 +419,7 @@ export default function ScreeningPage() {
         <div>
           <h1 className="text-2xl font-serif text-warm-800">AI Health Screening</h1>
           <p className="text-sm text-warm-500 mt-1">
-            Start with a free USPSTF preview, then unlock paid genetics-aware deep recommendations right before release.
+            Type your history once and get free USPSTF screening recommendations.
           </p>
         </div>
         <AIAction
@@ -543,89 +540,92 @@ export default function ScreeningPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 bg-pampas rounded-2xl border border-sand p-5">
-          <h2 className="text-sm font-bold text-warm-800 mb-3">Screening Intake</h2>
+          <h2 className="text-sm font-bold text-warm-800 mb-3">Simple Screening Intake</h2>
           <div className="rounded-xl border border-sand/70 bg-cream/30 p-3 mb-3 space-y-2">
             <label className="text-xs text-warm-600 block">
-              Natural-language intake
+              Tell us your history in plain English
               <textarea
                 value={narrative}
                 onChange={(event) => setNarrative(event.target.value)}
                 rows={4}
-                placeholder="Example: I am a 62-year-old woman with BRCA2 mutation, prior hypertension, former smoker, and family history of breast cancer."
+                placeholder="Example: I am 62, former smoker, hypertension, family history of stroke and diabetes."
                 className="mt-1 w-full px-3 py-2 rounded-lg border border-sand bg-pampas text-sm text-warm-800 placeholder:text-cloudy focus:outline-none focus:border-terra/40 resize-y"
               />
             </label>
-            <div className="flex flex-wrap items-center gap-2">
-              <button
-                onClick={() => void parseNarrativeIntake()}
-                disabled={parsingNarrative}
-                className="px-3 py-2 rounded-lg border border-sand text-xs font-semibold text-warm-700 hover:border-terra/30 transition disabled:opacity-60"
-              >
-                {parsingNarrative ? "Parsing intake..." : "Parse Intake"}
-              </button>
-              {intakeFeedback && <p className="text-[11px] text-warm-500">{intakeFeedback}</p>}
-            </div>
+            <p className="text-[11px] text-warm-500">
+              One sentence is enough. We auto-parse age, conditions, symptoms, and family risk factors.
+            </p>
+            {intakeFeedback && <p className="text-[11px] text-warm-500">{intakeFeedback}</p>}
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <label className="text-xs text-warm-600">
-              Age (optional)
-              <input
-                value={age}
-                onChange={(event) => setAge(event.target.value)}
-                inputMode="numeric"
-                placeholder="62"
-                className="mt-1 w-full px-3 py-2 rounded-lg border border-sand bg-cream/30 text-sm text-warm-800 placeholder:text-cloudy focus:outline-none focus:border-terra/40"
-              />
-            </label>
-            <label className="text-xs text-warm-600">
-              Symptoms (comma separated)
-              <input
-                value={symptoms}
-                onChange={(event) => setSymptoms(event.target.value)}
-                placeholder="fatigue, chest discomfort, dizziness"
-                className="mt-1 w-full px-3 py-2 rounded-lg border border-sand bg-cream/30 text-sm text-warm-800 placeholder:text-cloudy focus:outline-none focus:border-terra/40"
-              />
-            </label>
-            <label className="text-xs text-warm-600">
-              Family history risks
-              <input
-                value={familyHistory}
-                onChange={(event) => setFamilyHistory(event.target.value)}
-                placeholder="heart disease, stroke, diabetes"
-                className="mt-1 w-full px-3 py-2 rounded-lg border border-sand bg-cream/30 text-sm text-warm-800 placeholder:text-cloudy focus:outline-none focus:border-terra/40"
-              />
-            </label>
-            <label className="text-xs text-warm-600 md:col-span-2">
-              Conditions / mutations (comma separated)
-              <input
-                value={conditions}
-                onChange={(event) => setConditions(event.target.value)}
-                placeholder="diabetes, hypertension, BRCA2 mutation carrier"
-                className="mt-1 w-full px-3 py-2 rounded-lg border border-sand bg-cream/30 text-sm text-warm-800 placeholder:text-cloudy focus:outline-none focus:border-terra/40"
-              />
-            </label>
-            <label className="text-xs text-warm-600">
-              BMI (optional)
-              <input
-                value={bmi}
-                onChange={(event) => setBmi(event.target.value)}
-                inputMode="decimal"
-                placeholder="29.4"
-                className="mt-1 w-full px-3 py-2 rounded-lg border border-sand bg-cream/30 text-sm text-warm-800 placeholder:text-cloudy focus:outline-none focus:border-terra/40"
-              />
-            </label>
-            <label className="text-xs text-warm-600 flex items-end">
-              <span className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-sand bg-cream/30 text-sm text-warm-700">
+
+          <details className="rounded-xl border border-sand/70 bg-cream/20 p-3">
+            <summary className="cursor-pointer text-xs font-semibold text-warm-700">
+              Advanced fields (optional)
+            </summary>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
+              <label className="text-xs text-warm-600">
+                Age (optional)
                 <input
-                  checked={smoker}
-                  onChange={(event) => setSmoker(event.target.checked)}
-                  type="checkbox"
-                  className="accent-terra"
+                  value={age}
+                  onChange={(event) => setAge(event.target.value)}
+                  inputMode="numeric"
+                  placeholder="62"
+                  className="mt-1 w-full px-3 py-2 rounded-lg border border-sand bg-cream/30 text-sm text-warm-800 placeholder:text-cloudy focus:outline-none focus:border-terra/40"
                 />
-                Current smoker
-              </span>
-            </label>
-          </div>
+              </label>
+              <label className="text-xs text-warm-600">
+                Symptoms (comma separated)
+                <input
+                  value={symptoms}
+                  onChange={(event) => setSymptoms(event.target.value)}
+                  placeholder="fatigue, chest discomfort, dizziness"
+                  className="mt-1 w-full px-3 py-2 rounded-lg border border-sand bg-cream/30 text-sm text-warm-800 placeholder:text-cloudy focus:outline-none focus:border-terra/40"
+                />
+              </label>
+              <label className="text-xs text-warm-600">
+                Family history risks
+                <input
+                  value={familyHistory}
+                  onChange={(event) => setFamilyHistory(event.target.value)}
+                  placeholder="heart disease, stroke, diabetes"
+                  className="mt-1 w-full px-3 py-2 rounded-lg border border-sand bg-cream/30 text-sm text-warm-800 placeholder:text-cloudy focus:outline-none focus:border-terra/40"
+                />
+              </label>
+              <label className="text-xs text-warm-600 md:col-span-2">
+                Conditions / mutations (comma separated)
+                <input
+                  value={conditions}
+                  onChange={(event) => setConditions(event.target.value)}
+                  placeholder="diabetes, hypertension, BRCA2 mutation carrier"
+                  className="mt-1 w-full px-3 py-2 rounded-lg border border-sand bg-cream/30 text-sm text-warm-800 placeholder:text-cloudy focus:outline-none focus:border-terra/40"
+                />
+              </label>
+              <label className="text-xs text-warm-600">
+                BMI (optional)
+                <input
+                  value={bmi}
+                  onChange={(event) => setBmi(event.target.value)}
+                  inputMode="decimal"
+                  placeholder="29.4"
+                  className="mt-1 w-full px-3 py-2 rounded-lg border border-sand bg-cream/30 text-sm text-warm-800 placeholder:text-cloudy focus:outline-none focus:border-terra/40"
+                />
+              </label>
+              <label className="text-xs text-warm-600 flex items-end">
+                <span className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-sand bg-cream/30 text-sm text-warm-700">
+                  <input
+                    checked={smoker}
+                    onChange={(event) => {
+                      setSmoker(event.target.checked)
+                      setSmokerTouched(true)
+                    }}
+                    type="checkbox"
+                    className="accent-terra"
+                  />
+                  Current smoker
+                </span>
+              </label>
+            </div>
+          </details>
           <div className="mt-4 flex flex-wrap items-center gap-2">
             <button
               onClick={() => void runScreening("preview")}
@@ -633,7 +633,7 @@ export default function ScreeningPage() {
               className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-terra text-white text-sm font-semibold hover:bg-terra-dark disabled:opacity-60 transition"
             >
               {running ? <Loader2 size={14} className="animate-spin" /> : <Activity size={14} />}
-              Get USPSTF Preview (Free)
+              Get My Free Recommendations
             </button>
             {(assessment?.accessLevel === "preview" || paymentIntent || paymentReady) && (
               <button
