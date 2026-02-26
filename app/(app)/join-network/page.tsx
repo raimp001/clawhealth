@@ -101,7 +101,7 @@ export default function JoinNetworkPage() {
       <div>
         <h1 className="text-2xl font-serif text-warm-800">Join OpenRx Network</h1>
         <p className="text-sm text-warm-500 mt-1">
-          Providers and caregivers can apply here. Admin review notifications are sent automatically.
+          Providers and caregivers can apply here. Review happens through signed admin email actions.
         </p>
       </div>
 
@@ -208,7 +208,7 @@ export default function JoinNetworkPage() {
         {submittedId && (
           <div className="rounded-xl border border-accent/20 bg-accent/10 p-3 text-xs text-accent">
             <CheckCircle2 size={12} className="inline mr-1" />
-            Application submitted. Reference ID: <span className="font-mono">{submittedId}</span>
+            Application submitted and delivered for email review. Reference ID: <span className="font-mono">{submittedId}</span>
           </div>
         )}
 
@@ -218,7 +218,7 @@ export default function JoinNetworkPage() {
           className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-terra text-white text-sm font-semibold hover:bg-terra-dark disabled:opacity-60 transition"
         >
           {submitting ? <Loader2 size={14} className="animate-spin" /> : <UserPlus size={14} />}
-          Submit For Admin Review
+          Submit Application
         </button>
       </div>
     </div>

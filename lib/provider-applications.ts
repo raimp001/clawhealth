@@ -151,6 +151,13 @@ export function submitNetworkApplication(input: {
   return application
 }
 
+export function deleteNetworkApplication(applicationId: string): void {
+  const store = loadStore()
+  store.applications = store.applications.filter((item) => item.id !== applicationId)
+  store.notifications = store.notifications.filter((item) => item.applicationId !== applicationId)
+  saveStore(store)
+}
+
 export function listNetworkApplications(params?: {
   status?: ApplicationStatus
   role?: ApplicantRole
@@ -171,6 +178,10 @@ export function reviewNetworkApplication(input: {
   const store = loadStore()
   const application = store.applications.find((item) => item.id === input.applicationId)
   if (!application) throw new Error("Application not found.")
+  if (application.status !== "pending") {
+    if (application.status === input.decision) return application
+    throw new Error(`Application is already ${application.status}.`)
+  }
 
   application.status = input.decision
   application.reviewedAt = new Date().toISOString()

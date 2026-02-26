@@ -15,7 +15,7 @@ AI-powered healthcare clinic management platform — powered by [OpenClaw](https
 - **Care Network Search** — Live NPI Registry search (provider/caregiver/lab/radiology) with natural-language gating
 - **Pharmacy Finder** — Natural-language pharmacy search with clarification-first flow before query execution
 - **AI Screening** — Preventive risk scoring and prioritized screening plans
-- **Network Onboarding + Admin Review** — Provider/caregiver applications, admin queue, notifications, and release actions
+- **Network Onboarding + Email Admin Review** — Provider/caregiver applications with signed email approval/rejection actions
 - **Second Opinion** — Structured diagnosis and treatment-plan review
 - **Clinical Trials** — Condition-aware trial matching with fit scoring
 - **Compliance Ledger** — Payment intents, Base Pay verification, receipts, attestations, refunds, and audit ledger postings
@@ -88,6 +88,15 @@ OPENAI_API_KEY=...
 # Required for durable, compliance-oriented file persistence
 OPENRX_APPLICATIONS_PATH=/secure/path/openrx-applications.json
 OPENRX_LEDGER_PATH=/secure/path/openrx-ledger.json
+
+# Required for email-first admin approval workflow
+OPENRX_ADMIN_EMAILS=admin1@company.com,admin2@company.com
+OPENRX_ADMIN_REVIEW_SECRET=long-random-secret
+RESEND_API_KEY=...
+OPENRX_EMAIL_FROM=OpenRx <no-reply@yourdomain.com>
+
+# Optional admin API hardening (for /api/admin/* read/update endpoints)
+OPENRX_ADMIN_API_KEY=...
 ```
 
 Optional live pricing integration:

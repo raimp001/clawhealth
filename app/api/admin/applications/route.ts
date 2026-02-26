@@ -1,13 +1,25 @@
 import { NextRequest, NextResponse } from "next/server"
 import {
+  deleteNetworkApplication,
   listNetworkApplications,
   reviewNetworkApplication,
   submitNetworkApplication,
   type ApplicantRole,
   type ApplicationStatus,
 } from "@/lib/provider-applications"
+import { sendAdminApplicationEmail } from "@/lib/admin-email"
+
+function isAuthorizedAdminRequest(request: NextRequest): boolean {
+  const required = process.env.OPENRX_ADMIN_API_KEY
+  if (!required) return true
+  const received = request.headers.get("x-admin-api-key") || ""
+  return received === required
+}
 
 export async function GET(request: NextRequest) {
+  if (!isAuthorizedAdminRequest(request)) {
+    return NextResponse.json({ error: "Unauthorized admin request." }, { status: 401 })
+  }
   const { searchParams } = new URL(request.url)
   const status = (searchParams.get("status") || undefined) as ApplicationStatus | undefined
   const role = (searchParams.get("role") || undefined) as ApplicantRole | undefined
@@ -108,6 +120,19 @@ export async function POST(request: NextRequest) {
       state: normalizedState,
       zip: normalizedZip,
     })
+    try {
+      await sendAdminApplicationEmail({
+        application,
+        origin: new URL(request.url).origin,
+      })
+    } catch (issue) {
+      deleteNetworkApplication(application.id)
+      throw new Error(
+        issue instanceof Error
+          ? `Application was not submitted because admin email delivery failed: ${issue.message}`
+          : "Application was not submitted because admin email delivery failed."
+      )
+    }
 
     return NextResponse.json({ application }, { status: 201 })
   } catch (error) {
@@ -117,6 +142,9 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PATCH(request: NextRequest) {
+  if (!isAuthorizedAdminRequest(request)) {
+    return NextResponse.json({ error: "Unauthorized admin request." }, { status: 401 })
+  }
   try {
     const body = (await request.json()) as {
       applicationId?: string

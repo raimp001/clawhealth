@@ -20,6 +20,10 @@ export async function GET() {
   const notifications = listAdminNotifications(OPENRX_ADMIN_ID)
   const ledger = getLedgerSnapshot()
   const screening = assessHealthScreening()
+  const adminEmailConfigured = !!(process.env.OPENRX_ADMIN_EMAILS || "").trim()
+  const adminEmailDeliveryConfigured =
+    !!(process.env.RESEND_API_KEY && process.env.OPENRX_EMAIL_FROM)
+  const adminReviewSigningConfigured = !!(process.env.OPENRX_ADMIN_REVIEW_SECRET || "")
 
   const pendingApplications = applications.filter((item) => item.status === "pending").length
   const approvedApplications = applications.filter((item) => item.status === "approved").length
@@ -38,10 +42,10 @@ export async function GET() {
     {
       id: "network-onboarding",
       title: "Provider/caregiver onboarding",
-      description: "Applicant intake, admin queue, review decisions, and release notifications.",
-      status: toStatus(true),
+      description: "Applicant intake with signed email approval/rejection links for admin review.",
+      status: toStatus(adminEmailConfigured && adminEmailDeliveryConfigured && adminReviewSigningConfigured),
       metric: `${applications.length} applications`,
-      href: "/admin-review",
+      href: "/join-network",
     },
     {
       id: "screening-routing",

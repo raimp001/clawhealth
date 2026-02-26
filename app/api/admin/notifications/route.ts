@@ -5,7 +5,17 @@ import {
   markAdminNotificationRead,
 } from "@/lib/provider-applications"
 
+function isAuthorizedAdminRequest(request: NextRequest): boolean {
+  const required = process.env.OPENRX_ADMIN_API_KEY
+  if (!required) return true
+  const received = request.headers.get("x-admin-api-key") || ""
+  return received === required
+}
+
 export async function GET(request: NextRequest) {
+  if (!isAuthorizedAdminRequest(request)) {
+    return NextResponse.json({ error: "Unauthorized admin request." }, { status: 401 })
+  }
   const { searchParams } = new URL(request.url)
   const adminId = searchParams.get("adminId") || OPENRX_ADMIN_ID
   const notifications = listAdminNotifications(adminId)
@@ -17,6 +27,9 @@ export async function GET(request: NextRequest) {
 }
 
 export async function PATCH(request: NextRequest) {
+  if (!isAuthorizedAdminRequest(request)) {
+    return NextResponse.json({ error: "Unauthorized admin request." }, { status: 401 })
+  }
   try {
     const body = (await request.json()) as {
       notificationId?: string

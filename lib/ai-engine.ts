@@ -47,9 +47,14 @@ interface ConversationMessage {
 }
 
 const conversations = new Map<string, ConversationMessage[]>()
+const MAX_CONVERSATION_SESSIONS = 300
 
 function getConversation(sessionKey: string): ConversationMessage[] {
   if (!conversations.has(sessionKey)) {
+    if (conversations.size >= MAX_CONVERSATION_SESSIONS) {
+      const oldestKey = conversations.keys().next().value
+      if (oldestKey) conversations.delete(oldestKey)
+    }
     conversations.set(sessionKey, [])
   }
   return conversations.get(sessionKey)!
@@ -62,6 +67,35 @@ function addToConversation(sessionKey: string, role: "user" | "assistant", conte
   if (conv.length > 20) {
     conversations.set(sessionKey, conv.slice(-20))
   }
+}
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+async function createCompletionWithRetry(params: {
+  model: string
+  messages: Array<{ role: "system" | "user" | "assistant"; content: string }>
+  max_tokens: number
+  temperature: number
+}) {
+  let lastError: unknown = null
+
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      return await openai.chat.completions.create(params, { timeout: 20000 })
+    } catch (error) {
+      lastError = error
+      const status = typeof error === "object" && error !== null && "status" in error
+        ? Number((error as { status?: unknown }).status)
+        : undefined
+      const retryable = status === 408 || status === 429 || (typeof status === "number" && status >= 500)
+      if (!retryable || attempt === 1) break
+      await delay(350 * (attempt + 1))
+    }
+  }
+
+  throw lastError
 }
 
 // ── Patient Context Builder ──────────────────────────────
@@ -146,7 +180,7 @@ IMPORTANT RULES:
   const conv = getConversation(sessionKey)
 
   try {
-    const completion = await openai.chat.completions.create({
+    const completion = await createCompletionWithRetry({
       model: "gpt-4o-mini",
       messages: [
         { role: "system", content: systemPrompt },
