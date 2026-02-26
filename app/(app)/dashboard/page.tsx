@@ -7,35 +7,38 @@ import {
   AlertCircle, Search,
 } from "lucide-react"
 import Link from "next/link"
-import { getPhysician, priorAuths, getPatientLabResults, getPatientVitals, getPatientVaccinations, getPatientReferrals } from "@/lib/seed-data"
-import { currentUser, getMyAppointments, getMyPrescriptions, getMyMessages } from "@/lib/current-user"
 import { cn, formatTime, formatDate, getStatusColor } from "@/lib/utils"
 import PlatformReadiness from "@/components/platform-readiness"
+import { useLiveSnapshot } from "@/lib/hooks/use-live-snapshot"
 
 export default function DashboardPage() {
-  const myApts = getMyAppointments().sort(
+  const { snapshot, getPhysician } = useLiveSnapshot()
+  const patientName = snapshot.patient?.full_name || "there"
+  const patientId = snapshot.patient?.id || ""
+
+  const myApts = [...snapshot.appointments].sort(
     (a, b) => new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime()
   )
   const upcomingApts = myApts.filter(
     (a) => new Date(a.scheduled_at) >= new Date() && a.status !== "completed" && a.status !== "no-show"
   )
-  const myRx = getMyPrescriptions().filter((p) => p.status === "active")
-  const myMessages = getMyMessages()
+  const myRx = snapshot.prescriptions.filter((p) => p.status === "active")
+  const myMessages = snapshot.messages
   const unreadCount = myMessages.filter((m) => !m.read).length
   const lowAdherenceRx = myRx.filter((p) => p.adherence_pct < 80)
-  const myPA = priorAuths.filter((p) => p.patient_id === currentUser.id)
+  const myPA = snapshot.priorAuths.filter((p) => p.patient_id === patientId)
   const pendingPA = myPA.filter((p) => p.status === "pending" || p.status === "submitted")
   // New healthcare data
-  const myLabs = getPatientLabResults(currentUser.id)
+  const myLabs = snapshot.labResults
+  const resultedLabs = myLabs.filter((l) => l.status !== "pending")
   const pendingLabs = myLabs.filter((l) => l.status === "pending")
-  const abnormalLabCount = myLabs
-    .filter((l) => l.status !== "pending")
+  const abnormalLabCount = resultedLabs
     .reduce((count, lab) => count + lab.results.filter((r) => r.flag !== "normal").length, 0)
-  const myVitals = getPatientVitals(currentUser.id)
+  const myVitals = snapshot.vitals
   const latestVital = myVitals[0]
-  const myVaccinations = getPatientVaccinations(currentUser.id)
+  const myVaccinations = snapshot.vaccinations
   const dueVaccines = myVaccinations.filter((v) => v.status === "due" || v.status === "overdue")
-  const myReferrals = getPatientReferrals(currentUser.id)
+  const myReferrals = snapshot.referrals
   const pendingReferrals = myReferrals.filter((r) => r.status === "pending" || r.status === "scheduled")
 
   // Health engagement score (0-100) based on adherence, lab alerts, pending items
@@ -48,6 +51,73 @@ export default function DashboardPage() {
   const healthScoreColor = healthScore >= 80 ? "text-accent" : healthScore >= 60 ? "text-yellow-600" : "text-soft-red"
   const healthScoreBg = healthScore >= 80 ? "bg-accent" : healthScore >= 60 ? "bg-yellow-400" : "bg-soft-red"
 
+  function formatActivityTime(value: string): string {
+    const then = new Date(value).getTime()
+    if (!Number.isFinite(then)) return ""
+    const diff = Date.now() - then
+    if (diff < 0) return "Upcoming"
+    if (diff < 60 * 60 * 1000) return `${Math.max(1, Math.round(diff / (60 * 1000)))} min ago`
+    if (diff < 24 * 60 * 60 * 1000) return `${Math.max(1, Math.round(diff / (60 * 60 * 1000)))} hr ago`
+    return new Date(value).toLocaleDateString()
+  }
+
+  const careTeamActivity = [
+    ...resultedLabs.slice(0, 1).map((lab) => ({
+      icon: FlaskConical,
+      color: "text-soft-blue",
+      bg: "bg-soft-blue/5",
+      action: "Lab result posted",
+      detail: `${lab.test_name} is available for review`,
+      source: "Labs",
+      time: formatActivityTime(lab.resulted_at || lab.ordered_at),
+    })),
+    ...upcomingApts.slice(0, 1).map((appointment) => ({
+      icon: Send,
+      color: "text-soft-blue",
+      bg: "bg-soft-blue/5",
+      action: "Upcoming appointment",
+      detail: `${appointment.reason || "Consultation"} on ${formatDate(appointment.scheduled_at)} at ${formatTime(appointment.scheduled_at)}`,
+      source: "Scheduling",
+      time: formatActivityTime(appointment.scheduled_at),
+    })),
+    ...lowAdherenceRx.slice(0, 1).map((rx) => ({
+      icon: Pill,
+      color: "text-yellow-600",
+      bg: "bg-yellow-50",
+      action: "Adherence follow-up",
+      detail: `${rx.medication_name} adherence is ${rx.adherence_pct}%`,
+      source: "Medication",
+      time: formatActivityTime(rx.last_filled),
+    })),
+    ...snapshot.claims.filter((claim) => claim.status === "denied").slice(0, 1).map((claim) => ({
+      icon: CheckCircle2,
+      color: "text-terra",
+      bg: "bg-terra/10",
+      action: "Claim needs review",
+      detail: `${claim.claim_number} was denied${claim.denial_reason ? ` (${claim.denial_reason})` : ""}`,
+      source: "Billing",
+      time: formatActivityTime(claim.submitted_at),
+    })),
+    ...dueVaccines.slice(0, 1).map((vaccine) => ({
+      icon: Syringe,
+      color: "text-yellow-600",
+      bg: "bg-yellow-50",
+      action: "Vaccination due",
+      detail: `${vaccine.vaccine_name} is marked as ${vaccine.status}`,
+      source: "Preventive",
+      time: vaccine.next_due ? formatActivityTime(vaccine.next_due) : "Due",
+    })),
+    ...pendingReferrals.slice(0, 1).map((referral) => ({
+      icon: Heart,
+      color: "text-terra",
+      bg: "bg-terra/5",
+      action: "Referral update",
+      detail: `${referral.specialist_specialty} referral is ${referral.status}`,
+      source: "Referrals",
+      time: formatActivityTime(referral.created_at),
+    })),
+  ].slice(0, 6)
+
   return (
     <div className="animate-slide-up space-y-6">
       <section className="surface-card overflow-hidden">
@@ -55,11 +125,11 @@ export default function DashboardPage() {
           <h1 className="text-3xl text-warm-800">
             Good{" "}
             {new Date().getHours() < 12
-              ? "morning"
-              : new Date().getHours() < 17
+            ? "morning"
+            : new Date().getHours() < 17
               ? "afternoon"
               : "evening"}
-            , {currentUser.full_name.split(" ")[0]}
+            , {patientName.split(" ")[0]}
           </h1>
           <p className="mt-1 text-sm text-warm-500">
             Your care plan is organized and ready. Use natural language to book, search, and resolve tasks quickly.
@@ -470,14 +540,7 @@ export default function DashboardPage() {
           </Link>
         </div>
         <div className="divide-y divide-sand/50">
-          {[
-            { icon: FlaskConical, color: "text-soft-blue", bg: "bg-soft-blue/5", action: "Lab results reviewed", detail: "A1C improved to 6.8% — great progress!", agent: "Maya", time: "Today" },
-            { icon: Send, color: "text-soft-blue", bg: "bg-soft-blue/5", action: "Appointment reminder", detail: "Dietitian visit with Dr. Nguyen in 3 days", agent: "Cal", time: "2 min ago" },
-            { icon: Pill, color: "text-yellow-600", bg: "bg-yellow-50", action: "Refill checked", detail: "Atorvastatin refill needed soon — 2 refills remaining", agent: "Maya", time: "1 hr ago" },
-            { icon: CheckCircle2, color: "text-accent", bg: "bg-accent/5", action: "Bill reviewed", detail: "Your latest claim was paid correctly — no action needed", agent: "Vera", time: "3 hrs ago" },
-            { icon: Syringe, color: "text-yellow-600", bg: "bg-yellow-50", action: "Vaccine reminder", detail: "Shingrix and pneumococcal vaccines recommended for your age", agent: "Ivy", time: "Yesterday" },
-            { icon: Heart, color: "text-terra", bg: "bg-terra/5", action: "Referral update", detail: "Endocrinology appointment confirmed for next week", agent: "Atlas", time: "Yesterday" },
-          ].map((item, i) => (
+          {careTeamActivity.length > 0 ? careTeamActivity.map((item, i) => (
             <div key={i} className="flex items-center gap-3 px-4 py-3 hover:bg-cream/30 transition">
               <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center shrink-0", item.bg)}>
                 <item.icon size={14} className={item.color} />
@@ -485,13 +548,17 @@ export default function DashboardPage() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-semibold text-warm-800">{item.action}</span>
-                  <span className="text-[9px] font-bold text-terra bg-terra/10 px-1.5 py-0.5 rounded">{item.agent}</span>
+                  <span className="text-[9px] font-bold text-terra bg-terra/10 px-1.5 py-0.5 rounded">{item.source}</span>
                 </div>
                 <p className="text-[11px] text-warm-500 mt-0.5 truncate">{item.detail}</p>
               </div>
               <span className="text-[10px] text-cloudy shrink-0">{item.time}</span>
             </div>
-          ))}
+          )) : (
+            <div className="p-6 text-center text-xs text-warm-500">
+              Live care-team activity will appear here as appointments, labs, and messages update.
+            </div>
+          )}
         </div>
       </div>
     </div>

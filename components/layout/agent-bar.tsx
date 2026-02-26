@@ -1,16 +1,15 @@
 "use client"
 
 import { OPENCLAW_CONFIG } from "@/lib/openclaw/config"
-import { Bot, Wifi, WifiOff, Zap, ChevronDown, ChevronUp, ArrowRight, TrendingUp, CheckCircle2 } from "lucide-react"
+import { Bot, Wifi, WifiOff, Zap, ChevronDown, ChevronUp, TrendingUp, CheckCircle2 } from "lucide-react"
 import Link from "next/link"
 import { useState, useEffect } from "react"
 import { getImprovementMetrics, getImprovements, runImprovementCycle } from "@/lib/openclaw/self-improve"
 import { getRecentMessages, getActiveTasks } from "@/lib/openclaw/orchestrator"
 
 export default function AgentBar() {
-  const [status, setStatus] = useState<"checking" | "online" | "demo">("checking")
+  const [status, setStatus] = useState<"checking" | "online" | "offline">("checking")
   const [expanded, setExpanded] = useState(false)
-  const [recentAction, setRecentAction] = useState<string | null>(null)
   const [metrics, setMetrics] = useState<ReturnType<typeof getImprovementMetrics> | null>(null)
   const [activeTasks, setActiveTasks] = useState(0)
   const [interAgentMessages, setInterAgentMessages] = useState(0)
@@ -19,9 +18,9 @@ export default function AgentBar() {
     fetch("/api/openclaw/status")
       .then((r) => r.json())
       .then((d) => {
-        setStatus(d.connected ? "online" : "demo")
+        setStatus(d.connected ? "online" : "offline")
       })
-      .catch(() => setStatus("demo"))
+      .catch(() => setStatus("offline"))
   }, [])
 
   useEffect(() => {
@@ -32,27 +31,8 @@ export default function AgentBar() {
   }, [])
 
   useEffect(() => {
-    if (status !== "demo") return
-    const actions = [
-      { text: "Atlas routed billing query to Vera" },
-      { text: "Maya checked your medication adherence — 92%" },
-      { text: "Cal confirmed your appointment for Thursday" },
-      { text: "Vera found a billing error — filing correction" },
-      { text: "Ivy: Your cholesterol screening is overdue" },
-      { text: "Rex submitted prior auth — awaiting response" },
-      { text: "Bolt deployed performance improvement" },
-      { text: "Nova triaged symptom report — routine" },
-      { text: "Quinn published preventive screening priorities" },
-      { text: "Orion completed a second-opinion review" },
-      { text: "Lyra ranked 4 clinical trial matches" },
-    ]
-    let idx = 0
-    const interval = setInterval(() => {
-      setRecentAction(actions[idx % actions.length].text)
-      setInterAgentMessages((prev) => prev + 1)
-      idx++
-    }, 6000)
-    return () => clearInterval(interval)
+    if (status !== "online") return
+    return undefined
   }, [status])
 
   const inProgressImprovements = getImprovements({ status: "in_progress" })
@@ -70,13 +50,13 @@ export default function AgentBar() {
           <div className="flex items-center gap-1 text-[11px] text-warm-500">
             {status === "online" ? (
               <Wifi size={10} className="text-accent" />
-            ) : status === "demo" ? (
+            ) : status === "offline" ? (
               <WifiOff size={10} className="text-terra" />
             ) : (
               <div className="h-2 w-2 animate-pulse rounded-full bg-yellow-500" />
             )}
             <span className="font-medium">
-              {status === "online" ? "Live agents" : status === "demo" ? "Demo simulation" : "Checking connection"}
+              {status === "online" ? "Live agents" : status === "offline" ? "Gateway offline" : "Checking connection"}
             </span>
           </div>
 
@@ -87,12 +67,6 @@ export default function AgentBar() {
             <span>{activeTasks} active tasks</span>
           </div>
 
-          {recentAction && (
-            <div className="hidden items-center gap-1 text-[11px] text-warm-500 xl:flex animate-fade-in">
-              <ArrowRight size={10} className="text-terra" />
-              <span className="max-w-md truncate">{recentAction}</span>
-            </div>
-          )}
         </div>
 
         <div className="flex items-center gap-2">

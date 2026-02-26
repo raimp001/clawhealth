@@ -9,8 +9,8 @@ export async function GET() {
   return NextResponse.json({
     connected: hasLLM,
     gateway: {
-      status: hasLLM ? "live" : "demo-mode",
-      engine: hasLLM ? "OpenAI GPT-4o-mini" : "fallback-demo",
+      status: hasLLM ? "live" : "offline",
+      engine: hasLLM ? "OpenAI GPT-4o-mini" : "not-configured",
     },
     recentActions,
     agents: OPENCLAW_CONFIG.agents.map((a) => ({

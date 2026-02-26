@@ -42,34 +42,54 @@ interface ApplicationStore {
   notifications: AdminNotification[]
 }
 
-const STORE_PATH =
-  process.env.OPENRX_APPLICATIONS_PATH || path.join(process.cwd(), ".openrx-applications.json")
+function resolveStorePath(): string {
+  const configured = process.env.OPENRX_APPLICATIONS_PATH
+  if (configured) return configured
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("OPENRX_APPLICATIONS_PATH is required in production for durable application storage.")
+  }
+  return path.join(process.cwd(), ".openrx-applications.json")
+}
 
 function createId(prefix: string): string {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
 }
 
+function ensureStoreDirectory(filePath: string): void {
+  const directory = path.dirname(filePath)
+  if (!fs.existsSync(directory)) {
+    fs.mkdirSync(directory, { recursive: true })
+  }
+}
+
 function loadStore(): ApplicationStore {
+  const storePath = resolveStorePath()
   try {
-    if (!fs.existsSync(STORE_PATH)) {
+    if (!fs.existsSync(storePath)) {
       return { applications: [], notifications: [] }
     }
-    const raw = fs.readFileSync(STORE_PATH, "utf8")
+    const raw = fs.readFileSync(storePath, "utf8")
     const parsed = JSON.parse(raw) as Partial<ApplicationStore>
     return {
       applications: parsed.applications || [],
       notifications: parsed.notifications || [],
     }
-  } catch {
-    return { applications: [], notifications: [] }
+  } catch (error) {
+    throw new Error(
+      `Unable to load network application store at ${storePath}: ${error instanceof Error ? error.message : "unknown error"}`
+    )
   }
 }
 
 function saveStore(store: ApplicationStore): void {
+  const storePath = resolveStorePath()
   try {
-    fs.writeFileSync(STORE_PATH, JSON.stringify(store, null, 2), "utf8")
-  } catch {
-    // Ignore persistence failures in demo mode.
+    ensureStoreDirectory(storePath)
+    fs.writeFileSync(storePath, JSON.stringify(store, null, 2), "utf8")
+  } catch (error) {
+    throw new Error(
+      `Unable to persist network application store at ${storePath}: ${error instanceof Error ? error.message : "unknown error"}`
+    )
   }
 }
 

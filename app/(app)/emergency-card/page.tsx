@@ -1,17 +1,35 @@
 "use client"
 
-import { currentUser } from "@/lib/current-user"
-import { getPhysician, getPatientPrescriptions } from "@/lib/seed-data"
 import {
   AlertCircle, Heart, Pill, Phone, User, Shield,
   Droplets, Copy, CheckCircle2,
 } from "lucide-react"
 import { useState } from "react"
 import { cn } from "@/lib/utils"
+import { useLiveSnapshot } from "@/lib/hooks/use-live-snapshot"
 
 export default function EmergencyCardPage() {
+  const { snapshot, getPhysician } = useLiveSnapshot()
+  const currentUser = snapshot.patient || {
+    id: "",
+    full_name: "Patient",
+    date_of_birth: "",
+    gender: "",
+    phone: "",
+    email: "",
+    address: "",
+    insurance_provider: "",
+    insurance_plan: "",
+    insurance_id: "",
+    emergency_contact_name: "",
+    emergency_contact_phone: "",
+    medical_history: [] as { condition: string; diagnosed: string; status: string }[],
+    allergies: [] as string[],
+    primary_physician_id: "",
+    created_at: "",
+  }
   const physician = getPhysician(currentUser.primary_physician_id)
-  const meds = getPatientPrescriptions(currentUser.id).filter((p) => p.status === "active")
+  const meds = snapshot.prescriptions.filter((prescription) => prescription.status === "active")
   const [copied, setCopied] = useState(false)
 
   const emergencyText = [

@@ -1,18 +1,18 @@
 "use client"
 
-import { currentUser } from "@/lib/current-user"
-import { getPatientVitals } from "@/lib/seed-data"
 import { cn } from "@/lib/utils"
 import {
   Activity, Heart, Weight, Droplets,
   TrendingDown, TrendingUp, Minus, Bot, Clock,
 } from "lucide-react"
 import { useState } from "react"
+import { useLiveSnapshot } from "@/lib/hooks/use-live-snapshot"
 
 type TimeRange = "7d" | "14d" | "30d"
 
 export default function VitalsPage() {
-  const vitals = getPatientVitals(currentUser.id)
+  const { snapshot } = useLiveSnapshot()
+  const vitals = snapshot.vitals
   const [range, setRange] = useState<TimeRange>("14d")
 
   const rangeDays = range === "7d" ? 7 : range === "14d" ? 14 : 30

@@ -12,7 +12,7 @@ function toPayload(request: NextRequest): TrialMatchInput {
 
 export async function GET(request: NextRequest) {
   const payload = toPayload(request)
-  const matches = matchClinicalTrials(payload)
+  const matches = await matchClinicalTrials(payload)
   return NextResponse.json({
     matches,
     total: matches.length,
@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = (await request.json()) as TrialMatchInput
-    const matches = matchClinicalTrials(body)
+    const matches = await matchClinicalTrials(body)
     return NextResponse.json({
       matches,
       total: matches.length,

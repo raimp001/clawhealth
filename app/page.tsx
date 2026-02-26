@@ -113,7 +113,7 @@ export default function LandingPage() {
               {
                 icon: Pill,
                 title: "Medication refill approved",
-                detail: "Atorvastatin sent to neighborhood pharmacy",
+                detail: "Refill routed to selected pharmacy",
                 tone: "text-accent",
                 bg: "bg-accent/10",
               },
@@ -142,10 +142,10 @@ export default function LandingPage() {
       <section className="mx-auto w-full max-w-6xl px-6 pb-14">
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
           {[
-            { value: "$2,400", label: "Average annual savings", icon: CheckCircle2 },
-            { value: "4 min", label: "Prior auth turnaround", icon: TrendingUp },
-            { value: "34 sec", label: "Average time to book", icon: Calendar },
-            { value: "10k+", label: "Patients coordinated", icon: Users },
+            { value: `${OPENCLAW_CONFIG.agents.length}`, label: "Specialist agents", icon: CheckCircle2 },
+            { value: "Live", label: "NPI data source", icon: TrendingUp },
+            { value: "Natural language", label: "Search input mode", icon: Calendar },
+            { value: "Wallet linked", label: "Patient identity", icon: Users },
           ].map((s) => (
             <div key={s.label} className="surface-card p-5 text-center">
               <s.icon size={22} className="mx-auto mb-3 text-terra" />
@@ -239,7 +239,7 @@ export default function LandingPage() {
       <footer className="border-t border-sand/70 bg-pampas">
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-7 text-xs text-warm-500">
           <p>OpenRx · Powered by OpenClaw</p>
-          <p>Demo environment with sample healthcare data</p>
+          <p>Live data environment · wallet-linked patient context</p>
         </div>
       </footer>
     </div>

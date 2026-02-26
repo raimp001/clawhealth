@@ -3,8 +3,7 @@
 // Profile data is persisted in localStorage keyed by wallet address.
 // On wallet reconnect, profile is automatically restored.
 
-import type { Patient } from "./seed-data"
-import { patients } from "./seed-data"
+import type { LivePatient } from "./live-data-types"
 
 const STORAGE_PREFIX = "openrx:profile:" as const
 
@@ -108,7 +107,7 @@ export function createBlankProfile(walletAddress: string): WalletProfile {
 }
 
 /** Convert WalletProfile to a Patient-compatible object for seed data compatibility */
-export function profileToPatient(profile: WalletProfile): Patient {
+export function profileToPatient(profile: WalletProfile): LivePatient {
   return {
     id: `wallet-${profile.walletAddress.slice(2, 10).toLowerCase()}`,
     full_name: profile.fullName || `Wallet ${profile.walletAddress.slice(0, 6)}...${profile.walletAddress.slice(-4)}`,
@@ -129,18 +128,16 @@ export function profileToPatient(profile: WalletProfile): Patient {
   }
 }
 
-/** Get demo patient data or wallet-linked patient data */
-export function resolvePatientForWallet(walletAddress: string | undefined): Patient {
+/** Get wallet-linked patient data */
+export function resolvePatientForWallet(walletAddress: string | undefined): LivePatient | null {
   if (!walletAddress) {
-    // Not connected — return demo patient
-    return patients[0]
+    return null
   }
   const profile = loadWalletProfile(walletAddress)
   if (profile && profile.onboardingComplete) {
     return profileToPatient(profile)
   }
-  // Connected but not onboarded — still return demo but with wallet-aware ID
-  return patients[0]
+  return null
 }
 
 /** List all stored wallet profiles (for admin/debug) */

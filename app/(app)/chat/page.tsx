@@ -1,6 +1,5 @@
 "use client"
 
-import { CHAT_DEMOS } from "@/lib/seed-data"
 import { OPENCLAW_CONFIG } from "@/lib/openclaw/config"
 import { cn } from "@/lib/utils"
 import {
@@ -19,10 +18,8 @@ import {
   Calendar,
   Receipt,
   ShieldCheck,
-  Moon,
   Pill,
   Send,
-  Sparkles,
   User,
   Stethoscope,
   Heart,
@@ -81,14 +78,6 @@ const agentMeta: Record<string, { label: string; icon: typeof Bot; color: string
   devops: { label: "Bolt (DevOps)", icon: Bot, color: "text-warm-600" },
 }
 
-const iconMap: Record<string, typeof Calendar> = {
-  Calendar,
-  Receipt,
-  Shield: ShieldCheck,
-  Moon,
-  Pill,
-}
-
 export default function ChatPage() {
   const { isConnected, walletAddress } = useWalletIdentity()
   const [messages, setMessages] = useState<ChatMessage[]>([
@@ -107,10 +96,8 @@ export default function ChatPage() {
   ])
   const [input, setInput] = useState("")
   const [isLoading, setIsLoading] = useState(false)
-  const [gatewayStatus, setGatewayStatus] = useState<"checking" | "online" | "demo">("checking")
+  const [gatewayStatus, setGatewayStatus] = useState<"checking" | "online" | "offline">("checking")
   const [activeAgent, setActiveAgent] = useState<AgentId>("coordinator")
-  const [showDemos, setShowDemos] = useState(false)
-  const [activeDemo, setActiveDemo] = useState<string | null>(null)
   const [showImprovements, setShowImprovements] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -130,7 +117,6 @@ export default function ChatPage() {
 
   const clearChat = useCallback(() => {
     setMessages([welcomeMessage])
-    setActiveDemo(null)
     inputRef.current?.focus()
   }, [isConnected]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -149,8 +135,8 @@ export default function ChatPage() {
   useEffect(() => {
     fetch("/api/openclaw/status")
       .then((r) => r.json())
-      .then((d) => setGatewayStatus(d.connected ? "online" : "demo"))
-      .catch(() => setGatewayStatus("demo"))
+      .then((d) => setGatewayStatus(d.connected ? "online" : "offline"))
+      .catch(() => setGatewayStatus("offline"))
   }, [])
 
   // Auto-scroll
@@ -225,26 +211,6 @@ export default function ChatPage() {
       }
 
       setMessages((prev) => [...prev, agentMsg])
-
-      // If collaborators are involved, simulate their contributions
-      if (workflow.route.collaborators.length > 0) {
-        for (const collabId of workflow.route.collaborators) {
-          await new Promise((resolve) => setTimeout(resolve, 800 + Math.random() * 400))
-          const collabAgent = OPENCLAW_CONFIG.agents.find((a) => a.id === collabId)
-          if (collabAgent) {
-            setMessages((prev) => [
-              ...prev,
-              {
-                id: `collab-${collabId}-${Date.now()}`,
-                role: "agent",
-                content: getCollaboratorResponse(collabId as AgentId, userMsg.content),
-                agentId: collabId,
-                timestamp: new Date(),
-              },
-            ])
-          }
-        }
-      }
     } catch {
       setMessages((prev) => [
         ...prev,
@@ -259,23 +225,6 @@ export default function ChatPage() {
       setIsLoading(false)
     }
   }, [input, isLoading, activeAgent, walletAddress])
-
-  const loadDemo = (demoId: string) => {
-    const demo = CHAT_DEMOS.find((d) => d.id === demoId)
-    if (!demo) return
-    setActiveDemo(demoId)
-
-    const demoMessages: ChatMessage[] = demo.messages.map((m, i) => ({
-      id: `demo-${demoId}-${i}`,
-      role: m.role === "agent" ? ("agent" as const) : ("user" as const),
-      content: m.content,
-      agentId: m.role === "agent" ? "coordinator" : undefined,
-      timestamp: new Date(Date.now() - (demo.messages.length - i) * 60000),
-    }))
-
-    setMessages(demoMessages)
-    setShowDemos(false)
-  }
 
   const improvementMetrics = getImprovementMetrics()
   const recentImprovements = getImprovements().slice(0, 5)
@@ -303,7 +252,7 @@ export default function ChatPage() {
                 </span>
               ) : (
                 <span className="flex items-center gap-1 text-[10px] text-terra font-semibold">
-                  <WifiOff size={10} /> Demo Mode
+                  <WifiOff size={10} /> Gateway Offline
                 </span>
               )}
               {isConnected && (
@@ -327,18 +276,6 @@ export default function ChatPage() {
           >
             <TrendingUp size={12} className="inline mr-1" />
             Improvements ({improvementMetrics.totalSuggested})
-          </button>
-          <button
-            onClick={() => setShowDemos(!showDemos)}
-            className={cn(
-              "px-3 py-1.5 text-xs font-semibold rounded-lg border transition",
-              showDemos
-                ? "bg-terra text-white border-terra"
-                : "text-warm-600 border-sand hover:border-terra/30"
-            )}
-          >
-            <Sparkles size={12} className="inline mr-1" />
-            Demo Scenarios
           </button>
         </div>
       </div>
@@ -415,30 +352,6 @@ export default function ChatPage() {
               )
             })}
           </div>
-        </div>
-      )}
-
-      {/* Demo Scenarios Dropdown */}
-      {showDemos && (
-        <div className="grid grid-cols-2 lg:grid-cols-5 gap-2">
-          {CHAT_DEMOS.map((d) => {
-            const Icon = iconMap[d.icon] || Bot
-            return (
-              <button
-                key={d.id}
-                onClick={() => loadDemo(d.id)}
-                className={cn(
-                  "flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition-all border",
-                  activeDemo === d.id
-                    ? "bg-terra text-white border-terra"
-                    : "bg-pampas text-warm-600 border-sand hover:border-terra/30"
-                )}
-              >
-                <Icon size={14} />
-                {d.title}
-              </button>
-            )
-          })}
         </div>
       )}
 
@@ -712,54 +625,4 @@ export default function ChatPage() {
       </div>
     </div>
   )
-}
-
-/** Generate contextual collaborator responses */
-function getCollaboratorResponse(agentId: AgentId, userMessage: string): string {
-  const lower = userMessage.toLowerCase()
-
-  switch (agentId) {
-    case "billing":
-      if (lower.includes("appointment") || lower.includes("schedule"))
-        return "I've checked your insurance plan for this visit type. Estimated copay: $35 for in-network specialist, $0 for preventive care. Let me know if you need a cost breakdown."
-      return "I'll review the billing implications and check your insurance coverage for this."
-
-    case "scheduling":
-      if (lower.includes("refill") || lower.includes("medication"))
-        return "If you need lab work for this medication, I can schedule that too. Dr. Patel has morning slots available this week."
-      if (lower.includes("symptom") || lower.includes("pain"))
-        return "Based on the triage assessment, I can book a same-day visit. Dr. Chen has a 2:00 PM slot available today."
-      return "I'll check physician availability and can book any follow-up appointments needed."
-
-    case "rx":
-      if (lower.includes("symptom") || lower.includes("pain"))
-        return "I've checked your current medications for any interactions with common treatments for these symptoms. No conflicts found with your Metformin, Lisinopril, or Atorvastatin."
-      return "I'll review your medication list to ensure there are no interactions or concerns."
-
-    case "prior-auth":
-      if (lower.includes("bill") || lower.includes("denied"))
-        return "I'll check if this denial is PA-related. If prior authorization was missing, I can file a retroactive PA and appeal simultaneously."
-      return "I'll verify if prior authorization is needed and prepare documentation."
-
-    case "coordinator":
-      return "I'm monitoring this conversation and will route to additional specialists if needed."
-
-    case "wellness":
-      return "I'll check if this relates to any of your pending screenings or preventive care recommendations."
-
-    case "screening":
-      return "I'll run a risk stratification pass across your recent labs, vitals, and chronic conditions and send prioritized actions."
-
-    case "second-opinion":
-      return "I'll produce a structured second-opinion brief with key clinician questions and potential blind spots."
-
-    case "trials":
-      return "I'll search recruiting trial pathways, score likely fit, and flag what eligibility questions to ask first."
-
-    case "triage":
-      return "I'm standing by for any symptom assessment needs."
-
-    default:
-      return "I'm available to assist with my area of expertise."
-  }
 }

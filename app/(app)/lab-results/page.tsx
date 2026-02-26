@@ -1,16 +1,16 @@
 "use client"
 
-import { currentUser } from "@/lib/current-user"
-import { getPatientLabResults, getPhysician } from "@/lib/seed-data"
 import { cn } from "@/lib/utils"
 import {
   FlaskConical, AlertTriangle, CheckCircle2, Clock,
   ChevronDown, ChevronUp, Bot, FileText,
 } from "lucide-react"
 import { useState } from "react"
+import { useLiveSnapshot } from "@/lib/hooks/use-live-snapshot"
 
 export default function LabResultsPage() {
-  const labs = getPatientLabResults(currentUser.id)
+  const { snapshot, getPhysician } = useLiveSnapshot()
+  const labs = snapshot.labResults
   const [expandedLab, setExpandedLab] = useState<string | null>(labs[0]?.id || null)
 
   const pendingLabs = labs.filter((l) => l.status === "pending")
@@ -19,6 +19,12 @@ export default function LabResultsPage() {
     (count, lab) => count + lab.results.filter((r) => r.flag !== "normal").length,
     0
   )
+  const insightText =
+    resultedLabs.length === 0
+      ? "No finalized lab results are available yet. Once results post, this panel summarizes key trends and follow-up needs."
+      : abnormalCount === 0
+      ? "Current finalized labs do not show abnormal flags. Keep regular follow-up testing on schedule and review any new symptoms with your care team."
+      : `${abnormalCount} abnormal value${abnormalCount === 1 ? "" : "s"} detected across recent labs. Prioritize clinician review for flagged markers and schedule follow-up testing when recommended.`
 
   return (
     <div className="animate-slide-up space-y-6">
@@ -201,10 +207,7 @@ export default function LabResultsPage() {
           <span className="text-xs font-bold text-warm-800">Maya&apos;s Lab Analysis</span>
         </div>
         <p className="text-xs text-warm-600 leading-relaxed">
-          Your A1C improved from 7.2% to 6.8% — great progress! Your LDL is slightly above the
-          recommended target for diabetic patients. Improving Atorvastatin adherence (currently 78%)
-          could help bring it under 100 mg/dL. The microalbumin finding is worth monitoring — I&apos;ve
-          flagged Dr. Chen&apos;s nephrology referral.
+          {insightText}
         </p>
       </div>
     </div>

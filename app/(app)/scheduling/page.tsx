@@ -1,19 +1,19 @@
 "use client"
 
-import { getMyAppointments } from "@/lib/current-user"
-import { getPhysician } from "@/lib/seed-data"
 import { cn, formatTime, formatDate, getStatusColor } from "@/lib/utils"
 import { Video, AlertTriangle, Stethoscope, Bot, Calendar } from "lucide-react"
 import { useState, useMemo } from "react"
 import AIAction from "@/components/ai-action"
 import Link from "next/link"
+import { useLiveSnapshot } from "@/lib/hooks/use-live-snapshot"
 
 type ViewMode = "today" | "upcoming" | "past"
 
 export default function SchedulingPage() {
   const [view, setView] = useState<ViewMode>("today")
+  const { snapshot, getPhysician } = useLiveSnapshot()
 
-  const myAppointments = getMyAppointments()
+  const myAppointments = snapshot.appointments
   const today = new Date().toDateString()
 
   const { todayApts, upcomingApts, pastApts } = useMemo(() => {

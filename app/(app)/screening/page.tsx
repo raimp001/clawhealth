@@ -13,10 +13,11 @@ import {
   ShieldCheck,
 } from "lucide-react"
 import AIAction from "@/components/ai-action"
-import { currentUser } from "@/lib/current-user"
 import { cn } from "@/lib/utils"
 import type { ScreeningAssessment } from "@/lib/basehealth"
 import type { CareDirectoryMatch, CareSearchType } from "@/lib/npi-care-search"
+import { useLiveSnapshot } from "@/lib/hooks/use-live-snapshot"
+import { useWalletIdentity } from "@/lib/wallet-context"
 
 interface LocalCareConnection {
   recommendationId: string
@@ -40,6 +41,8 @@ type ScreeningResponse = ScreeningAssessment & {
 }
 
 export default function ScreeningPage() {
+  const { snapshot } = useLiveSnapshot()
+  const { walletAddress } = useWalletIdentity()
   const [assessment, setAssessment] = useState<ScreeningAssessment | null>(null)
   const [localCareConnections, setLocalCareConnections] = useState<LocalCareConnection[]>([])
   const [loading, setLoading] = useState(true)
@@ -71,7 +74,9 @@ export default function ScreeningPage() {
   useEffect(() => {
     const load = async () => {
       try {
-        const response = await fetch("/api/screening/assess")
+        const params = new URLSearchParams()
+        if (walletAddress) params.set("walletAddress", walletAddress)
+        const response = await fetch(`/api/screening/assess?${params.toString()}`)
         const data = (await response.json()) as ScreeningResponse
         setAssessment(data)
         setLocalCareConnections(data.localCareConnections || [])
@@ -80,7 +85,7 @@ export default function ScreeningPage() {
       }
     }
     void load()
-  }, [])
+  }, [walletAddress])
 
   async function runScreening() {
     setRunning(true)
@@ -89,7 +94,8 @@ export default function ScreeningPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          patientId: currentUser.id,
+          patientId: snapshot.patient?.id,
+          walletAddress,
           bmi: bmi ? Number(bmi) : undefined,
           smoker,
           symptoms: symptoms

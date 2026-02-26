@@ -5,7 +5,6 @@ import {
   type ScreeningInput,
   type ScreeningRecommendation,
 } from "@/lib/basehealth"
-import { currentUser } from "@/lib/current-user"
 import {
   CARE_SEARCH_PROMPT_ID,
   CARE_SEARCH_PROMPT_IMAGE_PATH,
@@ -15,7 +14,8 @@ import {
   type CareDirectoryMatch,
   type CareSearchType,
 } from "@/lib/npi-care-search"
-import { getPatient } from "@/lib/seed-data"
+import { getLiveSnapshotByWallet } from "@/lib/live-data.server"
+import { prisma } from "@/lib/db"
 
 interface ScreeningLocalCareConnection {
   recommendationId: string
@@ -169,15 +169,60 @@ async function buildLocalCareConnections(
   return connections
 }
 
-function resolvePatientAddress(patientId?: string): string {
-  if (!patientId) return currentUser.address
-  const patient = getPatient(patientId)
-  return patient?.address || currentUser.address
+async function loadSnapshotForRequest(params: {
+  walletAddress?: string
+  patientId?: string
+}) {
+  if (params.walletAddress) {
+    return getLiveSnapshotByWallet(params.walletAddress)
+  }
+
+  if (params.patientId) {
+    const patient = await prisma.patientProfile.findUnique({
+      where: { id: params.patientId },
+      include: { user: { select: { walletAddress: true } } },
+    })
+    const wallet = patient?.user.walletAddress || undefined
+    return getLiveSnapshotByWallet(wallet)
+  }
+
+  return getLiveSnapshotByWallet(undefined)
 }
 
-async function buildAssessmentPayload(input: ScreeningInput): Promise<ScreeningAssessmentPayload> {
-  const assessment = assessHealthScreening(input)
-  const patientAddress = resolvePatientAddress(assessment.patientId)
+async function buildAssessmentPayload(
+  input: ScreeningInput & { walletAddress?: string }
+): Promise<ScreeningAssessmentPayload> {
+  const snapshot = await loadSnapshotForRequest({
+    walletAddress: input.walletAddress,
+    patientId: input.patientId,
+  })
+
+  const livePatient = snapshot.patient
+  const assessment = assessHealthScreening({
+    ...input,
+    patient: livePatient
+      ? {
+          id: livePatient.id,
+          date_of_birth: livePatient.date_of_birth,
+          medical_history: livePatient.medical_history,
+        }
+      : undefined,
+    vitals: snapshot.vitals.map((vital) => ({
+      systolic: vital.systolic,
+      diastolic: vital.diastolic,
+    })),
+    labs: snapshot.labResults.map((lab) => ({
+      test_name: lab.test_name,
+      results: lab.results.map((result) => ({ value: result.value })),
+      status: lab.status,
+    })),
+    vaccinations: snapshot.vaccinations.map((vaccination) => ({
+      vaccine_name: vaccination.vaccine_name,
+      status: vaccination.status,
+    })),
+  })
+
+  const patientAddress = livePatient?.address || process.env.OPENRX_DEFAULT_PATIENT_LOCATION || ""
   const localCareConnections = await buildLocalCareConnections(assessment, patientAddress)
   return {
     ...assessment,
@@ -188,14 +233,15 @@ async function buildAssessmentPayload(input: ScreeningInput): Promise<ScreeningA
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const patientId = searchParams.get("patientId") || undefined
+  const walletAddress = searchParams.get("walletAddress") || undefined
 
-  const assessment = await buildAssessmentPayload({ patientId })
+  const assessment = await buildAssessmentPayload({ patientId, walletAddress })
   return NextResponse.json(assessment)
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const body = (await request.json()) as ScreeningInput
+    const body = (await request.json()) as ScreeningInput & { walletAddress?: string }
     const assessment = await buildAssessmentPayload(body)
     return NextResponse.json(assessment)
   } catch {

@@ -14,8 +14,26 @@ import {
   createBlankProfile,
   profileToPatient,
 } from "./wallet-identity"
-import type { Patient } from "./seed-data"
-import { patients } from "./seed-data"
+import type { LivePatient } from "./live-data-types"
+
+const EMPTY_PATIENT: LivePatient = {
+  id: "",
+  full_name: "",
+  date_of_birth: "",
+  gender: "",
+  phone: "",
+  email: "",
+  address: "",
+  insurance_provider: "",
+  insurance_plan: "",
+  insurance_id: "",
+  emergency_contact_name: "",
+  emergency_contact_phone: "",
+  medical_history: [],
+  allergies: [],
+  primary_physician_id: "",
+  created_at: "",
+}
 
 interface WalletIdentityState {
   // Wallet state
@@ -26,7 +44,7 @@ interface WalletIdentityState {
   isNewUser: boolean
   isLoading: boolean
   // Patient-compatible data for existing components
-  currentPatient: Patient
+  currentPatient: LivePatient
   // Actions
   updateProfile: (updates: Partial<WalletProfile>) => void
   completeOnboarding: () => void
@@ -40,7 +58,7 @@ const WalletIdentityContext = createContext<WalletIdentityState>({
   profile: null,
   isNewUser: false,
   isLoading: true,
-  currentPatient: patients[0],
+  currentPatient: EMPTY_PATIENT,
   updateProfile: () => {},
   completeOnboarding: () => {},
   setAgentAutoPay: () => {},
@@ -112,11 +130,10 @@ export function WalletIdentityProvider({ children }: { children: ReactNode }) {
     [updateProfile]
   )
 
-  // Resolve current patient (wallet-linked or demo)
-  const currentPatient: Patient =
+  const currentPatient: LivePatient =
     profile && profile.onboardingComplete
       ? profileToPatient(profile)
-      : patients[0]
+      : EMPTY_PATIENT
 
   return (
     <WalletIdentityContext.Provider

@@ -1,15 +1,16 @@
 "use client"
 
-import { currentUser } from "@/lib/current-user"
-import { getPatientReferrals, getPhysician } from "@/lib/seed-data"
 import { cn } from "@/lib/utils"
 import {
   ArrowRightCircle, Clock, CheckCircle2, Calendar, Phone,
   AlertTriangle, Bot,
 } from "lucide-react"
+import { useLiveSnapshot } from "@/lib/hooks/use-live-snapshot"
 
 export default function ReferralsPage() {
-  const referrals = getPatientReferrals(currentUser.id)
+  const { snapshot, getPhysician } = useLiveSnapshot()
+  const referrals = snapshot.referrals
+  const insuranceProvider = snapshot.patient?.insurance_provider || "your insurer"
 
   const pending = referrals.filter((r) => r.status === "pending")
   const scheduled = referrals.filter((r) => r.status === "scheduled")
@@ -54,7 +55,7 @@ export default function ReferralsPage() {
             .filter((r) => !r.insurance_authorized && r.status !== "completed")
             .map((r) => (
               <p key={r.id} className="text-xs text-warm-600 mt-1">
-                {r.specialist_name} ({r.specialist_specialty}) — authorization pending from {currentUser.insurance_provider}
+                {r.specialist_name} ({r.specialist_specialty}) — authorization pending from {insuranceProvider}
               </p>
             ))}
           <p className="text-[10px] text-warm-500 mt-2">

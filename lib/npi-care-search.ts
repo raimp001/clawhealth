@@ -1,5 +1,3 @@
-import { currentUser } from "./current-user"
-
 export const CARE_SEARCH_PROMPT_ID = "openrx.npi-care-search.v1" as const
 export const CARE_SEARCH_PROMPT_IMAGE_PATH = "/prompts/npi-care-search-prompt.svg" as const
 
@@ -242,7 +240,7 @@ function extractMappedValue(input: string, map: Record<string, string>): string 
 function buildClarification(missingInfo: string[], parsed: ParsedCareQuery): string {
   if (missingInfo.length === 0) return ""
   if (missingInfo.length === 2) {
-    return "Tell me both what you need and where. Example: 'Find a caregiver and radiology center near Portland OR 97209'."
+    return "Tell me both what you need and where. Example: 'Find a caregiver and radiology center near Seattle WA 98101'."
   }
   if (missingInfo[0] === "service") {
     return "What should I search for: provider, caregiver, lab, or radiology center?"
@@ -493,6 +491,6 @@ export function buildPatientLocalCareQuery(opts: {
     })
     .join(" and ")
   const specialty = opts.specialtyHint ? `${opts.specialtyHint} ` : ""
-  const location = opts.patientAddress || currentUser.address
+  const location = opts.patientAddress || process.env.OPENRX_DEFAULT_PATIENT_LOCATION || ""
   return `Find ${specialty}${servicePhrase} near ${location}`
 }

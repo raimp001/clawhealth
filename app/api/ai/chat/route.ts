@@ -94,11 +94,10 @@ export async function POST(request: NextRequest) {
 
     const apiKey = process.env.OPENAI_API_KEY
     if (!apiKey) {
-      return NextResponse.json({
-        message:
-          'AI service is running in demo mode. Set OPENAI_API_KEY to enable live model responses for this endpoint.',
-        sessionId,
-      })
+      return NextResponse.json(
+        { error: "AI service is unavailable. Set OPENAI_API_KEY to enable live responses." },
+        { status: 503 }
+      )
     }
 
     const openai = new OpenAI({ apiKey })

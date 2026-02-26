@@ -1,7 +1,6 @@
 import OpenAI from "openai"
 import { OPENCLAW_CONFIG } from "./openclaw/config"
-import { currentUser, getMyAppointments, getMyClaims, getMyPrescriptions, getMyMessages } from "./current-user"
-import { physicians, priorAuths } from "./seed-data"
+import { getLiveSnapshotByWallet } from "./live-data.server"
 
 // ── OpenAI Client ────────────────────────────────────────
 const openai = new OpenAI({
@@ -66,40 +65,46 @@ function addToConversation(sessionKey: string, role: "user" | "assistant", conte
 }
 
 // ── Patient Context Builder ──────────────────────────────
-function getPatientContext(): string {
-  const myApts = getMyAppointments()
-  const myClaims = getMyClaims()
-  const myRx = getMyPrescriptions()
-  const myMsgs = getMyMessages()
-  const myPA = priorAuths.filter((p) => p.patient_id === currentUser.id)
-  const myPhysician = physicians.find((p) => p.id === currentUser.primary_physician_id)
+async function getPatientContext(walletAddress?: string): Promise<string> {
+  const snapshot = await getLiveSnapshotByWallet(walletAddress)
+  if (!snapshot.patient) {
+    return "CURRENT PATIENT DATA: No live patient profile found. Ask the user to connect a wallet and complete onboarding."
+  }
+
+  const patient = snapshot.patient
+  const activeMedications = snapshot.prescriptions.filter((prescription) => prescription.status === "active")
+  const upcomingAppointments = snapshot.appointments
+    .filter((appointment) => new Date(appointment.scheduled_at).getTime() > Date.now())
+    .slice(0, 5)
+  const unreadCount = snapshot.messages.filter((message) => !message.read).length
+  const pcp = snapshot.physicians.find((physician) => physician.id === patient.primary_physician_id)
 
   return `
 CURRENT PATIENT DATA (use this to give specific, personalized answers):
 
-Patient: ${currentUser.full_name}
-DOB: ${currentUser.date_of_birth} | Gender: ${currentUser.gender}
-Insurance: ${currentUser.insurance_provider} ${currentUser.insurance_plan} (${currentUser.insurance_id})
-PCP: ${myPhysician?.full_name || "Not assigned"} (${myPhysician?.specialty || ""})
-Allergies: ${currentUser.allergies.join(", ") || "None"}
-Medical History: ${currentUser.medical_history.map((h) => `${h.condition} (${h.status})`).join(", ")}
+Patient: ${patient.full_name}
+DOB: ${patient.date_of_birth} | Gender: ${patient.gender}
+Insurance: ${patient.insurance_provider} ${patient.insurance_plan} (${patient.insurance_id})
+PCP: ${pcp?.full_name || "Not assigned"} (${pcp?.specialty || ""})
+Allergies: ${patient.allergies.join(", ") || "None"}
+Medical History: ${patient.medical_history.map((item) => `${item.condition} (${item.status})`).join(", ")}
 
-Active Medications (${myRx.filter((r) => r.status === "active").length}):
-${myRx.filter((r) => r.status === "active").map((r) => `- ${r.medication_name} ${r.dosage}, ${r.frequency} (adherence: ${r.adherence_pct}%, refills: ${r.refills_remaining}, pharmacy: ${r.pharmacy})`).join("\n")}
+Active Medications (${activeMedications.length}):
+${activeMedications.map((medication) => `- ${medication.medication_name} ${medication.dosage}, ${medication.frequency}`).join("\n")}
 
-Upcoming Appointments (${myApts.filter((a) => new Date(a.scheduled_at) > new Date()).length}):
-${myApts.filter((a) => new Date(a.scheduled_at) > new Date()).slice(0, 5).map((a) => {
-  const doc = physicians.find((p) => p.id === a.physician_id)
-  return `- ${new Date(a.scheduled_at).toLocaleDateString()} ${new Date(a.scheduled_at).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })} — ${doc?.full_name} — ${a.reason} (copay: $${a.copay})`
+Upcoming Appointments (${upcomingAppointments.length}):
+${upcomingAppointments.map((appointment) => {
+  const physician = snapshot.physicians.find((item) => item.id === appointment.physician_id)
+  return `- ${new Date(appointment.scheduled_at).toLocaleDateString()} ${new Date(appointment.scheduled_at).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })} — ${physician?.full_name || "Clinician"} — ${appointment.reason}`
 }).join("\n")}
 
-Recent Claims (${myClaims.length}):
-${myClaims.slice(0, 5).map((c) => `- ${c.claim_number}: $${c.total_amount} — ${c.status}${c.denial_reason ? ` (denied: ${c.denial_reason})` : ""}`).join("\n")}
+Recent Claims (${snapshot.claims.length}):
+${snapshot.claims.slice(0, 5).map((claim) => `- ${claim.claim_number}: $${claim.total_amount} — ${claim.status}${claim.denial_reason ? ` (denied: ${claim.denial_reason})` : ""}`).join("\n")}
 
-Prior Authorizations (${myPA.length}):
-${myPA.map((p) => `- ${p.procedure_name}: ${p.status}${p.denial_reason ? ` (denied: ${p.denial_reason})` : ""}`).join("\n")}
+Prior Authorizations (${snapshot.priorAuths.length}):
+${snapshot.priorAuths.map((auth) => `- ${auth.procedure_name}: ${auth.status}${auth.denial_reason ? ` (denied: ${auth.denial_reason})` : ""}`).join("\n")}
 
-Unread Messages: ${myMsgs.filter((m) => !m.read).length}
+Unread Messages: ${unreadCount}
 `.trim()
 }
 
@@ -108,21 +113,22 @@ export async function runAgent(params: {
   agentId: string
   message: string
   sessionId?: string
+  walletAddress?: string
 }): Promise<{ response: string; agentId: string; handoff?: string }> {
-  const { agentId, message, sessionId } = params
+  const { agentId, message, sessionId, walletAddress } = params
   const agent = OPENCLAW_CONFIG.agents.find((a) => a.id === agentId)
 
   if (!agent) {
     return { response: "Unknown agent.", agentId }
   }
 
-  // Check if OpenAI API key is configured
+  // Fail closed when no live model key is configured.
   if (!process.env.OPENAI_API_KEY) {
-    return { response: getFallbackResponse(agentId, message), agentId }
+    return { response: "AI service is unavailable because OPENAI_API_KEY is not configured.", agentId }
   }
 
   const sessionKey = sessionId || `${agentId}-default`
-  const patientContext = getPatientContext()
+  const patientContext = await getPatientContext(walletAddress)
 
   // Build system prompt with patient context
   const systemPrompt = `${agent.systemPrompt}
@@ -177,15 +183,19 @@ IMPORTANT RULES:
     console.error(`Agent ${agentId} error:`, message || error)
 
     if (status === 401) {
-      return { response: "API key is invalid. Please check your OpenAI API key in the environment variables.", agentId }
+      return { response: "AI service authentication failed. Verify OPENAI_API_KEY.", agentId }
     }
 
-    return { response: getFallbackResponse(agentId, message), agentId }
+    return { response: "AI service is temporarily unavailable. Please retry shortly.", agentId }
   }
 }
 
 // ── Coordinator with Real Routing ────────────────────────
-export async function runCoordinator(message: string, sessionId?: string): Promise<{
+export async function runCoordinator(
+  message: string,
+  sessionId?: string,
+  walletAddress?: string
+): Promise<{
   response: string
   agentId: string
   handoff?: string
@@ -194,6 +204,7 @@ export async function runCoordinator(message: string, sessionId?: string): Promi
     agentId: "coordinator",
     message,
     sessionId,
+    walletAddress,
   })
 
   // If coordinator hands off, run the target agent
@@ -206,6 +217,7 @@ export async function runCoordinator(message: string, sessionId?: string): Promi
         agentId: result.handoff,
         message,
         sessionId: sessionId ? `${sessionId}-${result.handoff}` : undefined,
+        walletAddress,
       })
 
       // Combine coordinator's intro with specialist's response
@@ -218,69 +230,4 @@ export async function runCoordinator(message: string, sessionId?: string): Promi
   }
 
   return result
-}
-
-// ── Fallback Responses (when no API key) ─────────────────
-function getFallbackResponse(agentId: string, message: string): string {
-  const lowerMsg = message.toLowerCase()
-  const agent = OPENCLAW_CONFIG.agents.find((a) => a.id === agentId)
-
-  switch (agentId) {
-    case "coordinator":
-      if (lowerMsg.includes("appointment") || lowerMsg.includes("schedule") || lowerMsg.includes("book"))
-        return `I'll route this to Cal (our scheduler). Let me check physician availability for your ${currentUser.insurance_provider} ${currentUser.insurance_plan} plan...`
-      if (lowerMsg.includes("bill") || lowerMsg.includes("claim") || lowerMsg.includes("charge"))
-        return `Connecting you with Vera (billing). She'll review your recent claims...`
-      if (lowerMsg.includes("prescription") || lowerMsg.includes("refill") || lowerMsg.includes("medication"))
-        return `Routing to Maya (Rx manager). She can see your active medications...`
-      if (lowerMsg.includes("prior auth") || lowerMsg.includes("authorization"))
-        return `Rex (PA specialist) is on it. He'll check your authorization status...`
-      if (lowerMsg.includes("screening") || lowerMsg.includes("risk score"))
-        return `Routing to Quinn (screening specialist). Quinn will prioritize your preventive risks and next steps.`
-      if (lowerMsg.includes("second opinion") || lowerMsg.includes("review my diagnosis"))
-        return `Connecting you with Orion (second-opinion specialist) for a structured plan review.`
-      if (lowerMsg.includes("clinical trial") || lowerMsg.includes("trial match"))
-        return `Lyra (clinical trials agent) will search recruiting studies that fit your profile.`
-      if (lowerMsg.includes("pain") || lowerMsg.includes("fever") || lowerMsg.includes("symptom") || lowerMsg.includes("sick"))
-        return `Routing to Nova (triage). Please describe your symptoms and she'll assess urgency...`
-      return `Hey ${currentUser.full_name.split(" ")[0]}, I'm Atlas — your coordinator. I can help with appointments, medications, bills, screening, second opinions, clinical trials, prior auths, or symptoms. What do you need?`
-
-    case "scheduling":
-      return `I've checked your insurance (${currentUser.insurance_provider}) and found some openings. Would you like morning or afternoon?`
-
-    case "billing":
-      const denied = getMyClaims().filter((c) => c.status === "denied")
-      return `I've reviewed your ${getMyClaims().length} claims. ${denied.length > 0 ? `Found ${denied.length} denied — I can draft appeals.` : "Everything looks clean."}`
-
-    case "rx":
-      const lowAdh = getMyPrescriptions().filter((r) => r.status === "active" && r.adherence_pct < 80)
-      return `Your medication status:\n${getMyPrescriptions().filter((r) => r.status === "active").map((r) => `• ${r.medication_name} ${r.dosage} — ${r.adherence_pct}% adherence`).join("\n")}${lowAdh.length > 0 ? `\n\n⚠️ ${lowAdh.length} medication(s) below 80% adherence.` : ""}`
-
-    case "prior-auth":
-      return `Checking your prior auths... ${priorAuths.filter((p) => p.patient_id === currentUser.id).map((p) => `${p.procedure_name}: ${p.status}`).join(", ") || "No pending authorizations."}`
-
-    case "triage":
-      return `I'm Nova. Tell me what's going on — when did it start, severity 1-10, and any fever/chest pain/breathing difficulty? This helps me determine if you need immediate care.`
-
-    case "onboarding":
-      return `Hey! I'm Sage. Let's get your care team set up. Do you have a primary care physician?`
-
-    case "wellness":
-      return `Hi, I'm Ivy! Based on your profile, I'd love to check your preventive screening schedule. Want me to run your USPSTF recommendations?`
-
-    case "screening":
-      return `I'm Quinn, your screening specialist. I can run a preventive risk profile from your labs, vitals, and history, then prioritize the top actions.`
-
-    case "second-opinion":
-      return `I'm Orion. Share your diagnosis and care plan, and I'll prepare a structured second-opinion summary with key clinician questions.`
-
-    case "trials":
-      return `I'm Lyra. I can match you to recruiting clinical trials based on condition, age, and location, and explain likely fit.`
-
-    case "devops":
-      return `Bolt here. All systems operational. 20+ routes healthy, API latency nominal.`
-
-    default:
-      return `I'm ${agent?.name || "an AI agent"}. How can I help you today?`
-  }
 }

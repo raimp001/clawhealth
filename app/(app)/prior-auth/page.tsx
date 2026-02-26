@@ -1,7 +1,5 @@
 "use client"
 
-import { currentUser } from "@/lib/current-user"
-import { priorAuths, getPhysician } from "@/lib/seed-data"
 import { cn, formatDate, getStatusColor } from "@/lib/utils"
 import {
   AlertTriangle,
@@ -11,9 +9,11 @@ import {
   Send,
 } from "lucide-react"
 import AIAction from "@/components/ai-action"
+import { useLiveSnapshot } from "@/lib/hooks/use-live-snapshot"
 
 export default function PriorAuthPage() {
-  const myAuths = priorAuths.filter((pa) => pa.patient_id === currentUser.id)
+  const { snapshot, getPhysician } = useLiveSnapshot()
+  const myAuths = snapshot.priorAuths
 
   const pending = myAuths.filter(
     (p) => p.status === "pending" || p.status === "submitted"

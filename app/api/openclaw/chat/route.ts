@@ -3,11 +3,19 @@ import { runAgent, runCoordinator } from "@/lib/ai-engine"
 
 export async function POST(req: NextRequest) {
   try {
+    if (!process.env.OPENAI_API_KEY) {
+      return NextResponse.json(
+        { error: "OpenClaw AI service is unavailable. Set OPENAI_API_KEY." },
+        { status: 503 }
+      )
+    }
+
     const body = await req.json()
-    const { message, agentId, sessionId } = body as {
+    const { message, agentId, sessionId, walletAddress } = body as {
       message: string
       agentId: string
       sessionId?: string
+      walletAddress?: string
     }
 
     const validAgents = [
@@ -48,8 +56,8 @@ export async function POST(req: NextRequest) {
 
     // Use coordinator routing for the coordinator agent
     const result = agentId === "coordinator"
-      ? await runCoordinator(message, sessionId)
-      : await runAgent({ agentId, message, sessionId })
+      ? await runCoordinator(message, sessionId, walletAddress)
+      : await runAgent({ agentId, message, sessionId, walletAddress })
 
     return NextResponse.json({
       sessionId: sessionId || `session-${Date.now()}`,

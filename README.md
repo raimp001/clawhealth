@@ -75,7 +75,27 @@ OPENCLAW_GATEWAY_URL=ws://127.0.0.1:18789
 OPENCLAW_GATEWAY_TOKEN=your-token-here
 ```
 
-The app detects the gateway automatically and switches from demo to live mode.
+The app detects gateway availability automatically and reports live/offline status in the UI.
+
+## Production Environment Requirements
+
+Set these for production deployments:
+
+```env
+# Required for live AI responses
+OPENAI_API_KEY=...
+
+# Required for durable, compliance-oriented file persistence
+OPENRX_APPLICATIONS_PATH=/secure/path/openrx-applications.json
+OPENRX_LEDGER_PATH=/secure/path/openrx-ledger.json
+```
+
+Optional live pricing integration:
+
+```env
+OPENRX_DRUG_PRICE_PROVIDER_URL=https://your-pricing-provider.example/api/prices
+OPENRX_DRUG_PRICE_PROVIDER_KEY=...
+```
 
 ## Tech Stack
 
@@ -126,7 +146,7 @@ lib/
 ├── openclaw/         # Gateway client + 12-agent configuration
 ├── basehealth.ts     # Screening, second-opinion, and trial matching logic
 ├── payments-ledger.ts # Compliance ledger and Base Pay verification workflow
-├── seed-data.ts      # Demo clinic data
+├── live-data.server.ts # Wallet-linked patient snapshot mapping from Prisma
 └── utils.ts          # Formatting utilities
 ```
 

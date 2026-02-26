@@ -1,18 +1,18 @@
 "use client"
 
-import { getMyPrescriptions } from "@/lib/current-user"
-import { getPhysician } from "@/lib/seed-data"
 import { cn, formatDate, getStatusColor } from "@/lib/utils"
 import { Pill, Search, AlertTriangle, RefreshCw } from "lucide-react"
 import { useState, useMemo } from "react"
 import Link from "next/link"
 import AIAction from "@/components/ai-action"
+import { useLiveSnapshot } from "@/lib/hooks/use-live-snapshot"
 
 export default function PrescriptionsPage() {
   const [search, setSearch] = useState("")
   const [statusFilter, setStatusFilter] = useState("")
+  const { snapshot, getPhysician } = useLiveSnapshot()
 
-  const myPrescriptions = getMyPrescriptions()
+  const myPrescriptions = snapshot.prescriptions
 
   const statuses = useMemo(
     () => Array.from(new Set(myPrescriptions.map((p) => p.status))),

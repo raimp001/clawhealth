@@ -15,18 +15,19 @@ import { useCallback, useMemo, useState } from "react"
 import Image from "next/image"
 import AIAction from "@/components/ai-action"
 import type { ParsedCareQuery, CareDirectoryMatch } from "@/lib/npi-care-search"
-import { currentUser } from "@/lib/current-user"
 import { cn } from "@/lib/utils"
+import { useLiveSnapshot } from "@/lib/hooks/use-live-snapshot"
 
 const EXAMPLE_SEARCHES = [
-  "Find a caregiver and endocrinology provider near Portland OR 97209",
+  "Find a caregiver and endocrinology provider near Seattle WA 98101",
   "Need a radiology center in Seattle WA for MRI",
   "Find nearby clinical labs around Austin TX 78701",
   "Looking for family medicine provider and lab near Miami FL",
 ]
 
 export default function ProvidersPage() {
-  const profileLocation = currentUser.address
+  const { snapshot } = useLiveSnapshot()
+  const profileLocation = snapshot.patient?.address || ""
   const [query, setQuery] = useState("")
   const [matches, setMatches] = useState<CareDirectoryMatch[]>([])
   const [parsed, setParsed] = useState<ParsedCareQuery | null>(null)
@@ -149,7 +150,7 @@ export default function ProvidersPage() {
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               onKeyDown={(event) => event.key === "Enter" && searchDirectory()}
-              placeholder="Example: find caregiver + radiology center near Portland OR 97209"
+              placeholder="Example: find caregiver + radiology center near Seattle WA 98101"
               className="w-full pl-12 pr-4 py-3.5 rounded-xl border border-sand bg-cream/30 text-sm text-warm-800 placeholder:text-cloudy focus:outline-none focus:border-terra/40 focus:ring-2 focus:ring-terra/10 transition"
             />
           </div>

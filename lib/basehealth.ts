@@ -1,23 +1,34 @@
-import { currentUser } from "./current-user"
-import {
-  getPatient,
-  getPatientLabResults,
-  getPatientVaccinations,
-  getPatientVitals,
-  type Patient,
-} from "./seed-data"
+interface BasePatientProfile {
+  id: string
+  date_of_birth: string
+  medical_history: { condition: string; diagnosed: string; status: string }[]
+}
 
 export type RiskTier = "low" | "moderate" | "high"
 export type RiskImpact = "protective" | "monitor" | "elevated" | "urgent"
 
 export interface ScreeningInput {
   patientId?: string
+  patient?: BasePatientProfile
   age?: number
   bmi?: number
   smoker?: boolean
   familyHistory?: string[]
   symptoms?: string[]
   conditions?: string[]
+  vitals?: Array<{
+    systolic?: number
+    diastolic?: number
+  }>
+  labs?: Array<{
+    test_name: string
+    results: Array<{ value: string }>
+    status?: string
+  }>
+  vaccinations?: Array<{
+    vaccine_name: string
+    status: string
+  }>
 }
 
 export interface ScreeningFactor {
@@ -47,6 +58,7 @@ export interface ScreeningAssessment {
 
 export interface SecondOpinionInput {
   patientId?: string
+  patient?: BasePatientProfile
   diagnosis: string
   currentPlan: string
   symptoms?: string[]
@@ -67,6 +79,7 @@ export interface SecondOpinionResult {
 
 export interface TrialMatchInput {
   patientId?: string
+  patient?: BasePatientProfile
   condition?: string
   location?: string
 }
@@ -87,128 +100,58 @@ export interface TrialMatch {
   summary: string
 }
 
-interface TrialListing {
-  id: string
-  title: string
-  condition: string
-  phase: string
-  status: "recruiting" | "active-not-recruiting"
-  sponsor: string
-  location: string
-  remoteEligible: boolean
-  minAge: number
-  maxAge: number
-  inclusionKeywords: string[]
-  exclusionKeywords: string[]
-  summary: string
-  url: string
+interface CtGovLocation {
+  facility?: string
+  city?: string
+  state?: string
+  country?: string
 }
 
-export const CLINICAL_TRIAL_CATALOG: TrialListing[] = [
-  {
-    id: "trial-diabetes-001",
-    title: "Cardiometabolic Outcomes in Type 2 Diabetes",
-    condition: "type 2 diabetes",
-    phase: "Phase III",
-    status: "recruiting",
-    sponsor: "Northwest Metabolic Institute",
-    location: "Portland, OR",
-    remoteEligible: true,
-    minAge: 40,
-    maxAge: 80,
-    inclusionKeywords: ["type 2 diabetes", "a1c", "metformin"],
-    exclusionKeywords: ["dialysis"],
-    summary: "Evaluates cardiometabolic outcomes for adults with type 2 diabetes on standard therapy.",
-    url: "https://clinicaltrials.gov/search?term=type+2+diabetes+cardiometabolic",
-  },
-  {
-    id: "trial-renal-002",
-    title: "Early Diabetic Kidney Disease Monitoring Program",
-    condition: "diabetic nephropathy",
-    phase: "Phase II",
-    status: "recruiting",
-    sponsor: "Cascade Kidney Research Group",
-    location: "Portland, OR",
-    remoteEligible: false,
-    minAge: 35,
-    maxAge: 85,
-    inclusionKeywords: ["microalbumin", "diabetes", "egfr"],
-    exclusionKeywords: ["transplant"],
-    summary: "Tracks progression and intervention outcomes in early diabetic nephropathy.",
-    url: "https://clinicaltrials.gov/search?term=diabetic+nephropathy+monitoring",
-  },
-  {
-    id: "trial-lipid-003",
-    title: "Precision Lipid-Lowering Pathway Study",
-    condition: "hyperlipidemia",
-    phase: "Phase II",
-    status: "recruiting",
-    sponsor: "Pacific Heart Labs",
-    location: "Seattle, WA",
-    remoteEligible: true,
-    minAge: 30,
-    maxAge: 75,
-    inclusionKeywords: ["ldl", "statin", "cholesterol"],
-    exclusionKeywords: ["active liver disease"],
-    summary: "Personalized lipid-lowering strategies guided by biomarker profile.",
-    url: "https://clinicaltrials.gov/search?term=hyperlipidemia+precision",
-  },
-  {
-    id: "trial-hypertension-004",
-    title: "Hybrid Blood Pressure Telemonitoring Trial",
-    condition: "hypertension",
-    phase: "Phase IV",
-    status: "recruiting",
-    sponsor: "US Preventive Care Collaborative",
-    location: "Remote + U.S. Sites",
-    remoteEligible: true,
-    minAge: 18,
-    maxAge: 85,
-    inclusionKeywords: ["hypertension", "home monitoring", "telehealth"],
-    exclusionKeywords: ["pregnancy"],
-    summary: "Compares clinic-only versus hybrid telemonitoring blood pressure control pathways.",
-    url: "https://clinicaltrials.gov/search?term=hypertension+telemonitoring",
-  },
-  {
-    id: "trial-prevention-005",
-    title: "Multimorbidity Preventive Screening Program",
-    condition: "preventive care",
-    phase: "Phase III",
-    status: "recruiting",
-    sponsor: "Preventive Health Equity Network",
-    location: "San Francisco, CA",
-    remoteEligible: true,
-    minAge: 45,
-    maxAge: 80,
-    inclusionKeywords: ["screening", "preventive", "risk stratification"],
-    exclusionKeywords: ["active cancer treatment"],
-    summary: "Risk-stratified preventive screening cadence for adults with chronic conditions.",
-    url: "https://clinicaltrials.gov/search?term=preventive+screening+risk",
-  },
-  {
-    id: "trial-cardiac-006",
-    title: "Atherosclerotic Risk Reduction in Diabetes",
-    condition: "cardiovascular risk",
-    phase: "Phase III",
-    status: "active-not-recruiting",
-    sponsor: "West Coast Cardio Alliance",
-    location: "Los Angeles, CA",
-    remoteEligible: false,
-    minAge: 45,
-    maxAge: 85,
-    inclusionKeywords: ["diabetes", "ldl", "hypertension"],
-    exclusionKeywords: ["recent stroke"],
-    summary: "Intensive risk reduction for adults with elevated cardiovascular risk and diabetes.",
-    url: "https://clinicaltrials.gov/search?term=diabetes+cardiovascular+risk+reduction",
-  },
-]
-
-function resolvePatient(patientId?: string): Patient {
-  if (patientId) {
-    const found = getPatient(patientId)
-    if (found) return found
+interface CtGovStudy {
+  protocolSection?: {
+    identificationModule?: {
+      nctId?: string
+      briefTitle?: string
+    }
+    statusModule?: {
+      overallStatus?: string
+    }
+    sponsorCollaboratorsModule?: {
+      leadSponsor?: {
+        name?: string
+      }
+    }
+    conditionsModule?: {
+      conditions?: string[]
+    }
+    descriptionModule?: {
+      briefSummary?: string
+    }
+    designModule?: {
+      phases?: string[]
+    }
+    contactsLocationsModule?: {
+      locations?: CtGovLocation[]
+    }
+    eligibilityModule?: {
+      minimumAge?: string
+      maximumAge?: string
+    }
   }
-  return currentUser
+}
+
+interface CtGovResponse {
+  studies?: CtGovStudy[]
+}
+
+const DEFAULT_PATIENT: BasePatientProfile = {
+  id: "unknown-patient",
+  date_of_birth: "1980-01-01",
+  medical_history: [],
+}
+
+function resolvePatient(inputPatient?: BasePatientProfile): BasePatientProfile {
+  return inputPatient || DEFAULT_PATIENT
 }
 
 function calcAge(dateOfBirth: string): number {
@@ -235,11 +178,11 @@ function parseLabValue(value: string): number | null {
 }
 
 export function assessHealthScreening(input: ScreeningInput = {}): ScreeningAssessment {
-  const patient = resolvePatient(input.patientId)
+  const patient = resolvePatient(input.patient)
   const age = input.age ?? calcAge(patient.date_of_birth)
-  const vitals = getPatientVitals(patient.id)
-  const labs = getPatientLabResults(patient.id)
-  const vaccines = getPatientVaccinations(patient.id)
+  const vitals = input.vitals || []
+  const labs = input.labs || []
+  const vaccines = input.vaccinations || []
 
   const latestVital = vitals[0]
   const conditionSet = new Set(
@@ -422,7 +365,7 @@ export function assessHealthScreening(input: ScreeningInput = {}): ScreeningAsse
 }
 
 export function reviewSecondOpinion(input: SecondOpinionInput): SecondOpinionResult {
-  const patient = resolvePatient(input.patientId)
+  const patient = resolvePatient(input.patient)
   const diagnosis = input.diagnosis.trim()
   const plan = input.currentPlan.trim()
   const diagnosisLower = diagnosis.toLowerCase()
@@ -501,83 +444,130 @@ export function reviewSecondOpinion(input: SecondOpinionInput): SecondOpinionRes
   }
 }
 
-export function matchClinicalTrials(input: TrialMatchInput = {}): TrialMatch[] {
-  const patient = resolvePatient(input.patientId)
+function parseAgeYears(value?: string): number | null {
+  if (!value || value.toUpperCase() === "N/A") return null
+  const match = value.match(/(\d+)/)
+  if (!match) return null
+  const numeric = Number.parseInt(match[1], 10)
+  if (!Number.isFinite(numeric)) return null
+  if (value.toLowerCase().includes("month")) return Math.floor(numeric / 12)
+  return numeric
+}
+
+function buildTrialSearchTerms(condition: string, history: string[]): string {
+  if (condition) return condition
+  return history.slice(0, 3).join(" ")
+}
+
+export async function matchClinicalTrials(input: TrialMatchInput = {}): Promise<TrialMatch[]> {
+  const patient = resolvePatient(input.patient)
   const age = calcAge(patient.date_of_birth)
-  const locationQuery = (input.location || "").toLowerCase()
-  const conditionQuery = (input.condition || "").toLowerCase()
-  const conditionText = patient.medical_history.map((item) => item.condition.toLowerCase()).join(" ")
+  const locationQuery = (input.location || "").trim().toLowerCase()
+  const conditionQuery = (input.condition || "").trim().toLowerCase()
+  const conditionHistory = patient.medical_history.map((item) => item.condition.trim()).filter(Boolean)
+  const conditionText = conditionHistory.join(" ").toLowerCase()
+  const queryTerm = buildTrialSearchTerms(input.condition?.trim() || "", conditionHistory)
 
-  const matches: TrialMatch[] = []
+  if (!queryTerm && !locationQuery) return []
 
-  for (const trial of CLINICAL_TRIAL_CATALOG) {
-    if (trial.status !== "recruiting") continue
-    if (age < trial.minAge || age > trial.maxAge) continue
+  const params = new URLSearchParams()
+  params.set("format", "json")
+  params.set("countTotal", "false")
+  params.set("pageSize", "20")
+  params.set("filter.overallStatus", "RECRUITING")
+  if (queryTerm) params.set("query.term", queryTerm)
+  if (locationQuery) params.set("query.locn", input.location!.trim())
 
-    let score = 20
-    const reasons: string[] = []
-
-    if (conditionQuery) {
-      if (trial.condition.includes(conditionQuery) || conditionQuery.includes(trial.condition)) {
-        score += 35
-        reasons.push(`Condition focus matches "${input.condition}".`)
-      } else if (trial.summary.toLowerCase().includes(conditionQuery)) {
-        score += 18
-        reasons.push("Condition partially matches trial focus.")
-      }
-    } else if (conditionText.includes(trial.condition) || trial.condition.includes("preventive care")) {
-      score += 25
-      reasons.push("Matched using your known medical history.")
-    }
-
-    if (locationQuery) {
-      if (trial.location.toLowerCase().includes(locationQuery)) {
-        score += 18
-        reasons.push("Trial location matches your preferred area.")
-      } else if (trial.remoteEligible) {
-        score += 10
-        reasons.push("Remote participation available.")
-      }
-    } else if (trial.remoteEligible || trial.location.toLowerCase().includes("portland")) {
-      score += 8
-      reasons.push("Accessible by remote visit or nearby region.")
-    }
-
-    const inclusionHits = trial.inclusionKeywords.filter((keyword) => {
-      const lowerKeyword = keyword.toLowerCase()
-      return conditionText.includes(lowerKeyword) || conditionQuery.includes(lowerKeyword)
+  try {
+    const response = await fetch(`https://clinicaltrials.gov/api/v2/studies?${params.toString()}`, {
+      next: { revalidate: 900 },
     })
-    if (inclusionHits.length > 0) {
-      score += Math.min(20, inclusionHits.length * 6)
-      reasons.push(`Inclusion criteria overlap: ${inclusionHits.join(", ")}.`)
+    if (!response.ok) return []
+
+    const payload = (await response.json()) as CtGovResponse
+    const studies = payload.studies || []
+    const matches: TrialMatch[] = []
+
+    for (const study of studies) {
+      const protocol = study.protocolSection
+      const id = protocol?.identificationModule?.nctId
+      const title = protocol?.identificationModule?.briefTitle
+      if (!id || !title) continue
+
+      const minAge = parseAgeYears(protocol?.eligibilityModule?.minimumAge)
+      const maxAge = parseAgeYears(protocol?.eligibilityModule?.maximumAge)
+      if (minAge !== null && age < minAge) continue
+      if (maxAge !== null && age > maxAge) continue
+
+      const conditions = protocol?.conditionsModule?.conditions || []
+      const summary = protocol?.descriptionModule?.briefSummary || "No study summary provided."
+      const sponsor = protocol?.sponsorCollaboratorsModule?.leadSponsor?.name || "Unknown sponsor"
+      const phase = protocol?.designModule?.phases?.[0] || "Not specified"
+      const status = (protocol?.statusModule?.overallStatus || "RECRUITING").toLowerCase()
+      const locations = protocol?.contactsLocationsModule?.locations || []
+      const primaryLocation = locations[0]
+      const location = primaryLocation
+        ? [primaryLocation.city, primaryLocation.state, primaryLocation.country].filter(Boolean).join(", ")
+        : "Location pending"
+      const remoteEligible = locations.length === 0
+
+      let score = 30
+      const reasons: string[] = []
+
+      if (conditionQuery) {
+        const conditionPool = `${conditions.join(" ")} ${summary}`.toLowerCase()
+        if (conditionPool.includes(conditionQuery)) {
+          score += 35
+          reasons.push(`Study focus matches "${input.condition}".`)
+        } else {
+          score += 10
+          reasons.push("Matched on broader query terms.")
+        }
+      } else if (conditionText) {
+        const conditionPool = `${conditions.join(" ")} ${summary}`.toLowerCase()
+        const overlap = conditionHistory.find((item) => conditionPool.includes(item.toLowerCase()))
+        if (overlap) {
+          score += 24
+          reasons.push(`Aligned with patient history: ${overlap}.`)
+        }
+      }
+
+      if (locationQuery) {
+        const locationPool = [location, ...locations.map((entry) => `${entry.city || ""} ${entry.state || ""}`)].join(" ").toLowerCase()
+        if (locationPool.includes(locationQuery)) {
+          score += 18
+          reasons.push("Location preference matched.")
+        } else if (remoteEligible) {
+          score += 8
+          reasons.push("No listed sites yet; may allow remote prescreening.")
+        } else {
+          score -= 6
+          reasons.push("Location is outside preferred area.")
+        }
+      }
+
+      const finalScore = Math.max(0, Math.min(100, score))
+      if (finalScore < 35) continue
+
+      matches.push({
+        id,
+        title,
+        phase,
+        status,
+        sponsor,
+        location,
+        remoteEligible,
+        condition: conditions[0] || input.condition || "General",
+        matchScore: finalScore,
+        fit: finalScore >= 65 ? "strong" : "possible",
+        reasons,
+        url: `https://clinicaltrials.gov/study/${id}`,
+        summary,
+      })
     }
 
-    const exclusionHit = trial.exclusionKeywords.find((keyword) =>
-      conditionText.includes(keyword.toLowerCase())
-    )
-    if (exclusionHit) {
-      score -= 18
-      reasons.push(`Potential exclusion risk: ${exclusionHit}.`)
-    }
-
-    if (score < 35) continue
-
-    matches.push({
-      id: trial.id,
-      title: trial.title,
-      phase: trial.phase,
-      status: trial.status,
-      sponsor: trial.sponsor,
-      location: trial.location,
-      remoteEligible: trial.remoteEligible,
-      condition: trial.condition,
-      matchScore: Math.min(100, score),
-      fit: score >= 65 ? "strong" : "possible",
-      reasons,
-      url: trial.url,
-      summary: trial.summary,
-    })
+    return matches.sort((a, b) => b.matchScore - a.matchScore).slice(0, 10)
+  } catch {
+    return []
   }
-
-  return matches.sort((a, b) => b.matchScore - a.matchScore).slice(0, 10)
 }

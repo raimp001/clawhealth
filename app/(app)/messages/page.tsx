@@ -1,7 +1,5 @@
 "use client"
 
-import { currentUser, getMyMessages } from "@/lib/current-user"
-import { getPhysician } from "@/lib/seed-data"
 import { cn, formatDate } from "@/lib/utils"
 import {
   MessageSquare,
@@ -13,13 +11,16 @@ import {
 } from "lucide-react"
 import { useState, useMemo } from "react"
 import AIAction from "@/components/ai-action"
+import { useLiveSnapshot } from "@/lib/hooks/use-live-snapshot"
 
 export default function MessagesPage() {
   const [channelFilter, setChannelFilter] = useState("")
   const [newMessage, setNewMessage] = useState("")
   const [isSending, setIsSending] = useState(false)
+  const { snapshot, getPhysician } = useLiveSnapshot()
+  const patient = snapshot.patient
 
-  const myMessages = getMyMessages()
+  const myMessages = snapshot.messages
 
   const channels = useMemo(
     () => Array.from(new Set(myMessages.map((m) => m.channel))),
@@ -101,8 +102,8 @@ export default function MessagesPage() {
                 My Conversation
               </h3>
               <p className="text-[10px] text-cloudy">
-                {currentUser.phone} &middot;{" "}
-                {currentUser.email}
+                {patient?.phone || "No phone"} &middot;{" "}
+                {patient?.email || "No email"}
               </p>
             </div>
           </div>
@@ -199,7 +200,7 @@ export default function MessagesPage() {
                       body: JSON.stringify({
                         message: newMessage,
                         agentId: "coordinator",
-                        patientId: currentUser.id,
+                        patientId: patient?.id,
                         channel: "portal",
                       }),
                     })
@@ -223,7 +224,7 @@ export default function MessagesPage() {
                     body: JSON.stringify({
                       message: newMessage,
                       agentId: "coordinator",
-                      patientId: currentUser.id,
+                      patientId: patient?.id,
                       channel: "portal",
                     }),
                   })

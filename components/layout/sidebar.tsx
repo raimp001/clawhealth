@@ -27,24 +27,7 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useState, useEffect } from "react"
-import { getPatientMessages, getPatientPrescriptions, priorAuths, getPatientLabResults } from "@/lib/seed-data"
-import { currentUser } from "@/lib/current-user"
-
-function useSidebarBadges() {
-  const myMessages = getPatientMessages(currentUser.id)
-  const unreadMessages = myMessages.filter((m) => !m.read).length
-
-  const myPrescriptions = getPatientPrescriptions(currentUser.id)
-  const pendingRefills = myPrescriptions.filter((p) => p.status === "pending-refill").length
-
-  const myPA = priorAuths.filter((p) => p.patient_id === currentUser.id)
-  const pendingPA = myPA.filter((p) => p.status === "pending" || p.status === "submitted").length
-
-  const myLabs = getPatientLabResults(currentUser.id)
-  const pendingLabs = myLabs.filter((l) => l.status === "pending").length
-
-  return { unreadMessages, pendingRefills, pendingPA, pendingLabs }
-}
+import { useLiveSnapshot } from "@/lib/hooks/use-live-snapshot"
 
 const navSections = [
   {
@@ -96,7 +79,15 @@ type BadgeKey = "unreadMessages" | "pendingRefills" | "pendingPA" | "pendingLabs
 export default function Sidebar() {
   const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false)
-  const badges = useSidebarBadges()
+  const { snapshot } = useLiveSnapshot()
+  const badges = {
+    unreadMessages: snapshot.messages.filter((message) => !message.read).length,
+    pendingRefills: snapshot.prescriptions.filter((prescription) => prescription.status === "pending-refill").length,
+    pendingPA: snapshot.priorAuths.filter(
+      (priorAuth) => priorAuth.status === "pending" || priorAuth.status === "submitted"
+    ).length,
+    pendingLabs: snapshot.labResults.filter((lab) => lab.status === "pending").length,
+  }
 
   useEffect(() => {
     setMobileOpen(false)
@@ -134,7 +125,9 @@ export default function Sidebar() {
 
         <div className="mt-3 rounded-xl border border-sand/80 bg-cream/60 px-3 py-2">
           <p className="text-[9px] font-bold uppercase tracking-[0.14em] text-cloudy">Signed in</p>
-          <p className="mt-0.5 truncate text-sm font-semibold text-warm-800">{currentUser.full_name}</p>
+          <p className="mt-0.5 truncate text-sm font-semibold text-warm-800">
+            {snapshot.patient?.full_name || "Connect wallet to load profile"}
+          </p>
         </div>
       </div>
 

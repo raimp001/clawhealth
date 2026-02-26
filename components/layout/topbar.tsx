@@ -10,23 +10,23 @@ import {
 } from "@coinbase/onchainkit/wallet"
 import { Address, Avatar, Name, Identity } from "@coinbase/onchainkit/identity"
 import { useWalletIdentity } from "@/lib/wallet-context"
-import { getPatientClaims, getPatientMessages, getPatientPrescriptions, getPatientAppointments, getPhysician } from "@/lib/seed-data"
 import { cn, formatDate, formatTime } from "@/lib/utils"
 import Link from "next/link"
 import { useState, useMemo, useRef, useEffect, useCallback } from "react"
+import { useLiveSnapshot } from "@/lib/hooks/use-live-snapshot"
 
 export default function Topbar() {
-  const { isConnected, profile, currentPatient, isNewUser } = useWalletIdentity()
-  const myMessages = getPatientMessages(currentPatient.id)
+  const { isConnected, profile, isNewUser } = useWalletIdentity()
+  const { snapshot, getPhysician } = useLiveSnapshot()
+  const myMessages = snapshot.messages
   const unread = myMessages.filter((m) => !m.read).length
   const [query, setQuery] = useState("")
   const [isOpen, setIsOpen] = useState(false)
   const searchRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
-
-  const myClaims = getPatientClaims(currentPatient.id)
-  const myPrescriptions = getPatientPrescriptions(currentPatient.id)
-  const myAppointments = getPatientAppointments(currentPatient.id)
+  const myClaims = snapshot.claims
+  const myPrescriptions = snapshot.prescriptions
+  const myAppointments = snapshot.appointments
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -94,7 +94,7 @@ export default function Topbar() {
     const total = matchedClaims.length + matchedRx.length + matchedApts.length
     if (total === 0) return { claims: [], rx: [], apts: [], total: 0 }
     return { claims: matchedClaims, rx: matchedRx, apts: matchedApts, total }
-  }, [query, myClaims, myPrescriptions, myAppointments])
+  }, [query, myClaims, myPrescriptions, myAppointments, getPhysician])
 
   const closeSearch = useCallback(() => {
     setIsOpen(false)

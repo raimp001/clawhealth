@@ -4,8 +4,8 @@ import Image from "next/image"
 import { useCallback, useMemo, useState } from "react"
 import { BadgeCheck, Building2, Loader2, MapPin, Phone, Pill, Search, ShieldCheck } from "lucide-react"
 import AIAction from "@/components/ai-action"
-import { currentUser } from "@/lib/current-user"
 import { cn } from "@/lib/utils"
+import { useLiveSnapshot } from "@/lib/hooks/use-live-snapshot"
 
 interface Pharmacy {
   npi: string
@@ -38,12 +38,13 @@ interface ParsedPharmacyQuery {
 
 const EXAMPLE_QUERIES = [
   "Find CVS pharmacy near Seattle WA 98101",
-  "Need a 24 hour pharmacy around Portland OR 97209",
+  "Need a 24 hour pharmacy around Denver CO 80202",
   "Find Walgreens in Austin TX",
   "Search pharmacy near Miami FL 33101",
 ]
 
 export default function PharmacyPage() {
+  const { snapshot } = useLiveSnapshot()
   const [query, setQuery] = useState("")
   const [results, setResults] = useState<Pharmacy[]>([])
   const [count, setCount] = useState(0)
@@ -56,7 +57,7 @@ export default function PharmacyPage() {
   const [error, setError] = useState("")
   const [selectedPharmacy, setSelectedPharmacy] = useState<string | null>(null)
 
-  const profileLocation = currentUser.address
+  const profileLocation = snapshot.patient?.address || ""
   const activeResults = useMemo(() => results.filter((item) => item.status === "Active"), [results])
 
   const searchPharmacies = useCallback(

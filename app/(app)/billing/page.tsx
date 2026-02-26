@@ -1,6 +1,5 @@
 "use client"
 
-import { getMyClaims } from "@/lib/current-user"
 import { cn, formatCurrency, formatDate, getStatusColor } from "@/lib/utils"
 import {
   Receipt,
@@ -12,11 +11,13 @@ import {
 } from "lucide-react"
 import { useState, useMemo } from "react"
 import AIAction from "@/components/ai-action"
+import { useLiveSnapshot } from "@/lib/hooks/use-live-snapshot"
 
 export default function BillingPage() {
   const [statusFilter, setStatusFilter] = useState("")
+  const { snapshot } = useLiveSnapshot()
 
-  const myClaims = getMyClaims()
+  const myClaims = snapshot.claims
 
   const stats = useMemo(() => {
     const totalBilled = myClaims.reduce((s, c) => s + c.total_amount, 0)

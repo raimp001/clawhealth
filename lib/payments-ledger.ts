@@ -137,7 +137,14 @@ interface LedgerStore {
   serial: number
 }
 
-const LEDGER_FILE = process.env.OPENRX_LEDGER_PATH || path.join(process.cwd(), ".openrx-ledger.json")
+function resolveLedgerFile(): string {
+  const configured = process.env.OPENRX_LEDGER_PATH
+  if (configured) return configured
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("OPENRX_LEDGER_PATH is required in production for durable compliance ledger storage.")
+  }
+  return path.join(process.cwd(), ".openrx-ledger.json")
+}
 
 export interface PaymentIntentInput {
   walletAddress: string
@@ -213,9 +220,10 @@ function getStore(): LedgerStore {
 }
 
 function loadPersistedStore(): LedgerStore | null {
+  const ledgerFile = resolveLedgerFile()
   try {
-    if (!fs.existsSync(LEDGER_FILE)) return null
-    const raw = fs.readFileSync(LEDGER_FILE, "utf8")
+    if (!fs.existsSync(ledgerFile)) return null
+    const raw = fs.readFileSync(ledgerFile, "utf8")
     const parsed = JSON.parse(raw) as LedgerStore
     if (!parsed || typeof parsed !== "object") return null
     return {
@@ -226,16 +234,25 @@ function loadPersistedStore(): LedgerStore | null {
       entries: parsed.entries || [],
       serial: parsed.serial || 1,
     }
-  } catch {
-    return null
+  } catch (error) {
+    throw new Error(
+      `Unable to load compliance ledger at ${ledgerFile}: ${error instanceof Error ? error.message : "unknown error"}`
+    )
   }
 }
 
 function persistStore(store: LedgerStore): void {
+  const ledgerFile = resolveLedgerFile()
+  const directory = path.dirname(ledgerFile)
+  if (!fs.existsSync(directory)) {
+    fs.mkdirSync(directory, { recursive: true })
+  }
   try {
-    fs.writeFileSync(LEDGER_FILE, JSON.stringify(store, null, 2), "utf8")
-  } catch {
-    // Ignore persistence failures so UI actions still complete.
+    fs.writeFileSync(ledgerFile, JSON.stringify(store, null, 2), "utf8")
+  } catch (error) {
+    throw new Error(
+      `Unable to persist compliance ledger at ${ledgerFile}: ${error instanceof Error ? error.message : "unknown error"}`
+    )
   }
 }
 
@@ -338,16 +355,6 @@ async function resolveBasePaymentStatus(params: {
   testnet?: boolean
 }): Promise<BasePayStatus> {
   const txHash = params.txHash.trim()
-  if (txHash.startsWith("demo-")) {
-    return {
-      status: "completed",
-      id: txHash,
-      amount: "10.00",
-      recipient: process.env.OPENRX_TREASURY_WALLET || DEFAULT_TREASURY_WALLET,
-      sender: "0x000000000000000000000000000000000000dEaD",
-      message: "Demo verification completed",
-    }
-  }
 
   const { getPaymentStatus } = await import("@base-org/account")
   const response = (await getPaymentStatus({

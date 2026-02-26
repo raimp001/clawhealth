@@ -74,7 +74,7 @@ function defaultSnapshot(): SnapshotPayload {
 
 export default function ComplianceLedgerPage() {
   const { walletAddress, isConnected } = useWalletIdentity()
-  const activeWallet = walletAddress || "0x000000000000000000000000000000000000dEaD"
+  const activeWallet = walletAddress || ""
   const [snapshot, setSnapshot] = useState<SnapshotPayload>(defaultSnapshot())
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
@@ -83,11 +83,11 @@ export default function ComplianceLedgerPage() {
   const [category, setCategory] = useState<PaymentCategory>("copay")
   const [description, setDescription] = useState("Routine clinic copay")
   const [selectedPaymentId, setSelectedPaymentId] = useState("")
-  const [verifyTxHash, setVerifyTxHash] = useState("demo-payment-hash")
+  const [verifyTxHash, setVerifyTxHash] = useState("")
   const [refundAmount, setRefundAmount] = useState("5.00")
   const [refundReason, setRefundReason] = useState("Duplicate charge")
   const [selectedRefundId, setSelectedRefundId] = useState("")
-  const [refundTxHash, setRefundTxHash] = useState("demo-refund-hash")
+  const [refundTxHash, setRefundTxHash] = useState("")
   const [paying, setPaying] = useState(false)
 
   const latestPayments = useMemo(() => snapshot.payments.slice(0, 8), [snapshot.payments])
@@ -134,6 +134,10 @@ export default function ComplianceLedgerPage() {
   }, [loadSnapshot])
 
   async function createIntent() {
+    if (!activeWallet) {
+      setError("Connect a wallet before creating payment intents.")
+      return
+    }
     setBusy(true)
     setError("")
     try {
@@ -188,6 +192,10 @@ export default function ComplianceLedgerPage() {
   }
 
   async function verifyPayment() {
+    if (!activeWallet) {
+      setError("Connect a wallet before verifying payments.")
+      return
+    }
     if (!selectedPaymentId || !verifyTxHash.trim()) return
     setBusy(true)
     setError("")
@@ -214,6 +222,10 @@ export default function ComplianceLedgerPage() {
   }
 
   async function requestPaymentRefund() {
+    if (!activeWallet) {
+      setError("Connect a wallet before requesting refunds.")
+      return
+    }
     if (!selectedPaymentId || !refundAmount.trim()) return
     setBusy(true)
     setError("")
@@ -240,6 +252,10 @@ export default function ComplianceLedgerPage() {
   }
 
   async function approveRefund() {
+    if (!activeWallet) {
+      setError("Connect a wallet before approving refunds.")
+      return
+    }
     if (!selectedRefundId) return
     setBusy(true)
     setError("")
@@ -264,6 +280,10 @@ export default function ComplianceLedgerPage() {
   }
 
   async function finalizeRefund() {
+    if (!activeWallet) {
+      setError("Connect a wallet before finalizing refunds.")
+      return
+    }
     if (!selectedRefundId) return
     setBusy(true)
     setError("")
@@ -320,7 +340,7 @@ export default function ComplianceLedgerPage() {
 
       {!isConnected && (
         <div className="bg-yellow-100/20 border border-yellow-300/30 rounded-xl p-3 text-xs text-warm-600">
-          Wallet is not connected. Actions run with a demo wallet until you connect.
+          Wallet is not connected. Connect a wallet to run payment, receipt, attestation, and refund actions.
         </div>
       )}
 
@@ -424,9 +444,7 @@ export default function ComplianceLedgerPage() {
                   Expected: ${selectedPayment.expectedAmount} to {selectedPayment.recipientAddress.slice(0, 10)}...
                 </p>
               )}
-              <p className="text-[10px] text-cloudy">
-                Use a real Base Pay tx hash. Demo hashes prefixed with <code>demo-</code> are also accepted.
-              </p>
+              <p className="text-[10px] text-cloudy">Use a real Base Pay transaction hash from settlement.</p>
               <button
                 onClick={() => void verifyPayment()}
                 disabled={busy || !selectedPaymentId}

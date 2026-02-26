@@ -1,15 +1,15 @@
 "use client"
 
-import { currentUser } from "@/lib/current-user"
-import { getPatientVaccinations } from "@/lib/seed-data"
 import {
   Syringe, CheckCircle2, AlertTriangle, Calendar,
   Bot, Shield, ArrowRight,
 } from "lucide-react"
 import Link from "next/link"
+import { useLiveSnapshot } from "@/lib/hooks/use-live-snapshot"
 
 export default function VaccinationsPage() {
-  const vaccinations = getPatientVaccinations(currentUser.id)
+  const { snapshot } = useLiveSnapshot()
+  const vaccinations = snapshot.vaccinations
 
   const completed = vaccinations.filter((v) => v.status === "completed")
   const due = vaccinations.filter((v) => v.status === "due" || v.status === "overdue")
@@ -105,7 +105,7 @@ export default function VaccinationsPage() {
                     <div className="flex items-center gap-3 mt-1.5 text-[10px] text-warm-500">
                       <span className="flex items-center gap-1">
                         <Calendar size={8} />
-                        {new Date(vax.administered_at).toLocaleDateString()}
+                        {vax.administered_at ? new Date(vax.administered_at).toLocaleDateString() : "Date unavailable"}
                       </span>
                       <span>{vax.administered_by}</span>
                     </div>
