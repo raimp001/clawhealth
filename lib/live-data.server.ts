@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/db"
 import { createEmptyLiveSnapshot, type LiveClaim, type LiveLabResult, type LiveSnapshot, type LiveVital } from "@/lib/live-data-types"
 
+let hasWarnedMissingDatabaseUrl = false
+
 function normalizeAddress(address?: string | null): string {
   return (address || "").trim().toLowerCase()
 }
@@ -112,52 +114,62 @@ export async function getLiveSnapshotByWallet(walletAddress?: string | null): Pr
   const normalizedWallet = normalizeAddress(walletAddress)
   if (!normalizedWallet) return createEmptyLiveSnapshot(null)
 
-  const user = await prisma.user.findFirst({
-    where: { walletAddress: { equals: normalizedWallet, mode: "insensitive" } },
-    include: {
-      patientProfile: {
-        include: {
-          appointments: {
-            include: {
-              doctor: { include: { user: true } },
+  if (!process.env.DATABASE_URL) {
+    if (!hasWarnedMissingDatabaseUrl) {
+      hasWarnedMissingDatabaseUrl = true
+      console.warn("DATABASE_URL is not configured. Returning empty live snapshot fallback.")
+    }
+    return createEmptyLiveSnapshot(normalizedWallet)
+  }
+
+  try {
+
+    const user = await prisma.user.findFirst({
+      where: { walletAddress: { equals: normalizedWallet, mode: "insensitive" } },
+      include: {
+        patientProfile: {
+          include: {
+            appointments: {
+              include: {
+                doctor: { include: { user: true } },
+              },
+              orderBy: { scheduledAt: "asc" },
             },
-            orderBy: { scheduledAt: "asc" },
-          },
-          prescriptions: {
-            include: {
-              doctor: { include: { user: true } },
-              medications: true,
+            prescriptions: {
+              include: {
+                doctor: { include: { user: true } },
+                medications: true,
+              },
+              orderBy: { issuedAt: "desc" },
             },
-            orderBy: { issuedAt: "desc" },
-          },
-          labResults: {
-            orderBy: { testDate: "desc" },
-          },
-          vitalSigns: {
-            orderBy: { recordedAt: "desc" },
-          },
-          medicalRecords: {
-            orderBy: { recordDate: "desc" },
+            labResults: {
+              orderBy: { testDate: "desc" },
+            },
+            vitalSigns: {
+              orderBy: { recordedAt: "desc" },
+            },
+            medicalRecords: {
+              orderBy: { recordDate: "desc" },
+            },
           },
         },
-      },
-      sentMessages: {
-        include: {
-          receiver: { include: { doctorProfile: true } },
+        sentMessages: {
+          include: {
+            receiver: { include: { doctorProfile: true } },
+          },
+          orderBy: { createdAt: "asc" },
         },
-        orderBy: { createdAt: "asc" },
-      },
-      receivedMessages: {
-        include: {
-          sender: { include: { doctorProfile: true } },
+        receivedMessages: {
+          include: {
+            sender: { include: { doctorProfile: true } },
+          },
+          orderBy: { createdAt: "asc" },
         },
-        orderBy: { createdAt: "asc" },
+        payments: {
+          orderBy: { createdAt: "desc" },
+        },
       },
-      payments: {
-        orderBy: { createdAt: "desc" },
-      },
-    },
-  })
+    })
 
   const base = createEmptyLiveSnapshot(normalizedWallet)
   if (!user?.patientProfile) return base
@@ -260,7 +272,7 @@ export async function getLiveSnapshotByWallet(walletAddress?: string | null): Pr
       notes: "",
     }))
 
-  return {
+    return {
     ...base,
     patient: {
       id: patient.id,
@@ -371,5 +383,9 @@ export async function getLiveSnapshotByWallet(walletAddress?: string | null): Pr
     vitals,
     vaccinations,
     referrals,
+    }
+  } catch (error) {
+    console.error("Failed to load live snapshot from database. Returning empty fallback.", error)
+    return createEmptyLiveSnapshot(normalizedWallet)
   }
 }
