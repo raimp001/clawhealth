@@ -5,6 +5,7 @@ import {
   BookText,
   CheckCircle2,
   CreditCard,
+  Download,
   FileText,
   Loader2,
   RefreshCcw,
@@ -47,6 +48,11 @@ const PAYMENT_CATEGORIES: PaymentCategory[] = [
   "other",
 ]
 
+function isPositiveMoney(value: string): boolean {
+  const parsed = Number.parseFloat(value)
+  return Number.isFinite(parsed) && parsed > 0
+}
+
 function defaultSnapshot(): SnapshotPayload {
   return {
     payments: [],
@@ -86,6 +92,24 @@ export default function ComplianceLedgerPage() {
 
   const latestPayments = useMemo(() => snapshot.payments.slice(0, 8), [snapshot.payments])
   const latestEntries = useMemo(() => snapshot.entries.slice(0, 12), [snapshot.entries])
+  const selectedPayment = useMemo(
+    () => snapshot.payments.find((item) => item.id === selectedPaymentId),
+    [selectedPaymentId, snapshot.payments]
+  )
+  const canCreateIntent = isPositiveMoney(amount) && description.trim().length > 2
+  const canRequestRefund = !!selectedPaymentId && isPositiveMoney(refundAmount) && refundReason.trim().length > 2
+
+  function exportSnapshot() {
+    const blob = new Blob([JSON.stringify(snapshot, null, 2)], {
+      type: "application/json",
+    })
+    const href = URL.createObjectURL(blob)
+    const link = document.createElement("a")
+    link.href = href
+    link.download = `openrx-ledger-${new Date().toISOString().slice(0, 19).replaceAll(":", "-")}.json`
+    link.click()
+    URL.revokeObjectURL(href)
+  }
 
   async function loadSnapshot() {
     setLoading(true)
@@ -172,7 +196,6 @@ export default function ComplianceLedgerPage() {
     setBusy(true)
     setError("")
     try {
-      const payment = snapshot.payments.find((item) => item.id === selectedPaymentId)
       const response = await fetch("/api/payments/verify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -180,8 +203,8 @@ export default function ComplianceLedgerPage() {
           paymentId: selectedPaymentId,
           txHash: verifyTxHash.trim(),
           walletAddress: activeWallet,
-          expectedAmount: payment?.expectedAmount,
-          expectedRecipient: payment?.recipientAddress,
+          expectedAmount: selectedPayment?.expectedAmount,
+          expectedRecipient: selectedPayment?.recipientAddress,
         }),
       })
       const data = (await response.json()) as { error?: string }
@@ -279,14 +302,24 @@ export default function ComplianceLedgerPage() {
             Base Pay-aligned payment verification, receipts, attestations, refunds, and ledger controls.
           </p>
         </div>
-        <button
-          onClick={() => void loadSnapshot()}
-          disabled={busy || loading}
-          className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-sand text-xs font-semibold text-warm-700 hover:border-terra/30 transition disabled:opacity-60"
-        >
-          <RefreshCcw size={12} />
-          Refresh
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={exportSnapshot}
+            disabled={loading}
+            className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-sand text-xs font-semibold text-warm-700 hover:border-terra/30 transition disabled:opacity-60"
+          >
+            <Download size={12} />
+            Export JSON
+          </button>
+          <button
+            onClick={() => void loadSnapshot()}
+            disabled={busy || loading}
+            className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-sand text-xs font-semibold text-warm-700 hover:border-terra/30 transition disabled:opacity-60"
+          >
+            <RefreshCcw size={12} />
+            Refresh
+          </button>
+        </div>
       </div>
 
       {!isConnected && (
@@ -308,12 +341,14 @@ export default function ComplianceLedgerPage() {
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+          <div className="grid grid-cols-2 lg:grid-cols-7 gap-3">
             <SummaryCard label="Verified Volume" value={`$${snapshot.summary.verifiedVolume}`} icon={CreditCard} />
             <SummaryCard label="Refunded Volume" value={`$${snapshot.summary.refundedVolume}`} icon={Undo2} />
             <SummaryCard label="Net Settled" value={`$${snapshot.summary.netSettledVolume}`} icon={CheckCircle2} />
             <SummaryCard label="Receipts" value={`${snapshot.summary.receiptCount}`} icon={FileText} />
             <SummaryCard label="Attestations" value={`${snapshot.summary.attestationCount}`} icon={ShieldCheck} />
+            <SummaryCard label="Pending Verify" value={`${snapshot.summary.pendingVerificationCount}`} icon={RefreshCcw} />
+            <SummaryCard label="Open Refunds" value={`${snapshot.summary.openRefundCount}`} icon={Undo2} />
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -351,11 +386,16 @@ export default function ComplianceLedgerPage() {
               </label>
               <button
                 onClick={() => void createIntent()}
-                disabled={busy}
+                disabled={busy || !canCreateIntent}
                 className="w-full px-3 py-2 rounded-lg bg-terra text-white text-xs font-semibold hover:bg-terra-dark transition disabled:opacity-60"
               >
                 Create Intent
               </button>
+              {!canCreateIntent && (
+                <p className="text-[10px] text-cloudy">
+                  Enter a positive amount and description to create an intent.
+                </p>
+              )}
             </div>
 
             <div className="bg-pampas rounded-2xl border border-sand p-4 space-y-3">
@@ -383,6 +423,11 @@ export default function ComplianceLedgerPage() {
                   className="mt-1 w-full px-3 py-2 rounded-lg border border-sand bg-cream/40 text-sm text-warm-800 focus:outline-none focus:border-terra/40"
                 />
               </label>
+              {selectedPayment && (
+                <p className="text-[10px] text-cloudy">
+                  Expected: ${selectedPayment.expectedAmount} to {selectedPayment.recipientAddress.slice(0, 10)}...
+                </p>
+              )}
               <p className="text-[10px] text-cloudy">
                 Use a real Base Pay tx hash. Demo hashes prefixed with <code>demo-</code> are also accepted.
               </p>
@@ -445,11 +490,16 @@ export default function ComplianceLedgerPage() {
               </label>
               <button
                 onClick={() => void requestPaymentRefund()}
-                disabled={busy || !selectedPaymentId}
+                disabled={busy || !canRequestRefund}
                 className="w-full px-3 py-2 rounded-lg bg-soft-blue text-white text-xs font-semibold hover:opacity-90 transition disabled:opacity-60"
               >
                 Request Refund
               </button>
+              {!canRequestRefund && (
+                <p className="text-[10px] text-cloudy">
+                  Select a payment, positive refund amount, and reason.
+                </p>
+              )}
             </div>
           </div>
 

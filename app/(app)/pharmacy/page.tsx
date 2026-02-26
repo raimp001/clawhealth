@@ -1,17 +1,11 @@
 "use client"
 
-import { cn } from "@/lib/utils"
-import {
-  Search,
-  MapPin,
-  Phone,
-  Pill,
-  Loader2,
-  BadgeCheck,
-  Building2,
-} from "lucide-react"
-import { useState, useCallback } from "react"
+import Image from "next/image"
+import { useCallback, useMemo, useState } from "react"
+import { BadgeCheck, Building2, Loader2, MapPin, Phone, Pill, Search, ShieldCheck } from "lucide-react"
 import AIAction from "@/components/ai-action"
+import { currentUser } from "@/lib/current-user"
+import { cn } from "@/lib/utils"
 
 interface Pharmacy {
   npi: string
@@ -31,175 +25,188 @@ interface Pharmacy {
   lastUpdated: string
 }
 
-const US_STATES = [
-  "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA",
-  "KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ",
-  "NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT",
-  "VA","WA","WV","WI","WY","DC",
+interface ParsedPharmacyQuery {
+  query: string
+  normalizedQuery: string
+  name?: string
+  city?: string
+  state?: string
+  zip?: string
+  ready: boolean
+  clarificationQuestion?: string
+}
+
+const EXAMPLE_QUERIES = [
+  "Find CVS pharmacy near Seattle WA 98101",
+  "Need a 24 hour pharmacy around Portland OR 97209",
+  "Find Walgreens in Austin TX",
+  "Search pharmacy near Miami FL 33101",
 ]
 
 export default function PharmacyPage() {
-  const [city, setCity] = useState("")
-  const [state, setState] = useState("")
-  const [zip, setZip] = useState("")
-  const [name, setName] = useState("")
+  const [query, setQuery] = useState("")
   const [results, setResults] = useState<Pharmacy[]>([])
   const [count, setCount] = useState(0)
+  const [ready, setReady] = useState<boolean | null>(null)
+  const [parsed, setParsed] = useState<ParsedPharmacyQuery | null>(null)
+  const [clarificationQuestion, setClarificationQuestion] = useState("")
+  const [promptImage, setPromptImage] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [hasSearched, setHasSearched] = useState(false)
   const [error, setError] = useState("")
   const [selectedPharmacy, setSelectedPharmacy] = useState<string | null>(null)
 
-  const searchPharmacies = useCallback(async () => {
-    if (!city && !zip && !name && !state) {
-      setError("Please enter at least one search criteria.")
-      return
-    }
+  const profileLocation = currentUser.address
+  const activeResults = useMemo(() => results.filter((item) => item.status === "Active"), [results])
 
-    setIsLoading(true)
-    setError("")
-    setHasSearched(true)
+  const searchPharmacies = useCallback(
+    async (searchQuery?: string) => {
+      const q = (searchQuery || query).trim()
+      if (!q) {
+        setError("Type what you need in natural language.")
+        return
+      }
 
-    try {
-      const params = new URLSearchParams()
-      if (city) params.set("city", city)
-      if (state) params.set("state", state)
-      if (zip) params.set("zip", zip)
-      if (name) params.set("name", name)
-      params.set("limit", "20")
+      setIsLoading(true)
+      setError("")
+      setHasSearched(true)
+      if (searchQuery) setQuery(searchQuery)
 
-      const res = await fetch(`/api/pharmacy/search?${params}`)
-      const data = await res.json()
+      try {
+        const response = await fetch(`/api/pharmacy/search?q=${encodeURIComponent(q)}&limit=20`)
+        const data = (await response.json()) as {
+          error?: string
+          ready?: boolean
+          parsed?: ParsedPharmacyQuery
+          clarificationQuestion?: string
+          count?: number
+          pharmacies?: Pharmacy[]
+          prompt?: { image?: string }
+        }
 
-      if (data.error) {
-        setError(data.error)
-        setResults([])
-      } else {
+        if (!response.ok || data.error) {
+          throw new Error(data.error || "Search failed.")
+        }
+
+        setReady(Boolean(data.ready))
+        setParsed(data.parsed || null)
+        setClarificationQuestion(data.clarificationQuestion || "")
         setResults(data.pharmacies || [])
         setCount(data.count || 0)
+        setPromptImage(data.prompt?.image || "")
+      } catch (issue) {
+        setError(issue instanceof Error ? issue.message : "Failed to search.")
+        setResults([])
+        setCount(0)
+      } finally {
+        setIsLoading(false)
       }
-    } catch {
-      setError("Failed to search. Please try again.")
-    } finally {
-      setIsLoading(false)
+    },
+    [query]
+  )
+
+  function useProfileLocation() {
+    if (!query.trim()) {
+      setQuery(`Find pharmacy near ${profileLocation}`)
+      return
     }
-  }, [city, state, zip, name])
+    if (!query.toLowerCase().includes("near ")) {
+      setQuery(`${query.trim()} near ${profileLocation}`)
+    }
+  }
 
   return (
     <div className="animate-slide-up space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-serif text-warm-800">
-            Pharmacy Finder
-          </h1>
+          <h1 className="text-2xl font-serif text-warm-800">Pharmacy Finder</h1>
           <p className="text-sm text-warm-500 mt-1">
-            Search pharmacies by location &middot; NPI Registry data
+            Natural-language pharmacy search with NPI registry gating and clarification.
           </p>
         </div>
         <AIAction
           agentId="rx"
           label="Compare Prices"
-          prompt="For all active prescriptions with pending refills, compare pricing across nearby pharmacies and suggest the most cost-effective options considering the patient's insurance plan."
+          prompt="Compare nearby pharmacy options for active medications and suggest the most cost-effective refill plan."
         />
       </div>
 
-      {/* Search Form */}
       <div className="bg-pampas rounded-2xl border border-sand p-5">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-          <div>
-            <label className="text-xs font-semibold text-warm-700 mb-1.5 block">
-              Pharmacy Name
-            </label>
-            <div className="relative">
-              <Building2
-                size={14}
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-cloudy"
-              />
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="e.g. Walgreens"
-                className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-sand bg-sand/20 text-sm text-warm-800 placeholder:text-cloudy focus:outline-none focus:border-terra/40 focus:ring-1 focus:ring-terra/20 transition"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="text-xs font-semibold text-warm-700 mb-1.5 block">
-              City
-            </label>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1">
+            <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-cloudy" />
             <input
               type="text"
-              value={city}
-              onChange={(e) => setCity(e.target.value)}
-              placeholder="e.g. Portland"
-              className="w-full px-4 py-2.5 rounded-xl border border-sand bg-sand/20 text-sm text-warm-800 placeholder:text-cloudy focus:outline-none focus:border-terra/40 focus:ring-1 focus:ring-terra/20 transition"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              onKeyDown={(event) => event.key === "Enter" && searchPharmacies()}
+              placeholder="Example: Find CVS pharmacy near Seattle WA 98101"
+              className="w-full pl-12 pr-4 py-3.5 rounded-xl border border-sand bg-cream/30 text-sm text-warm-800 placeholder:text-cloudy focus:outline-none focus:border-terra/40 focus:ring-2 focus:ring-terra/10 transition"
             />
           </div>
-
-          <div>
-            <label className="text-xs font-semibold text-warm-700 mb-1.5 block">
-              State
-            </label>
-            <select
-              value={state}
-              onChange={(e) => setState(e.target.value)}
-              className="w-full px-3 py-2.5 rounded-xl border border-sand bg-sand/20 text-sm text-warm-800 focus:outline-none focus:border-terra/40 appearance-none cursor-pointer"
-            >
-              <option value="">Any State</option>
-              {US_STATES.map((s) => (
-                <option key={s} value={s}>{s}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="text-xs font-semibold text-warm-700 mb-1.5 block">
-              ZIP Code
-            </label>
-            <input
-              type="text"
-              value={zip}
-              onChange={(e) => setZip(e.target.value.replace(/\D/g, "").slice(0, 5))}
-              placeholder="e.g. 97201"
-              maxLength={5}
-              className="w-full px-4 py-2.5 rounded-xl border border-sand bg-sand/20 text-sm text-warm-800 placeholder:text-cloudy focus:outline-none focus:border-terra/40 focus:ring-1 focus:ring-terra/20 transition"
-            />
-          </div>
-
-          <div className="flex items-end">
-            <button
-              onClick={searchPharmacies}
-              disabled={isLoading}
-              className="w-full px-4 py-2.5 bg-terra text-white text-sm font-semibold rounded-xl hover:bg-terra-dark transition flex items-center justify-center gap-2 disabled:opacity-50"
-            >
-              {isLoading ? (
-                <Loader2 size={16} className="animate-spin" />
-              ) : (
-                <Search size={16} />
-              )}
-              Search
-            </button>
-          </div>
+          <button
+            onClick={() => void searchPharmacies()}
+            disabled={isLoading}
+            className="px-6 py-3.5 bg-terra text-white text-sm font-semibold rounded-xl hover:bg-terra-dark transition flex items-center justify-center gap-2 disabled:opacity-50 shrink-0"
+          >
+            {isLoading ? <Loader2 size={16} className="animate-spin" /> : <Search size={16} />}
+            Search
+          </button>
         </div>
-
-        {error && (
-          <p className="text-xs text-soft-red mt-3">{error}</p>
-        )}
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <button
+            onClick={useProfileLocation}
+            className="text-[11px] px-2.5 py-1 rounded-lg border border-sand text-warm-600 hover:border-terra/30 hover:text-terra transition"
+          >
+            Use profile location
+          </button>
+          <span className="text-[10px] text-cloudy">{profileLocation}</span>
+        </div>
+        {error && <p className="text-xs text-soft-red mt-3">{error}</p>}
       </div>
 
-      {/* Results */}
-      {hasSearched && (
+      {hasSearched && !isLoading && ready === false && (
+        <div className="bg-yellow-100/20 rounded-2xl border border-yellow-300/30 p-4">
+          <div className="flex items-center gap-2 mb-1">
+            <ShieldCheck size={14} className="text-yellow-500" />
+            <p className="text-sm font-semibold text-warm-800">Need one more detail before search</p>
+          </div>
+          <p className="text-sm text-warm-600">{clarificationQuestion}</p>
+          {parsed && (
+            <div className="flex flex-wrap gap-2 mt-3">
+              {parsed.name && (
+                <span className="text-[10px] font-semibold px-2 py-1 rounded-full bg-terra/10 text-terra">
+                  {parsed.name}
+                </span>
+              )}
+              {parsed.city && (
+                <span className="text-[10px] font-semibold px-2 py-1 rounded-full bg-soft-blue/10 text-soft-blue">
+                  {parsed.city}
+                </span>
+              )}
+              {parsed.state && (
+                <span className="text-[10px] font-semibold px-2 py-1 rounded-full bg-accent/10 text-accent">
+                  {parsed.state}
+                </span>
+              )}
+              {parsed.zip && (
+                <span className="text-[10px] font-semibold px-2 py-1 rounded-full bg-terra/10 text-terra">
+                  ZIP {parsed.zip}
+                </span>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {hasSearched && !isLoading && ready && (
         <div>
           <div className="flex items-center justify-between mb-3">
             <p className="text-sm text-warm-500">
-              {isLoading
-                ? "Searching..."
-                : `${count} pharmac${count !== 1 ? "ies" : "y"} found`}
+              {count} pharmac{count !== 1 ? "ies" : "y"} found · {activeResults.length} active
             </p>
             <span className="text-[10px] text-cloudy flex items-center gap-1">
-              <BadgeCheck size={10} /> Live data from NPI Registry
+              <BadgeCheck size={10} /> Live CMS NPI data
             </span>
           </div>
 
@@ -209,14 +216,10 @@ export default function PharmacyPage() {
                 key={pharmacy.npi}
                 className={cn(
                   "bg-pampas rounded-2xl border p-5 hover:border-terra/20 transition cursor-pointer",
-                  selectedPharmacy === pharmacy.npi
-                    ? "border-terra/30 ring-1 ring-terra/10"
-                    : "border-sand"
+                  selectedPharmacy === pharmacy.npi ? "border-terra/30 ring-1 ring-terra/10" : "border-sand"
                 )}
                 onClick={() =>
-                  setSelectedPharmacy(
-                    selectedPharmacy === pharmacy.npi ? null : pharmacy.npi
-                  )
+                  setSelectedPharmacy(selectedPharmacy === pharmacy.npi ? null : pharmacy.npi)
                 }
               >
                 <div className="flex items-start gap-4">
@@ -224,13 +227,20 @@ export default function PharmacyPage() {
                     <Pill size={18} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-sm font-bold text-warm-800">
-                      {pharmacy.name}
-                    </h3>
-                    <p className="text-[10px] font-semibold text-accent mt-0.5">
-                      {pharmacy.type}
-                    </p>
-
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="text-sm font-bold text-warm-800">{pharmacy.name || "Unknown pharmacy"}</h3>
+                      <span
+                        className={cn(
+                          "text-[9px] font-bold px-2 py-0.5 rounded-full uppercase",
+                          pharmacy.status === "Active"
+                            ? "bg-accent/10 text-accent"
+                            : "bg-yellow-100/20 text-yellow-600"
+                        )}
+                      >
+                        {pharmacy.status}
+                      </span>
+                    </div>
+                    <p className="text-[10px] font-semibold text-accent mt-0.5">{pharmacy.type}</p>
                     <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-xs text-warm-500">
                       <span className="flex items-center gap-1">
                         <MapPin size={12} />
@@ -243,10 +253,27 @@ export default function PharmacyPage() {
                         </span>
                       )}
                     </div>
-
-                    <span className="text-[10px] font-mono text-cloudy mt-1 block">
-                      NPI: {pharmacy.npi}
-                    </span>
+                    <span className="text-[10px] font-mono text-cloudy mt-1 block">NPI: {pharmacy.npi}</span>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {pharmacy.phone && (
+                        <a
+                          href={`tel:${pharmacy.phone.replace(/[^\d+]/g, "")}`}
+                          className="text-[10px] font-semibold px-2 py-1 rounded-md border border-sand text-warm-600 hover:text-terra hover:border-terra/30 transition"
+                        >
+                          Call
+                        </a>
+                      )}
+                      {pharmacy.fullAddress && (
+                        <a
+                          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(pharmacy.fullAddress)}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-[10px] font-semibold px-2 py-1 rounded-md border border-sand text-warm-600 hover:text-terra hover:border-terra/30 transition"
+                        >
+                          Map
+                        </a>
+                      )}
+                    </div>
                   </div>
                 </div>
 
@@ -255,21 +282,21 @@ export default function PharmacyPage() {
                     <AIAction
                       agentId="rx"
                       label="Transfer Rx"
-                      prompt={`Initiate prescription transfer to ${pharmacy.name} (NPI: ${pharmacy.npi}) at ${pharmacy.fullAddress}. Check all active prescriptions for transfer eligibility and contact the pharmacy.`}
+                      prompt={`Initiate prescription transfer to ${pharmacy.name} (NPI: ${pharmacy.npi}) at ${pharmacy.fullAddress}.`}
                       context={`Pharmacy: ${pharmacy.name}, NPI: ${pharmacy.npi}, Phone: ${pharmacy.phone}, Address: ${pharmacy.fullAddress}`}
                       variant="inline"
                     />
                     <AIAction
                       agentId="rx"
                       label="Send Refill"
-                      prompt={`Send all pending refill requests to ${pharmacy.name} (NPI: ${pharmacy.npi}). Verify stock availability and estimated ready time.`}
+                      prompt={`Send pending refill requests to ${pharmacy.name} (NPI: ${pharmacy.npi}).`}
                       context={`Pharmacy: ${pharmacy.name}, NPI: ${pharmacy.npi}, Phone: ${pharmacy.phone}`}
                       variant="inline"
                     />
                     <AIAction
                       agentId="rx"
                       label="Check Formulary"
-                      prompt={`Check if ${pharmacy.name} carries all current patient medications and verify formulary compatibility with their insurance plans.`}
+                      prompt={`Check if ${pharmacy.name} carries all current patient medications and verify formulary compatibility.`}
                       variant="inline"
                     />
                   </div>
@@ -278,31 +305,55 @@ export default function PharmacyPage() {
             ))}
           </div>
 
-          {results.length === 0 && !isLoading && (
-            <div className="text-center py-12 bg-pampas rounded-2xl border border-sand">
-              <Pill size={32} className="text-sand mx-auto mb-3" />
+          {results.length === 0 && (
+            <div className="text-center py-12 bg-pampas rounded-2xl border border-sand mt-3">
+              <Building2 size={30} className="text-sand mx-auto mb-2" />
               <p className="text-sm text-warm-500">
-                No pharmacies found. Try adjusting your search.
+                No pharmacies found. Try a nearby ZIP or a different pharmacy name.
               </p>
             </div>
           )}
         </div>
       )}
 
-      {/* Pre-search state */}
       {!hasSearched && (
-        <div className="text-center py-16 bg-pampas rounded-2xl border border-sand">
+        <div className="text-center py-12 bg-pampas rounded-2xl border border-sand">
           <div className="w-16 h-16 rounded-2xl bg-accent/5 flex items-center justify-center mx-auto mb-4">
             <Pill size={28} className="text-accent" />
           </div>
-          <h3 className="text-lg font-serif text-warm-800">
-            Find a Pharmacy
-          </h3>
-          <p className="text-sm text-warm-500 mt-2 max-w-md mx-auto">
-            Search pharmacies by name, city, or ZIP code. Transfer
-            prescriptions, send refills, and check formulary compatibility — all
-            powered by live NPI Registry data.
+          <h3 className="text-lg font-serif text-warm-800">Natural Language Pharmacy Search</h3>
+          <p className="text-sm text-warm-500 mt-2 max-w-xl mx-auto">
+            Tell us the pharmacy and location in one sentence. Search begins only when location details are complete.
           </p>
+          <div className="flex flex-wrap gap-2 justify-center mt-6 max-w-3xl mx-auto">
+            {EXAMPLE_QUERIES.map((example) => (
+              <button
+                key={example}
+                onClick={() => void searchPharmacies(example)}
+                className="px-3 py-1.5 text-xs font-medium text-warm-600 bg-cream rounded-lg border border-sand hover:border-terra/30 hover:text-terra transition"
+              >
+                {example}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {promptImage && (
+        <div className="bg-pampas rounded-2xl border border-sand p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <ShieldCheck size={14} className="text-terra" />
+            <span className="text-xs font-bold text-warm-800">Prompt Artifact Used</span>
+          </div>
+          <div className="rounded-xl overflow-hidden border border-sand/70">
+            <Image
+              src={promptImage}
+              width={1400}
+              height={920}
+              alt="OpenRx natural-language pharmacy search prompt"
+              className="w-full h-auto"
+            />
+          </div>
         </div>
       )}
     </div>

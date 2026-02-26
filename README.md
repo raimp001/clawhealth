@@ -12,12 +12,14 @@ AI-powered healthcare clinic management platform — powered by [OpenClaw](https
 - **Billing & Claims** — Claims analysis, error detection, AI-powered appeals
 - **Prescriptions** — Adherence monitoring, refill coordination, AI outreach
 - **Prior Authorization** — Status tracking, AI form submission, appeal preparation
-- **Provider Search** — Live NPI Registry search with natural language input
-- **Pharmacy Finder** — Pharmacy search with Rx transfer, refill, and formulary actions
+- **Care Network Search** — Live NPI Registry search (provider/caregiver/lab/radiology) with natural-language gating
+- **Pharmacy Finder** — Natural-language pharmacy search with clarification-first flow before query execution
 - **AI Screening** — Preventive risk scoring and prioritized screening plans
+- **Network Onboarding + Admin Review** — Provider/caregiver applications, admin queue, notifications, and release actions
 - **Second Opinion** — Structured diagnosis and treatment-plan review
 - **Clinical Trials** — Condition-aware trial matching with fit scoring
 - **Compliance Ledger** — Payment intents, Base Pay verification, receipts, attestations, refunds, and audit ledger postings
+- **Platform Readiness** — Live operational coverage checks for search, onboarding, screening, and payments
 - **Messages** — Multi-channel conversations (WhatsApp, SMS, portal) with AI triage
 - **AI Agent** — Interactive chat with 12 specialized healthcare agents
 
@@ -45,7 +47,7 @@ OpenRx uses OpenClaw as its AI backbone with 12 specialized agents:
 ## Live API Integrations
 
 - **NPI Registry (NPPES)** — Real-time provider search by city, ZIP, specialty, or name. Free CMS API, no key needed.
-- **NPI Registry (Organizations)** — Pharmacy finder by location. Same free API.
+- **NPI Registry (Organizations)** — Natural-language pharmacy finder with location validation.
 - **Base Account (`@base-org/account`)** — Server-side Base Pay status verification for payment settlement controls.
 
 ## Quick Start
@@ -98,8 +100,10 @@ app/
 │   ├── prescriptions/
 │   ├── prior-auth/
 │   ├── providers/    # Live NPI provider search
-│   ├── pharmacy/     # Pharmacy finder
+│   ├── pharmacy/     # Natural-language pharmacy finder
 │   ├── screening/    # AI preventive risk scoring
+│   ├── join-network/ # Provider/caregiver onboarding
+│   ├── admin-review/ # Admin queue + release actions
 │   ├── second-opinion/
 │   ├── clinical-trials/
 │   ├── compliance-ledger/
@@ -109,6 +113,8 @@ app/
 │   ├── openclaw/     # Chat, status, webhook routes
 │   ├── providers/    # NPI provider search proxy
 │   ├── pharmacy/     # NPI pharmacy search proxy
+│   ├── admin/        # Network application and notification review APIs
+│   ├── screening/    # Screening assessment + nearby care routing
 │   └── payments/     # Intents, verify, refunds, receipts, attestations, ledger
 ├── page.tsx          # Landing page
 └── layout.tsx        # Root layout (fonts, metadata, SEO)

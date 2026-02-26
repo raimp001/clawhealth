@@ -10,6 +10,7 @@ import Link from "next/link"
 import { getPhysician, priorAuths, getPatientLabResults, getPatientVitals, getPatientVaccinations, getPatientReferrals } from "@/lib/seed-data"
 import { currentUser, getMyAppointments, getMyClaims, getMyPrescriptions, getMyMessages } from "@/lib/current-user"
 import { cn, formatCurrency, formatTime, formatDate, getStatusColor } from "@/lib/utils"
+import PlatformReadiness from "@/components/platform-readiness"
 
 export default function DashboardPage() {
   const myApts = getMyAppointments().sort(
@@ -107,6 +108,9 @@ export default function DashboardPage() {
           <div className="text-xs text-warm-500">Unread Messages</div>
         </Link>
       </div>
+
+      {/* Precision Care Tools */}
+      <PlatformReadiness />
 
       {/* Precision Care Tools */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">

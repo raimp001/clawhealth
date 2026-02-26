@@ -15,6 +15,7 @@ import { useCallback, useMemo, useState } from "react"
 import Image from "next/image"
 import AIAction from "@/components/ai-action"
 import type { ParsedCareQuery, CareDirectoryMatch } from "@/lib/npi-care-search"
+import { currentUser } from "@/lib/current-user"
 import { cn } from "@/lib/utils"
 
 const EXAMPLE_SEARCHES = [
@@ -25,6 +26,7 @@ const EXAMPLE_SEARCHES = [
 ]
 
 export default function ProvidersPage() {
+  const profileLocation = currentUser.address
   const [query, setQuery] = useState("")
   const [matches, setMatches] = useState<CareDirectoryMatch[]>([])
   const [parsed, setParsed] = useState<ParsedCareQuery | null>(null)
@@ -34,6 +36,7 @@ export default function ProvidersPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [hasSearched, setHasSearched] = useState(false)
   const [error, setError] = useState("")
+  const [activeGroup, setActiveGroup] = useState<"all" | CareDirectoryMatch["kind"]>("all")
 
   const grouped = useMemo(() => {
     return {
@@ -43,6 +46,17 @@ export default function ProvidersPage() {
       radiology: matches.filter((item) => item.kind === "radiology"),
     }
   }, [matches])
+
+  const groupItems = useMemo(
+    () => [
+      { id: "all" as const, label: "All", count: matches.length },
+      { id: "provider" as const, label: "Providers", count: grouped.providers.length },
+      { id: "caregiver" as const, label: "Caregivers", count: grouped.caregivers.length },
+      { id: "lab" as const, label: "Labs", count: grouped.labs.length },
+      { id: "radiology" as const, label: "Radiology", count: grouped.radiology.length },
+    ],
+    [grouped, matches.length]
+  )
 
   const searchDirectory = useCallback(
     async (searchQuery?: string) => {
@@ -79,6 +93,7 @@ export default function ProvidersPage() {
         setClarificationQuestion(data.clarificationQuestion || "")
         setMatches(data.matches || [])
         setPromptImage(data.prompt?.image || "")
+        setActiveGroup("all")
       } catch (issue) {
         setError(issue instanceof Error ? issue.message : "Failed to search.")
         setMatches([])
@@ -88,6 +103,23 @@ export default function ProvidersPage() {
     },
     [query]
   )
+
+  function useProfileLocation() {
+    if (!profileLocation) return
+    if (!query.trim()) {
+      setQuery(`Find providers and caregivers near ${profileLocation}`)
+      return
+    }
+    if (query.toLowerCase().includes("near ")) return
+    setQuery(`${query.trim()} near ${profileLocation}`)
+  }
+
+  const visible = {
+    providers: activeGroup === "all" || activeGroup === "provider",
+    caregivers: activeGroup === "all" || activeGroup === "caregiver",
+    labs: activeGroup === "all" || activeGroup === "lab",
+    radiology: activeGroup === "all" || activeGroup === "radiology",
+  }
 
   return (
     <div className="animate-slide-up space-y-6">
@@ -106,7 +138,7 @@ export default function ProvidersPage() {
       </div>
 
       <div className="bg-pampas rounded-2xl border border-sand p-5">
-        <div className="flex gap-3">
+        <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">
             <Search
               size={18}
@@ -124,7 +156,7 @@ export default function ProvidersPage() {
           <button
             onClick={() => searchDirectory()}
             disabled={isLoading}
-            className="px-6 py-3.5 bg-terra text-white text-sm font-semibold rounded-xl hover:bg-terra-dark transition flex items-center gap-2 disabled:opacity-50 shrink-0"
+            className="px-6 py-3.5 bg-terra text-white text-sm font-semibold rounded-xl hover:bg-terra-dark transition flex items-center justify-center gap-2 disabled:opacity-50 shrink-0"
           >
             {isLoading ? (
               <Loader2 size={16} className="animate-spin" />
@@ -133,6 +165,15 @@ export default function ProvidersPage() {
             )}
             Search
           </button>
+        </div>
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <button
+            onClick={useProfileLocation}
+            className="text-[11px] px-2.5 py-1 rounded-lg border border-sand text-warm-600 hover:border-terra/30 hover:text-terra transition"
+          >
+            Use profile location
+          </button>
+          <span className="text-[10px] text-cloudy">{profileLocation}</span>
         </div>
         {error && <p className="text-xs text-soft-red mt-3">{error}</p>}
       </div>
@@ -180,26 +221,57 @@ export default function ProvidersPage() {
             </span>
           </div>
 
-          <ResultGroup
-            title="Providers"
-            icon={Stethoscope}
-            items={grouped.providers}
-          />
-          <ResultGroup
-            title="Caregivers"
-            icon={Users}
-            items={grouped.caregivers}
-          />
-          <ResultGroup
-            title="Labs"
-            icon={Search}
-            items={grouped.labs}
-          />
-          <ResultGroup
-            title="Radiology Centers"
-            icon={ShieldCheck}
-            items={grouped.radiology}
-          />
+          <div className="flex flex-wrap gap-2">
+            {groupItems.map((item) => (
+              <button
+                key={item.id}
+                onClick={() => setActiveGroup(item.id)}
+                className={cn(
+                  "text-[11px] font-semibold px-3 py-1.5 rounded-full border transition",
+                  activeGroup === item.id
+                    ? "border-terra/30 bg-terra/10 text-terra"
+                    : "border-sand text-warm-600 hover:border-terra/20"
+                )}
+              >
+                {item.label} ({item.count})
+              </button>
+            ))}
+          </div>
+
+          {matches.length === 0 && (
+            <div className="rounded-xl border border-sand bg-cream/30 p-4 text-sm text-warm-600">
+              No NPI matches found for this request. Try adding a nearby ZIP or a different specialty keyword.
+            </div>
+          )}
+
+          {visible.providers && (
+            <ResultGroup
+              title="Providers"
+              icon={Stethoscope}
+              items={grouped.providers}
+            />
+          )}
+          {visible.caregivers && (
+            <ResultGroup
+              title="Caregivers"
+              icon={Users}
+              items={grouped.caregivers}
+            />
+          )}
+          {visible.labs && (
+            <ResultGroup
+              title="Labs"
+              icon={Search}
+              items={grouped.labs}
+            />
+          )}
+          {visible.radiology && (
+            <ResultGroup
+              title="Radiology Centers"
+              icon={ShieldCheck}
+              items={grouped.radiology}
+            />
+          )}
         </div>
       )}
 
@@ -310,6 +382,26 @@ function ResultGroup({
                 <span className="text-[10px] font-mono text-cloudy mt-1.5 block">
                   NPI: {item.npi} · Taxonomy: {item.taxonomyCode || "n/a"}
                 </span>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {item.phone && (
+                    <a
+                      href={`tel:${item.phone.replace(/[^\d+]/g, "")}`}
+                      className="text-[10px] font-semibold px-2 py-1 rounded-md border border-sand text-warm-600 hover:text-terra hover:border-terra/30 transition"
+                    >
+                      Call
+                    </a>
+                  )}
+                  {item.fullAddress && (
+                    <a
+                      href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.fullAddress)}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-[10px] font-semibold px-2 py-1 rounded-md border border-sand text-warm-600 hover:text-terra hover:border-terra/30 transition"
+                    >
+                      Map
+                    </a>
+                  )}
+                </div>
               </div>
 
               <AIAction

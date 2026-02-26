@@ -79,7 +79,7 @@ const navSections = [
   {
     label: "More",
     items: [
-      { href: "/providers", label: "Find a Doctor", icon: Stethoscope },
+      { href: "/providers", label: "Care Network", icon: Stethoscope },
       { href: "/join-network", label: "Join Network", icon: UserPlus },
       { href: "/admin-review", label: "Admin Review", icon: ClipboardCheck },
       { href: "/second-opinion", label: "Second Opinion", icon: ShieldCheck },
