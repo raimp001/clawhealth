@@ -4,7 +4,7 @@ import {
   Calendar, Pill, MessageSquare, AlertTriangle, Receipt,
   ArrowRight, Bot, Send, CheckCircle2, Heart, ShieldCheck,
   FlaskConical, Activity, Syringe, ArrowRightCircle,
-  AlertCircle, Search,
+  AlertCircle, Search, Workflow,
 } from "lucide-react"
 import Link from "next/link"
 import { cn, formatTime, formatDate, getStatusColor } from "@/lib/utils"
@@ -145,7 +145,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-2 border-t border-sand/70 bg-cream/60 p-3 sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-2 border-t border-sand/70 bg-cream/60 p-3 sm:grid-cols-4">
           <Link href="/providers" className="surface-muted flex items-center gap-2 px-3 py-2 text-xs font-semibold text-warm-700 hover:border-terra/25 hover:text-terra transition">
             <Search size={13} className="text-terra" />
             Find Care Near Me
@@ -157,6 +157,10 @@ export default function DashboardPage() {
           <Link href="/billing" className="surface-muted flex items-center gap-2 px-3 py-2 text-xs font-semibold text-warm-700 hover:border-terra/25 hover:text-terra transition">
             <Receipt size={13} className="text-terra" />
             Review Billing & Receipts
+          </Link>
+          <Link href="/projects/default/visualize" className="surface-muted flex items-center gap-2 px-3 py-2 text-xs font-semibold text-warm-700 hover:border-terra/25 hover:text-terra transition">
+            <Workflow size={13} className="text-terra" />
+            Map with AI Agent
           </Link>
         </div>
       </section>

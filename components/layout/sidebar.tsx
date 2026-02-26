@@ -23,6 +23,7 @@ import {
   AlertCircle,
   ShieldCheck,
   UserPlus,
+  Workflow,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useState, useEffect } from "react"
@@ -63,6 +64,7 @@ const navSections = [
     items: [
       { href: "/providers", label: "Care Network", icon: Stethoscope },
       { href: "/join-network", label: "Join Network", icon: UserPlus },
+      { href: "/projects/default/visualize", label: "Codebase Mapper", icon: Workflow },
       { href: "/second-opinion", label: "Second Opinion", icon: ShieldCheck },
       { href: "/clinical-trials", label: "Clinical Trials", icon: FlaskConical },
       { href: "/messages", label: "Messages", icon: MessageSquare, badgeKey: "unreadMessages" as const },

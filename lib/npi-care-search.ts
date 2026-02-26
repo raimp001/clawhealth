@@ -88,6 +88,42 @@ const CAREGIVER_ROLE_MAP: Record<string, string> = {
 const LAB_KEYWORDS = ["lab", "laboratory", "clinical laboratory", "pathology", "diagnostic lab"]
 const RADIOLOGY_KEYWORDS = ["radiology", "imaging", "mri", "ct", "xray", "ultrasound", "mammography"]
 
+const LOCATION_STOP_WORDS = new Set(
+  [
+    "find",
+    "search",
+    "look",
+    "need",
+    "want",
+    "please",
+    "for",
+    "near",
+    "in",
+    "around",
+    "nearby",
+    "closest",
+    "me",
+    "provider",
+    "providers",
+    "doctor",
+    "doctors",
+    "caregiver",
+    "caregivers",
+    "lab",
+    "labs",
+    "laboratory",
+    "radiology",
+    "center",
+    "centers",
+    "clinic",
+    "imaging",
+  ]
+    .concat(Object.keys(SPECIALTY_MAP).flatMap((item) => item.toLowerCase().split(/\s+/)))
+    .concat(Object.keys(CAREGIVER_ROLE_MAP).flatMap((item) => item.toLowerCase().split(/\s+/)))
+    .concat(LAB_KEYWORDS.flatMap((item) => item.toLowerCase().split(/\s+/)))
+    .concat(RADIOLOGY_KEYWORDS.flatMap((item) => item.toLowerCase().split(/\s+/)))
+)
+
 export type CareSearchType = "provider" | "caregiver" | "lab" | "radiology"
 
 export interface ParsedCareQuery {
@@ -216,11 +252,16 @@ function parseLocation(working: string): {
     .trim()
 
   if (normalizedForCity) {
-    const words = normalizedForCity.split(" ")
+    const words = normalizedForCity
+      .split(" ")
+      .map((word) => word.trim())
+      .filter((word) => !!word && !LOCATION_STOP_WORDS.has(word.toLowerCase()))
     if (words.length <= 3) {
-      city = normalizedForCity
+      city = words.join(" ")
     } else if (state && !zip) {
-      city = words[words.length - 1]
+      city = words.slice(-3).join(" ")
+    } else {
+      city = words.slice(0, 3).join(" ")
     }
   }
 
@@ -246,9 +287,6 @@ function buildClarification(missingInfo: string[], parsed: ParsedCareQuery): str
   }
   if (missingInfo[0] === "service") {
     return "What should I search for: provider, caregiver, lab, or radiology center?"
-  }
-  if (parsed.city && !parsed.state && !parsed.zip) {
-    return `I found "${parsed.city}". Add a state or ZIP so I can start NPI search.`
   }
   if (parsed.state && !parsed.city && !parsed.zip) {
     return `I found state "${parsed.state}". Add a city or ZIP so I can start NPI search.`
@@ -285,7 +323,7 @@ export function parseCareSearchQuery(query: string): ParsedCareQuery {
 
   const missingInfo: string[] = []
   if (uniqueTypes.length === 0) missingInfo.push("service")
-  if (!location.zip && !(location.city && location.state)) missingInfo.push("location")
+  if (!location.zip && !location.city) missingInfo.push("location")
 
   const ready = missingInfo.length === 0
   const parsed: ParsedCareQuery = {
