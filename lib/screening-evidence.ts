@@ -57,6 +57,17 @@ const USPSTF_SCREENING_LINKS: Array<{
   },
 ]
 
+export function buildUspstfGuidelineCitations(): ScreeningEvidenceCitation[] {
+  return USPSTF_SCREENING_LINKS.map((entry) => ({
+    id: entry.id,
+    title: entry.title,
+    source: "USPSTF",
+    url: entry.url,
+    type: "guideline",
+    summary: entry.summary,
+  }))
+}
+
 function parseList(input: string[] | undefined, fallback: string[] = []): string[] {
   return Array.isArray(input) ? input : fallback
 }
@@ -146,14 +157,7 @@ export async function buildScreeningEvidence(params: {
     return true
   })
 
-  const guidelines: ScreeningEvidenceCitation[] = USPSTF_SCREENING_LINKS.map((entry) => ({
-    id: entry.id,
-    title: entry.title,
-    source: "USPSTF",
-    url: entry.url,
-    type: "guideline",
-    summary: entry.summary,
-  }))
+  const guidelines = buildUspstfGuidelineCitations()
 
   return [...guidelines, ...uniquePapers].slice(0, 10)
 }

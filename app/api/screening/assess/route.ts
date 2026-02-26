@@ -5,7 +5,11 @@ import {
   type ScreeningInput,
   type ScreeningRecommendation,
 } from "@/lib/basehealth"
-import { buildScreeningEvidence, type ScreeningEvidenceCitation } from "@/lib/screening-evidence"
+import {
+  buildScreeningEvidence,
+  buildUspstfGuidelineCitations,
+  type ScreeningEvidenceCitation,
+} from "@/lib/screening-evidence"
 import {
   CARE_SEARCH_PROMPT_ID,
   CARE_SEARCH_PROMPT_IMAGE_PATH,
@@ -18,6 +22,8 @@ import {
 import { getLiveSnapshotByWallet } from "@/lib/live-data.server"
 import { prisma } from "@/lib/db"
 import { verifyScreeningAccess } from "@/lib/screening-access"
+
+type ScreeningAnalysisLevel = "preview" | "deep"
 
 interface ScreeningLocalCareConnection {
   recommendationId: string
@@ -39,10 +45,124 @@ interface ScreeningLocalCareConnection {
 type ScreeningAssessmentPayload = ScreeningAssessment & {
   localCareConnections: ScreeningLocalCareConnection[]
   evidenceCitations: ScreeningEvidenceCitation[]
+  accessLevel: ScreeningAnalysisLevel
+  isPreview: boolean
+  upgradeMessage?: string
 }
 
 const CARE_MATCH_LIMIT = 10
 const MAX_CONNECTIONS = 3
+const GENETIC_MARKERS = [
+  "brca1",
+  "brca2",
+  "palb2",
+  "atm",
+  "chek2",
+  "lynch",
+  "mlh1",
+  "msh2",
+  "msh6",
+  "pms2",
+]
+
+function resolveAnalysisLevel(value?: string | null): ScreeningAnalysisLevel {
+  return value === "deep" ? "deep" : "preview"
+}
+
+function normalizeTerms(input?: string[]): string[] {
+  return Array.isArray(input) ? input.map((item) => item.toLowerCase().trim()).filter(Boolean) : []
+}
+
+function hasGeneticSignal(term: string): boolean {
+  if (!term) return false
+  return (
+    GENETIC_MARKERS.some((marker) => term.includes(marker)) ||
+    term.includes("mutation") ||
+    term.includes("carrier") ||
+    term.includes("genetic") ||
+    term.includes("gene")
+  )
+}
+
+function sanitizePreviewInput(input: ScreeningInput): ScreeningInput {
+  return {
+    ...input,
+    conditions: (input.conditions || []).filter((condition) => !hasGeneticSignal(condition.toLowerCase())),
+    familyHistory: (input.familyHistory || []).filter((entry) => !hasGeneticSignal(entry.toLowerCase())),
+  }
+}
+
+function withRecommendation(
+  recommendations: ScreeningRecommendation[],
+  candidate: ScreeningRecommendation
+): ScreeningRecommendation[] {
+  if (recommendations.some((entry) => entry.id === candidate.id)) return recommendations
+  return [...recommendations, candidate]
+}
+
+function withAction(actions: string[], candidate: string): string[] {
+  if (actions.includes(candidate)) return actions
+  return [...actions, candidate]
+}
+
+function applyGeneticsDeepDive(
+  assessment: ScreeningAssessment,
+  input: ScreeningInput
+): ScreeningAssessment {
+  const terms = [...normalizeTerms(input.conditions), ...normalizeTerms(input.familyHistory)]
+  const geneticsTerms = terms.filter((term) => hasGeneticSignal(term))
+  if (geneticsTerms.length === 0) return assessment
+
+  let recommendations = assessment.recommendedScreenings
+  let nextActions = assessment.nextActions
+  const mention = GENETIC_MARKERS.filter((marker) => geneticsTerms.some((term) => term.includes(marker)))
+
+  recommendations = withRecommendation(recommendations, {
+    id: "genetics-counseling-cascade",
+    name: "Hereditary-risk counseling and cascade testing",
+    priority: "high",
+    ownerAgent: "screening",
+    reason:
+      "Reported genetic risk signals warrant counseling plus family cascade testing and personalized preventive intervals.",
+  })
+
+  if (mention.some((marker) => ["brca1", "brca2", "palb2", "atm", "chek2"].includes(marker))) {
+    recommendations = withRecommendation(recommendations, {
+      id: "hereditary-breast-prostate-pathway",
+      name: "Mutation-informed breast/prostate surveillance planning",
+      priority: "high",
+      ownerAgent: "screening",
+      reason:
+        "BRCA-pathway and related mutation signals can justify earlier or intensified surveillance planning.",
+    })
+    nextActions = withAction(
+      nextActions,
+      "Discuss mutation-informed screening start ages and interval cadence with a genetics-enabled clinician."
+    )
+  }
+
+  if (mention.some((marker) => ["lynch", "mlh1", "msh2", "msh6", "pms2"].includes(marker))) {
+    recommendations = withRecommendation(recommendations, {
+      id: "lynch-colorectal-surveillance",
+      name: "Enhanced colorectal surveillance pathway",
+      priority: "high",
+      ownerAgent: "screening",
+      reason:
+        "Lynch-spectrum mutation signals support a personalized colorectal surveillance strategy.",
+    })
+  }
+
+  nextActions = withAction(
+    nextActions,
+    "Share prior genetic test reports with your care team to lock in precise screening timing."
+  )
+
+  return {
+    ...assessment,
+    recommendedScreenings: recommendations,
+    nextActions,
+  }
+}
 
 function inferServiceTypes(rec: ScreeningRecommendation): CareSearchType[] {
   const text = `${rec.name} ${rec.reason}`.toLowerCase()
@@ -193,7 +313,8 @@ async function loadSnapshotForRequest(params: {
 }
 
 async function buildAssessmentPayload(
-  input: ScreeningInput & { walletAddress?: string }
+  input: ScreeningInput & { walletAddress?: string },
+  options: { analysisLevel: ScreeningAnalysisLevel }
 ): Promise<ScreeningAssessmentPayload> {
   const snapshot = await loadSnapshotForRequest({
     walletAddress: input.walletAddress,
@@ -201,8 +322,11 @@ async function buildAssessmentPayload(
   })
 
   const livePatient = snapshot.patient
+  const screeningInput =
+    options.analysisLevel === "preview" ? sanitizePreviewInput(input) : input
+
   const assessment = assessHealthScreening({
-    ...input,
+    ...screeningInput,
     patient: livePatient
       ? {
           id: livePatient.id,
@@ -224,18 +348,42 @@ async function buildAssessmentPayload(
       status: vaccination.status,
     })),
   })
+  const enrichedAssessment =
+    options.analysisLevel === "deep" ? applyGeneticsDeepDive(assessment, input) : assessment
 
   const patientAddress = livePatient?.address || process.env.OPENRX_DEFAULT_PATIENT_LOCATION || ""
-  const localCareConnections = await buildLocalCareConnections(assessment, patientAddress)
-  const evidenceCitations = await buildScreeningEvidence({
-    assessment,
-    symptoms: input.symptoms,
-    familyHistory: input.familyHistory,
-  })
+  const localCareConnections =
+    options.analysisLevel === "deep"
+      ? await buildLocalCareConnections(enrichedAssessment, patientAddress)
+      : []
+  const evidenceCitations =
+    options.analysisLevel === "deep"
+      ? await buildScreeningEvidence({
+          assessment: enrichedAssessment,
+          symptoms: input.symptoms,
+          familyHistory: input.familyHistory,
+        })
+      : buildUspstfGuidelineCitations()
+  const nextActions =
+    options.analysisLevel === "preview"
+      ? withAction(
+          enrichedAssessment.nextActions,
+          "Unlock the deep-dive for genetics-aware intervals, paper-backed evidence, and nearby care routing."
+        )
+      : enrichedAssessment.nextActions
   return {
-    ...assessment,
+    ...enrichedAssessment,
+    nextActions,
     localCareConnections,
     evidenceCitations,
+    accessLevel: options.analysisLevel,
+    isPreview: options.analysisLevel === "preview",
+    ...(options.analysisLevel === "preview"
+      ? {
+          upgradeMessage:
+            "Free preview includes USPSTF guidance. Deep dive unlocks mutation-informed personalization and full evidence synthesis.",
+        }
+      : {}),
   }
 }
 
@@ -261,17 +409,23 @@ export async function GET(request: NextRequest) {
   const patientId = searchParams.get("patientId") || undefined
   const walletAddress = searchParams.get("walletAddress") || undefined
   const paymentId = searchParams.get("paymentId") || undefined
+  const analysisLevel = resolveAnalysisLevel(searchParams.get("analysisLevel"))
 
-  const access = verifyScreeningAccess({ walletAddress, paymentId })
-  if (!access.ok) {
-    return paymentRequiredResponse({
-      reason: access.reason,
-      fee: access.fee,
-      recipientAddress: access.recipientAddress,
-    })
+  if (analysisLevel === "deep") {
+    const access = verifyScreeningAccess({ walletAddress, paymentId })
+    if (!access.ok) {
+      return paymentRequiredResponse({
+        reason: access.reason,
+        fee: access.fee,
+        recipientAddress: access.recipientAddress,
+      })
+    }
   }
 
-  const assessment = await buildAssessmentPayload({ patientId, walletAddress })
+  const assessment = await buildAssessmentPayload(
+    { patientId, walletAddress },
+    { analysisLevel }
+  )
   return NextResponse.json(assessment)
 }
 
@@ -280,19 +434,23 @@ export async function POST(request: NextRequest) {
     const body = (await request.json()) as ScreeningInput & {
       walletAddress?: string
       paymentId?: string
+      analysisLevel?: ScreeningAnalysisLevel
     }
-    const access = verifyScreeningAccess({
-      walletAddress: body.walletAddress,
-      paymentId: body.paymentId,
-    })
-    if (!access.ok) {
-      return paymentRequiredResponse({
-        reason: access.reason,
-        fee: access.fee,
-        recipientAddress: access.recipientAddress,
+    const analysisLevel = resolveAnalysisLevel(body.analysisLevel)
+    if (analysisLevel === "deep") {
+      const access = verifyScreeningAccess({
+        walletAddress: body.walletAddress,
+        paymentId: body.paymentId,
       })
+      if (!access.ok) {
+        return paymentRequiredResponse({
+          reason: access.reason,
+          fee: access.fee,
+          recipientAddress: access.recipientAddress,
+        })
+      }
     }
-    const assessment = await buildAssessmentPayload(body)
+    const assessment = await buildAssessmentPayload(body, { analysisLevel })
     return NextResponse.json(assessment)
   } catch {
     return NextResponse.json(

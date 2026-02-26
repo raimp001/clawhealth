@@ -42,9 +42,14 @@ interface LocalCareConnection {
   matches: CareDirectoryMatch[]
 }
 
+type ScreeningAnalysisLevel = "preview" | "deep"
+
 type ScreeningResponse = ScreeningAssessment & {
   localCareConnections?: LocalCareConnection[]
   evidenceCitations?: ScreeningEvidenceCitation[]
+  accessLevel?: ScreeningAnalysisLevel
+  isPreview?: boolean
+  upgradeMessage?: string
   requiresPayment?: boolean
   fee?: string
   currency?: string
@@ -59,7 +64,7 @@ type ScreeningIntakeResponse = ScreeningIntakeResult & {
 export default function ScreeningPage() {
   const { snapshot } = useLiveSnapshot()
   const { walletAddress, isConnected } = useWalletIdentity()
-  const [assessment, setAssessment] = useState<ScreeningAssessment | null>(null)
+  const [assessment, setAssessment] = useState<ScreeningResponse | null>(null)
   const [localCareConnections, setLocalCareConnections] = useState<LocalCareConnection[]>([])
   const [evidenceCitations, setEvidenceCitations] = useState<ScreeningEvidenceCitation[]>([])
   const [running, setRunning] = useState(false)
@@ -78,6 +83,7 @@ export default function ScreeningPage() {
   const [verifyTxHash, setVerifyTxHash] = useState("")
   const [fee, setFee] = useState("1.00")
   const [recipientAddress, setRecipientAddress] = useState("")
+  const [showPaymentGate, setShowPaymentGate] = useState(false)
   const [paymentReady, setPaymentReady] = useState(false)
   const [creatingIntent, setCreatingIntent] = useState(false)
   const [launchingPay, setLaunchingPay] = useState(false)
@@ -102,9 +108,14 @@ export default function ScreeningPage() {
     () => localCareConnections.find((connection) => connection.prompt?.image)?.prompt.image || "",
     [localCareConnections]
   )
+  const accessLevel: ScreeningAnalysisLevel = assessment?.accessLevel === "deep" ? "deep" : "preview"
+  const showingDeepResults = accessLevel === "deep"
+  const paymentGateVisible =
+    showPaymentGate || accessLevel === "preview" || !!paymentIntent || paymentReady
 
   function applyPaymentRequired(data: ScreeningResponse) {
     setPaymentReady(false)
+    setShowPaymentGate(true)
     if (data.fee) setFee(data.fee)
     if (data.recipientAddress) setRecipientAddress(data.recipientAddress)
     setError(data.error || "Payment is required before personalized recommendations are generated.")
@@ -117,6 +128,7 @@ export default function ScreeningPage() {
     }
 
     setCreatingIntent(true)
+    setShowPaymentGate(true)
     setError("")
     try {
       const response = await fetch("/api/screening/payment-intent", {
@@ -265,9 +277,10 @@ export default function ScreeningPage() {
     }
   }
 
-  async function runScreening() {
-    if (!paymentReady || !paymentId) {
-      setError("Verify screening payment before running personalized recommendations.")
+  async function runScreening(level: ScreeningAnalysisLevel) {
+    if (level === "deep" && (!paymentReady || !paymentId)) {
+      setShowPaymentGate(true)
+      setError("Verify Base Pay before running the deep personalized/genetics recommendation set.")
       return
     }
 
@@ -280,7 +293,8 @@ export default function ScreeningPage() {
         body: JSON.stringify({
           patientId: snapshot.patient?.id,
           walletAddress,
-          paymentId,
+          paymentId: level === "deep" ? paymentId : undefined,
+          analysisLevel: level,
           age: age ? Number(age) : undefined,
           bmi: bmi ? Number(bmi) : undefined,
           smoker,
@@ -311,6 +325,9 @@ export default function ScreeningPage() {
       setAssessment(data)
       setLocalCareConnections(data.localCareConnections || [])
       setEvidenceCitations(data.evidenceCitations || [])
+      if (data.accessLevel === "preview") {
+        setShowPaymentGate(true)
+      }
     } catch (issue) {
       setError(issue instanceof Error ? issue.message : "Failed to compute screening assessment.")
     } finally {
@@ -324,7 +341,7 @@ export default function ScreeningPage() {
         <div>
           <h1 className="text-2xl font-serif text-warm-800">AI Health Screening</h1>
           <p className="text-sm text-warm-500 mt-1">
-            Personalized screening recommendations with evidence links and nearby care routing.
+            Start with a free USPSTF preview, then unlock paid genetics-aware deep dive recommendations.
           </p>
         </div>
         <AIAction
@@ -337,14 +354,14 @@ export default function ScreeningPage() {
       <div className="bg-terra/10 rounded-2xl border border-terra/20 p-4 flex items-start gap-3">
         <HeartPulse size={18} className="text-terra shrink-0 mt-0.5" />
         <p className="text-xs text-warm-600 leading-relaxed">
-          Personalized screening requires a verified payment of {fee} USDC to prevent abuse and preserve model capacity.
-          This workflow does not diagnose disease. For severe symptoms, use triage immediately.
+          Free mode provides USPSTF-oriented screening guidance. Deep mode adds mutation-aware personalization,
+          PubMed-backed evidence synthesis, and local care routing after verified Base Pay ({fee} USDC).
         </p>
       </div>
 
       {!isConnected && (
         <div className="bg-yellow-100/20 border border-yellow-300/30 rounded-xl p-3 text-xs text-warm-600">
-          Connect a wallet to unlock personalized screening.
+          Connect a wallet when you are ready to unlock paid deep-dive screening.
         </div>
       )}
 
@@ -354,62 +371,64 @@ export default function ScreeningPage() {
         </div>
       )}
 
-      <div className="bg-pampas rounded-2xl border border-sand p-5 space-y-3">
-        <div className="flex items-center gap-2">
-          <CreditCard size={14} className="text-terra" />
-          <h2 className="text-sm font-bold text-warm-800">Payment Gate</h2>
-          {paymentReady && (
-            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-accent/10 text-accent uppercase">
-              verified
-            </span>
-          )}
+      {paymentGateVisible && (
+        <div className="bg-pampas rounded-2xl border border-sand p-5 space-y-3">
+          <div className="flex items-center gap-2">
+            <CreditCard size={14} className="text-terra" />
+            <h2 className="text-sm font-bold text-warm-800">Unlock Deep Dive (Base Pay)</h2>
+            {paymentReady && (
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-accent/10 text-accent uppercase">
+                verified
+              </span>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+            <div className="rounded-xl border border-sand/70 bg-cream/30 p-3 text-xs text-warm-600">
+              <p><span className="font-semibold text-warm-800">Fee:</span> {fee} USDC</p>
+              <p className="mt-1 break-all"><span className="font-semibold text-warm-800">Recipient:</span> {recipientAddress || "Set after intent creation"}</p>
+              {paymentIntent && <p className="mt-1"><span className="font-semibold text-warm-800">Payment ID:</span> {paymentIntent.id}</p>}
+            </div>
+
+            <div className="space-y-2">
+              <button
+                onClick={() => void createScreeningPaymentIntent()}
+                disabled={!walletAddress || creatingIntent}
+                className="w-full px-3 py-2 rounded-lg bg-terra text-white text-xs font-semibold hover:bg-terra-dark transition disabled:opacity-60"
+              >
+                {creatingIntent ? "Creating intent..." : "1) Create Intent"}
+              </button>
+              <button
+                onClick={() => void launchBasePay()}
+                disabled={!paymentIntent || launchingPay}
+                className="w-full px-3 py-2 rounded-lg border border-sand text-xs font-semibold text-warm-700 hover:border-terra/30 transition disabled:opacity-60"
+              >
+                {launchingPay ? "Launching..." : "2) Launch Base Pay"}
+              </button>
+            </div>
+
+            <div className="space-y-2">
+              <input
+                value={verifyTxHash}
+                onChange={(event) => setVerifyTxHash(event.target.value)}
+                placeholder="Paste transaction hash"
+                className="w-full px-3 py-2 rounded-lg border border-sand bg-cream/30 text-xs text-warm-800 focus:outline-none focus:border-terra/40"
+              />
+              <button
+                onClick={() => void verifyScreeningPayment()}
+                disabled={!paymentIntent || verifyingPayment}
+                className="w-full px-3 py-2 rounded-lg bg-accent text-white text-xs font-semibold hover:opacity-90 transition disabled:opacity-60"
+              >
+                {verifyingPayment ? "Verifying..." : "3) Verify Payment"}
+              </button>
+            </div>
+          </div>
         </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-          <div className="rounded-xl border border-sand/70 bg-cream/30 p-3 text-xs text-warm-600">
-            <p><span className="font-semibold text-warm-800">Fee:</span> {fee} USDC</p>
-            <p className="mt-1 break-all"><span className="font-semibold text-warm-800">Recipient:</span> {recipientAddress || "Set after intent creation"}</p>
-            {paymentIntent && <p className="mt-1"><span className="font-semibold text-warm-800">Payment ID:</span> {paymentIntent.id}</p>}
-          </div>
-
-          <div className="space-y-2">
-            <button
-              onClick={() => void createScreeningPaymentIntent()}
-              disabled={!walletAddress || creatingIntent}
-              className="w-full px-3 py-2 rounded-lg bg-terra text-white text-xs font-semibold hover:bg-terra-dark transition disabled:opacity-60"
-            >
-              {creatingIntent ? "Creating intent..." : "1) Create Intent"}
-            </button>
-            <button
-              onClick={() => void launchBasePay()}
-              disabled={!paymentIntent || launchingPay}
-              className="w-full px-3 py-2 rounded-lg border border-sand text-xs font-semibold text-warm-700 hover:border-terra/30 transition disabled:opacity-60"
-            >
-              {launchingPay ? "Launching..." : "2) Launch Base Pay"}
-            </button>
-          </div>
-
-          <div className="space-y-2">
-            <input
-              value={verifyTxHash}
-              onChange={(event) => setVerifyTxHash(event.target.value)}
-              placeholder="Paste transaction hash"
-              className="w-full px-3 py-2 rounded-lg border border-sand bg-cream/30 text-xs text-warm-800 focus:outline-none focus:border-terra/40"
-            />
-            <button
-              onClick={() => void verifyScreeningPayment()}
-              disabled={!paymentIntent || verifyingPayment}
-              className="w-full px-3 py-2 rounded-lg bg-accent text-white text-xs font-semibold hover:opacity-90 transition disabled:opacity-60"
-            >
-              {verifyingPayment ? "Verifying..." : "3) Verify Payment"}
-            </button>
-          </div>
-        </div>
-      </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 bg-pampas rounded-2xl border border-sand p-5">
-          <h2 className="text-sm font-bold text-warm-800 mb-3">Run Personalized Screening</h2>
+          <h2 className="text-sm font-bold text-warm-800 mb-3">Screening Intake</h2>
           <div className="rounded-xl border border-sand/70 bg-cream/30 p-3 mb-3 space-y-2">
             <label className="text-xs text-warm-600 block">
               Natural-language intake
@@ -492,16 +511,34 @@ export default function ScreeningPage() {
               </span>
             </label>
           </div>
-          <button
-            onClick={() => void runScreening()}
-            disabled={running || !paymentReady}
-            className="mt-4 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-terra text-white text-sm font-semibold hover:bg-terra-dark disabled:opacity-60 transition"
-          >
-            {running ? <Loader2 size={14} className="animate-spin" /> : <Activity size={14} />}
-            Generate Personalized Recommendations
-          </button>
-          {!paymentReady && (
-            <p className="text-[11px] text-cloudy mt-2">Complete and verify payment to unlock screening output.</p>
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            <button
+              onClick={() => void runScreening("preview")}
+              disabled={running}
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-terra text-white text-sm font-semibold hover:bg-terra-dark disabled:opacity-60 transition"
+            >
+              {running ? <Loader2 size={14} className="animate-spin" /> : <Activity size={14} />}
+              Get USPSTF Preview (Free)
+            </button>
+            {(assessment?.accessLevel === "preview" || paymentIntent || paymentReady) && (
+              <button
+                onClick={() => void runScreening("deep")}
+                disabled={running || !paymentReady}
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-sand text-sm font-semibold text-warm-700 hover:border-terra/30 transition disabled:opacity-60"
+              >
+                {running ? <Loader2 size={14} className="animate-spin" /> : <ShieldCheck size={14} />}
+                Generate Deep Dive (Paid)
+              </button>
+            )}
+          </div>
+          {assessment?.accessLevel === "preview" && (
+            <p className="text-[11px] text-cloudy mt-2">
+              {assessment.upgradeMessage ||
+                "Free preview is ready. Complete Base Pay to unlock mutation-aware deep personalization."}
+            </p>
+          )}
+          {(assessment?.accessLevel === "preview" || paymentIntent) && !paymentReady && (
+            <p className="text-[11px] text-cloudy mt-1">Deep dive requires verified payment before release.</p>
           )}
         </div>
 
@@ -516,7 +553,7 @@ export default function ScreeningPage() {
           </div>
           {!assessment ? (
             <div className="h-24 flex items-center justify-center text-xs text-cloudy">
-              <Wallet size={14} className="mr-2" /> Complete payment and run screening.
+              <Wallet size={14} className="mr-2" /> Run free preview to generate baseline screening guidance.
             </div>
           ) : (
             <>
@@ -597,7 +634,11 @@ export default function ScreeningPage() {
             <Search size={14} className="text-terra" />
             <h2 className="text-sm font-bold text-warm-800">Evidence Sources</h2>
           </div>
-          <p className="text-xs text-warm-500">Guideline and literature links used to support this recommendation set.</p>
+          <p className="text-xs text-warm-500">
+            {showingDeepResults
+              ? "Guideline and literature links supporting the deep personalized recommendation set."
+              : "Free preview currently shows USPSTF guideline sources."}
+          </p>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
             {evidenceCitations.map((citation) => (
               <a
@@ -625,7 +666,7 @@ export default function ScreeningPage() {
         </div>
       )}
 
-      {assessment && (
+      {assessment && showingDeepResults && (
         <div className="bg-pampas rounded-2xl border border-sand p-5 space-y-4">
           <div className="flex items-center gap-2">
             <Search size={14} className="text-terra" />
