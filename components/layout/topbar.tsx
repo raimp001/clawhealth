@@ -1,6 +1,6 @@
 "use client"
 
-import { Bell, Search, X, UserCircle, Sparkles, Pill, Calendar, Receipt, Command, type LucideIcon } from "lucide-react"
+import { Bell, Search, X, UserCircle, Sparkles, Pill, Calendar, Receipt, Command, FlaskConical, MessageSquare, ArrowRightCircle, LayoutDashboard, Activity, Syringe, Bot, Clock, type LucideIcon } from "lucide-react"
 import {
   ConnectWallet,
   Wallet,
@@ -57,9 +57,31 @@ export default function Topbar() {
     return () => document.removeEventListener("keydown", handler)
   }, [])
 
+  const myLabResults = snapshot.labResults
+  const myReferrals = snapshot.referrals
+
+  const QUICK_NAV = [
+    { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard, keywords: ["home", "dashboard", "overview"] },
+    { label: "Timeline", href: "/timeline", icon: Clock, keywords: ["timeline", "history", "events", "log"] },
+    { label: "Appointments", href: "/scheduling", icon: Calendar, keywords: ["appointments", "schedule", "book", "visit"] },
+    { label: "Medications", href: "/prescriptions", icon: Pill, keywords: ["meds", "medications", "prescriptions", "drugs", "pills"] },
+    { label: "Lab Results", href: "/lab-results", icon: FlaskConical, keywords: ["labs", "lab", "results", "tests", "blood"] },
+    { label: "Vital Signs", href: "/vitals", icon: Activity, keywords: ["vitals", "bp", "blood pressure", "heart rate", "glucose", "weight"] },
+    { label: "Vaccinations", href: "/vaccinations", icon: Syringe, keywords: ["vaccines", "vaccinations", "shots", "immunizations"] },
+    { label: "Referrals", href: "/referrals", icon: ArrowRightCircle, keywords: ["referrals", "specialists", "specialist"] },
+    { label: "Messages", href: "/messages", icon: MessageSquare, keywords: ["messages", "inbox", "chat", "communicate"] },
+    { label: "Billing", href: "/billing", icon: Receipt, keywords: ["billing", "claims", "bills", "payments", "charges"] },
+    { label: "Ask AI", href: "/chat", icon: Bot, keywords: ["ai", "ask", "chat", "help", "assistant"] },
+  ]
+
   const results = useMemo(() => {
     if (!query || query.length < 2) return null
     const q = query.toLowerCase()
+
+    // Quick navigation shortcuts
+    const quickNav = QUICK_NAV.filter((n) =>
+      n.label.toLowerCase().includes(q) || n.keywords.some((k) => k.includes(q))
+    ).slice(0, 3)
 
     const matchedClaims = myClaims
       .filter(
@@ -91,10 +113,32 @@ export default function Topbar() {
       })
       .slice(0, 3)
 
-    const total = matchedClaims.length + matchedRx.length + matchedApts.length
-    if (total === 0) return { claims: [], rx: [], apts: [], total: 0 }
-    return { claims: matchedClaims, rx: matchedRx, apts: matchedApts, total }
-  }, [query, myClaims, myPrescriptions, myAppointments, getPhysician])
+    const matchedLabs = myLabResults
+      .filter((lab) =>
+        lab.test_name.toLowerCase().includes(q) ||
+        lab.lab_facility.toLowerCase().includes(q) ||
+        lab.category.toLowerCase().includes(q) ||
+        lab.results.some((r) => r.name.toLowerCase().includes(q))
+      )
+      .slice(0, 3)
+
+    const matchedMessages = myMessages
+      .filter((m) => m.content.toLowerCase().includes(q))
+      .slice(0, 2)
+
+    const matchedReferrals = myReferrals
+      .filter((r) =>
+        r.specialist_specialty.toLowerCase().includes(q) ||
+        r.reason.toLowerCase().includes(q) ||
+        (r.specialist_name || "").toLowerCase().includes(q)
+      )
+      .slice(0, 2)
+
+    const total = quickNav.length + matchedClaims.length + matchedRx.length + matchedApts.length + matchedLabs.length + matchedMessages.length + matchedReferrals.length
+    if (total === 0) return { quickNav: [], claims: [], rx: [], apts: [], labs: [], messages: [], referrals: [], total: 0 }
+    return { quickNav, claims: matchedClaims, rx: matchedRx, apts: matchedApts, labs: matchedLabs, messages: matchedMessages, referrals: matchedReferrals, total }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query, myClaims, myPrescriptions, myAppointments, myLabResults, myMessages, myReferrals, getPhysician])
 
   const closeSearch = useCallback(() => {
     setIsOpen(false)
@@ -136,11 +180,35 @@ export default function Topbar() {
           )}
 
           {isOpen && results && (
-            <div className="absolute left-0 right-0 top-full z-50 mt-1.5 max-h-[440px] overflow-y-auto rounded-2xl border border-sand bg-pampas shadow-soft-card animate-fade-in">
+            <div className="absolute left-0 right-0 top-full z-50 mt-1.5 max-h-[500px] overflow-y-auto rounded-2xl border border-sand bg-pampas shadow-soft-card animate-fade-in">
               {results.total === 0 ? (
                 <div className="px-4 py-3 text-xs text-warm-500">No results for &ldquo;{query}&rdquo;</div>
               ) : (
                 <>
+                  {results.quickNav.length > 0 && (
+                    <>
+                      <div className="flex items-center gap-1.5 border-b border-sand/60 bg-cream/70 px-4 py-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-warm-500">
+                        <Search size={10} /> Navigate
+                      </div>
+                      <div className="flex flex-wrap gap-2 px-4 py-2.5">
+                        {results.quickNav.map((nav) => {
+                          const Icon = nav.icon
+                          return (
+                            <Link
+                              key={nav.href}
+                              href={nav.href}
+                              onClick={closeSearch}
+                              className="flex items-center gap-1.5 rounded-lg border border-sand/70 bg-cream/80 px-2.5 py-1.5 text-xs font-semibold text-warm-700 transition hover:border-terra/30 hover:text-terra"
+                            >
+                              <Icon size={11} className="text-terra" />
+                              {nav.label}
+                            </Link>
+                          )
+                        })}
+                      </div>
+                    </>
+                  )}
+
                   {results.apts.length > 0 && (
                     <>
                       <div className="flex items-center gap-1.5 border-y border-sand/60 bg-cream/70 px-4 py-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-warm-500">
@@ -186,6 +254,71 @@ export default function Topbar() {
                               {rx.status}
                             </span>
                           </p>
+                        </Link>
+                      ))}
+                    </>
+                  )}
+
+                  {results.labs.length > 0 && (
+                    <>
+                      <div className="flex items-center gap-1.5 border-y border-sand/60 bg-cream/70 px-4 py-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-warm-500">
+                        <FlaskConical size={10} /> Lab Results
+                      </div>
+                      {results.labs.map((lab) => (
+                        <Link
+                          key={lab.id}
+                          href="/lab-results"
+                          onClick={closeSearch}
+                          className="block px-4 py-2.5 transition hover:bg-cream/70"
+                        >
+                          <p className="text-xs font-semibold text-warm-800">{lab.test_name}</p>
+                          <p className="text-[11px] text-cloudy">
+                            {lab.lab_facility} ·{" "}
+                            <span className={cn("font-bold uppercase", lab.status === "resulted" ? "text-accent" : "text-warm-500")}>
+                              {lab.status}
+                            </span>
+                            {lab.results.some((r) => r.flag !== "normal") && (
+                              <span className="ml-1 font-bold text-soft-red">· ABNORMAL</span>
+                            )}
+                          </p>
+                        </Link>
+                      ))}
+                    </>
+                  )}
+
+                  {results.messages.length > 0 && (
+                    <>
+                      <div className="flex items-center gap-1.5 border-y border-sand/60 bg-cream/70 px-4 py-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-warm-500">
+                        <MessageSquare size={10} /> Messages
+                      </div>
+                      {results.messages.map((msg) => (
+                        <Link
+                          key={msg.id}
+                          href="/messages"
+                          onClick={closeSearch}
+                          className="block px-4 py-2.5 transition hover:bg-cream/70"
+                        >
+                          <p className="text-xs font-semibold text-warm-800 truncate">{msg.content.slice(0, 60)}{msg.content.length > 60 ? "…" : ""}</p>
+                          <p className="text-[11px] text-cloudy">via {msg.channel} · {msg.read ? "read" : "unread"}</p>
+                        </Link>
+                      ))}
+                    </>
+                  )}
+
+                  {results.referrals.length > 0 && (
+                    <>
+                      <div className="flex items-center gap-1.5 border-y border-sand/60 bg-cream/70 px-4 py-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-warm-500">
+                        <ArrowRightCircle size={10} /> Referrals
+                      </div>
+                      {results.referrals.map((ref) => (
+                        <Link
+                          key={ref.id}
+                          href="/referrals"
+                          onClick={closeSearch}
+                          className="block px-4 py-2.5 transition hover:bg-cream/70"
+                        >
+                          <p className="text-xs font-semibold text-warm-800">{ref.specialist_specialty}</p>
+                          <p className="text-[11px] text-cloudy">{ref.reason} · {ref.status}</p>
                         </Link>
                       ))}
                     </>

@@ -24,6 +24,7 @@ import {
   ShieldCheck,
   UserPlus,
   Workflow,
+  Clock,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useState, useEffect } from "react"
@@ -34,6 +35,7 @@ const navSections = [
     label: null,
     items: [
       { href: "/dashboard", label: "Home", icon: LayoutDashboard },
+      { href: "/timeline", label: "Health Timeline", icon: Clock },
       { href: "/onboarding", label: "Get Started", icon: Heart },
     ],
   },
