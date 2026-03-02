@@ -191,6 +191,13 @@ export default function Sidebar() {
           <ExternalLink size={13} />
           Open Marketing Site
         </Link>
+        <Link
+          href="/privacy-explained"
+          className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-medium text-cloudy transition hover:bg-cream hover:text-warm-700"
+        >
+          <ShieldCheck size={13} />
+          Privacy
+        </Link>
       </div>
     </>
   )
