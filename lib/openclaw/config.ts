@@ -261,9 +261,23 @@ DAILY ROUTINE:
 
 INTER-AGENT: Receive improvement requests from all agents. Report deployment status to @coordinator. You're the only agent with exec and deployment permissions.`
 
+const QUALITY_GUARDRAILS = `OPENCLAW QUALITY GUARDRAILS (MANDATORY):
+- Ask one clear question at a time when patient context is incomplete.
+- Never fabricate availability, network status, pricing, or clinical certainty.
+- For screening, explicitly account for age, personal history, family history, and germline risk when present.
+- For high-stakes actions (billing changes, prescriptions, prior auth submissions), require explicit human confirmation before execution.
+- If uncertain, say what is missing and propose the fastest safe next step.
+- Keep responses concise, plain-language, and actionable for non-technical patients.`
+
+function withQualityGuardrails(prompt: string): string {
+  return `${prompt}\n\n${QUALITY_GUARDRAILS}`
+}
+
 // ── Main Configuration ───────────────────────────────────
 
 export const OPENCLAW_CONFIG = {
+  protocolVersion: "2026.03.07",
+  qualityMode: process.env.OPENCLAW_QUALITY_MODE || "strict",
   gateway: {
     port: 18789,
     url: process.env.OPENCLAW_GATEWAY_URL || "ws://127.0.0.1:18789",
@@ -277,7 +291,7 @@ export const OPENCLAW_CONFIG = {
       role: "Onboarding Guide",
       description: "Walks new patients through frictionless setup",
       personality: "Warm, patient, thorough — like a caring nurse with all the time in the world",
-      systemPrompt: ONBOARDING_PROMPT,
+      systemPrompt: withQualityGuardrails(ONBOARDING_PROMPT),
       tools: { profile: "full" as const },
       canMessage: ["rx", "scheduling", "wellness", "billing", "coordinator"],
     },
@@ -287,7 +301,7 @@ export const OPENCLAW_CONFIG = {
       role: "Coordinator",
       description: "Routes messages and orchestrates all agents",
       personality: "Efficient, decisive, dry humor — the air traffic controller",
-      systemPrompt: COORDINATOR_PROMPT,
+      systemPrompt: withQualityGuardrails(COORDINATOR_PROMPT),
       tools: { profile: "full" as const },
       canMessage: ["*"],
     },
@@ -297,7 +311,7 @@ export const OPENCLAW_CONFIG = {
       role: "Triage Nurse",
       description: "After-hours symptom assessment and urgency classification",
       personality: "Reassuring but direct — calm confidence of an experienced ER nurse",
-      systemPrompt: TRIAGE_PROMPT,
+      systemPrompt: withQualityGuardrails(TRIAGE_PROMPT),
       tools: { profile: "messaging" as const },
       canMessage: ["scheduling", "rx", "coordinator"],
     },
@@ -307,7 +321,7 @@ export const OPENCLAW_CONFIG = {
       role: "Scheduler",
       description: "Insurance-aware appointment booking and management",
       personality: "Organized, upbeat — always finds a way to make it work",
-      systemPrompt: SCHEDULING_PROMPT,
+      systemPrompt: withQualityGuardrails(SCHEDULING_PROMPT),
       tools: { profile: "messaging" as const },
       canMessage: ["billing", "coordinator", "wellness"],
     },
@@ -317,7 +331,7 @@ export const OPENCLAW_CONFIG = {
       role: "Billing Specialist",
       description: "Claims analysis, error detection, and appeal filing",
       personality: "Detail-obsessed, protective of patients' wallets",
-      systemPrompt: BILLING_PROMPT,
+      systemPrompt: withQualityGuardrails(BILLING_PROMPT),
       tools: { profile: "full" as const },
       canMessage: ["rx", "prior-auth", "coordinator"],
     },
@@ -327,7 +341,7 @@ export const OPENCLAW_CONFIG = {
       role: "Rx Manager",
       description: "Medication reconciliation, adherence monitoring, pharmacy coordination",
       personality: "Caring, knowledgeable — the pharmacist everyone wishes they had",
-      systemPrompt: RX_PROMPT,
+      systemPrompt: withQualityGuardrails(RX_PROMPT),
       tools: { profile: "messaging" as const },
       canMessage: ["scheduling", "prior-auth", "billing", "coordinator"],
     },
@@ -337,7 +351,7 @@ export const OPENCLAW_CONFIG = {
       role: "PA Specialist",
       description: "Prior authorization workflows, submission to appeal",
       personality: "Tenacious, strategic — treats every denial as a personal challenge",
-      systemPrompt: PA_PROMPT,
+      systemPrompt: withQualityGuardrails(PA_PROMPT),
       tools: { profile: "full" as const },
       canMessage: ["billing", "coordinator", "scheduling"],
     },
@@ -347,7 +361,7 @@ export const OPENCLAW_CONFIG = {
       role: "Wellness Coach",
       description: "Preventive care, screenings, health goals, device integration",
       personality: "Encouraging, holistic — makes preventive care exciting",
-      systemPrompt: WELLNESS_PROMPT,
+      systemPrompt: withQualityGuardrails(WELLNESS_PROMPT),
       tools: { profile: "messaging" as const },
       canMessage: ["scheduling", "rx", "coordinator", "onboarding"],
     },
@@ -357,7 +371,7 @@ export const OPENCLAW_CONFIG = {
       role: "Screening Specialist",
       description: "Risk stratification and preventive screening prioritization",
       personality: "Analytical, calm, prevention-first",
-      systemPrompt: SCREENING_PROMPT,
+      systemPrompt: withQualityGuardrails(SCREENING_PROMPT),
       tools: { profile: "full" as const },
       canMessage: ["triage", "scheduling", "wellness", "coordinator", "trials"],
     },
@@ -367,7 +381,7 @@ export const OPENCLAW_CONFIG = {
       role: "Second Opinion",
       description: "Structured diagnosis and care-plan review",
       personality: "Objective, clinically careful, and transparent about uncertainty",
-      systemPrompt: SECOND_OPINION_PROMPT,
+      systemPrompt: withQualityGuardrails(SECOND_OPINION_PROMPT),
       tools: { profile: "full" as const },
       canMessage: ["triage", "wellness", "scheduling", "coordinator", "screening"],
     },
@@ -377,7 +391,7 @@ export const OPENCLAW_CONFIG = {
       role: "Clinical Trials",
       description: "Trial discovery and enrollment-fit guidance",
       personality: "Detail-oriented and pragmatic",
-      systemPrompt: TRIALS_PROMPT,
+      systemPrompt: withQualityGuardrails(TRIALS_PROMPT),
       tools: { profile: "full" as const },
       canMessage: ["coordinator", "screening", "wellness", "billing", "scheduling"],
     },
@@ -387,7 +401,7 @@ export const OPENCLAW_CONFIG = {
       role: "DevOps",
       description: "Automated builds, deployments, monitoring, and app improvements",
       personality: "Precise, security-conscious — treats the app like a living organism",
-      systemPrompt: DEVOPS_PROMPT,
+      systemPrompt: withQualityGuardrails(DEVOPS_PROMPT),
       tools: { profile: "full" as const },
       canMessage: ["coordinator"],
     },

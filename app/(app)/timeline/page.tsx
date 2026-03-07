@@ -1,12 +1,12 @@
 "use client"
 
 import { useLiveSnapshot } from "@/lib/hooks/use-live-snapshot"
-import { cn, formatDate, formatTime } from "@/lib/utils"
+import { cn, formatTime } from "@/lib/utils"
 import Link from "next/link"
 import { useState, useMemo } from "react"
 import {
   Calendar, Pill, FlaskConical, Activity, MessageSquare,
-  Syringe, ArrowRightCircle, Receipt, ShieldCheck, Heart,
+  Syringe, ArrowRightCircle, Receipt,
   Clock, ChevronRight,
 } from "lucide-react"
 

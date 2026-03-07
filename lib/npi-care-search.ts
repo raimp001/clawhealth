@@ -229,17 +229,6 @@ function parseLocation(working: string): {
     }
   }
 
-  if (!state) {
-    const trailingLowerMatch = text.match(/\b([a-z]{2})\b\s*$/)
-    if (trailingLowerMatch) {
-      const candidate = trailingLowerMatch[1].toUpperCase()
-      if (STATE_ABBREVS.has(candidate)) {
-        state = candidate
-        text = text.replace(new RegExp(`${trailingLowerMatch[1]}\\s*$`), " ")
-      }
-    }
-  }
-
   text = text.replace(/[,.]+/g, " ").replace(/\s+/g, " ").trim()
 
   const normalizedForCity = text
@@ -262,6 +251,20 @@ function parseLocation(working: string): {
       city = words.slice(-3).join(" ")
     } else {
       city = words.slice(0, 3).join(" ")
+    }
+  }
+
+  if (!city) {
+    const nearMatch = working.match(/\b(?:near|in|around)\s+([a-zA-Z][a-zA-Z\s.'-]{1,80})$/i)
+    if (nearMatch) {
+      const fallbackWords = nearMatch[1]
+        .replace(/[,.]+/g, " ")
+        .split(/\s+/)
+        .map((word) => word.trim())
+        .filter((word) => !!word && !LOCATION_STOP_WORDS.has(word.toLowerCase()))
+      if (fallbackWords.length > 0) {
+        city = fallbackWords.slice(0, 3).join(" ")
+      }
     }
   }
 
@@ -363,6 +366,13 @@ interface SearchPlan {
 function buildSearchPlan(parsed: ParsedCareQuery, limit: number): SearchPlan[] {
   const plans: SearchPlan[] = []
   const targetTypes = parsed.serviceTypes
+  const normalizedHint = parsed.normalizedQuery.trim()
+  const cityLower = (parsed.city || "").toLowerCase()
+  const stateLower = (parsed.state || "").toLowerCase()
+  const shouldUseOrgHint =
+    normalizedHint.length >= 4 &&
+    normalizedHint.toLowerCase() !== cityLower &&
+    normalizedHint.toLowerCase() !== stateLower
 
   targetTypes.forEach((serviceType) => {
     const createParams = (input: {
@@ -400,6 +410,17 @@ function buildSearchPlan(parsed: ParsedCareQuery, limit: number): SearchPlan[] {
           ...(parsed.specialty ? { taxonomyDescription: parsed.specialty } : {}),
         }),
       })
+      if (shouldUseOrgHint) {
+        plans.push({
+          serviceType,
+          phase: "primary",
+          note: "provider-organization-name",
+          params: createParams({
+            enumerationType: "NPI-2",
+            organizationName: normalizedHint,
+          }),
+        })
+      }
       plans.push({
         serviceType,
         phase: "fallback",
@@ -502,9 +523,13 @@ function mapResult(result: NppesResult, requested: CareSearchType, parsed: Parse
   const taxonomyLower = taxonomyDesc.toLowerCase()
   const specialtyLower = parsed.specialty?.toLowerCase() || ""
   const roleLower = parsed.caregiverRole?.toLowerCase() || ""
+  const parsedCityLower = (parsed.city || "").toLowerCase()
+  const resultCityLower = (locationAddress.city || "").toLowerCase()
+  const cityMatched = !!parsedCityLower && parsedCityLower === resultCityLower
   const isHighConfidence =
     (!!specialtyLower && taxonomyLower.includes(specialtyLower)) ||
     (!!roleLower && taxonomyLower.includes(roleLower)) ||
+    cityMatched ||
     (kind === requested && (requested === "provider" || taxonomyLower.length > 0))
 
   const fullAddress = [

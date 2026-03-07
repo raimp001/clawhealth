@@ -63,6 +63,13 @@ type ScreeningIntakeResponse = ScreeningIntakeResult & {
   error?: string
 }
 
+const NARRATIVE_STARTERS = [
+  "I am 58. Father had prostate cancer at 52. BRCA2 mutation carrier.",
+  "I am 46 with family history of colon cancer and polyposis.",
+  "I am 39, current smoker, mother had breast cancer at 44.",
+  "I am 67 with diabetes, hypertension, and prior abnormal colon polyp.",
+]
+
 function formatWallet(address?: string): string {
   if (!address) return ""
   if (address.length < 12) return address
@@ -146,6 +153,11 @@ export default function ScreeningPage() {
     if (!isBaseTxHash(verifyTxHash)) return ""
     return toBaseBuilderTxUrl(verifyTxHash.trim())
   }, [verifyTxHash])
+  const canRunPreview =
+    narrative.trim().length > 0 ||
+    age.trim().length > 0 ||
+    familyHistory.trim().length > 0 ||
+    conditions.trim().length > 0
 
   useEffect(() => {
     if (!walletAddress) return
@@ -320,15 +332,6 @@ export default function ScreeningPage() {
     return Number.isFinite(numeric) ? numeric : undefined
   }
 
-  function appendNarrativeHint(text: string) {
-    setNarrative((current) => {
-      const trimmed = current.trim()
-      if (!trimmed) return text
-      const separator = /[.!?]$/.test(trimmed) ? " " : ". "
-      return `${trimmed}${separator}${text}`
-    })
-  }
-
   async function parseNarrativeIntakeIfPresent(): Promise<ScreeningIntakeResult["extracted"] | null> {
     if (!narrative.trim()) {
       setIntakeFeedback("")
@@ -363,6 +366,11 @@ export default function ScreeningPage() {
   }
 
   async function runScreening(level: ScreeningAnalysisLevel) {
+    if (!canRunPreview) {
+      setError("Share one short sentence about your age and family/genetic history to start.")
+      return
+    }
+
     if (level === "deep" && !walletAddress) {
       setShowPaymentGate(true)
       setError("Connect your wallet to unlock the paid deep-dive recommendation.")
@@ -441,9 +449,9 @@ export default function ScreeningPage() {
     <div className="animate-slide-up space-y-6">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-serif text-warm-800">AI Health Screening</h1>
+          <h1 className="text-2xl font-serif text-warm-800">Personalized Screening</h1>
           <p className="text-sm text-warm-500 mt-1">
-            Tell your history in plain language once. The app extracts details and personalizes screening.
+            One short message in natural language. We handle the medical parsing and build an age- and history-aware plan.
           </p>
         </div>
         <AIAction
@@ -453,25 +461,25 @@ export default function ScreeningPage() {
         />
       </div>
 
-      <div className="bg-terra/10 rounded-2xl border border-terra/20 p-4 flex items-start gap-3">
-        <HeartPulse size={18} className="text-terra shrink-0 mt-0.5" />
-        <p className="text-xs text-warm-600 leading-relaxed">
-          Free mode gives baseline preventive guidance. Deep mode adds inherited-risk personalization (for example germline
-          mutations or family prostate/colorectal/polyposis history), evidence synthesis, and nearby care routing after
-          verified Base Pay ({fee} USDC).
+      <div className="rounded-2xl border border-terra/20 bg-terra/8 p-4 flex flex-col gap-2 text-xs text-warm-600">
+        <div className="flex items-center gap-2">
+          <HeartPulse size={16} className="text-terra" />
+          <span className="font-semibold text-warm-700">Simple flow: free preview first, then optional deep genetics.</span>
+        </div>
+        <p>
+          `Get USPSTF Preview (Free)` gives immediate baseline guidance. `Unlock Deep Genetics` adds mutation-aware and
+          inherited-risk personalization after Base Pay verification ({fee} USDC).
         </p>
       </div>
 
       {!isConnected && (
-        <div className="bg-yellow-100/20 border border-yellow-300/30 rounded-xl p-3 text-xs text-warm-600">
-          Connect a wallet when you are ready to unlock paid deep-dive screening.
+        <div className="rounded-xl border border-yellow-300/30 bg-yellow-100/20 p-3 text-xs text-warm-600">
+          Wallet is optional for free preview. Connect only when you want to unlock deep genetics.
         </div>
       )}
 
       {error && (
-        <div className="bg-soft-red/5 border border-soft-red/20 rounded-xl p-3 text-xs text-soft-red">
-          {error}
-        </div>
+        <div className="rounded-xl border border-soft-red/20 bg-soft-red/5 p-3 text-xs text-soft-red">{error}</div>
       )}
 
       {paymentGateVisible && (
@@ -479,13 +487,13 @@ export default function ScreeningPage() {
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               <CreditCard size={14} className="text-terra" />
-              <h2 className="text-sm font-bold text-warm-800">Complete Base Pay Before Deep Recommendation</h2>
+              <h2 className="text-sm font-bold text-warm-800">Base Pay Required Before Deep Recommendation</h2>
             </div>
             <button
               onClick={() => setShowPaymentGate(false)}
               className="text-[11px] font-semibold text-warm-500 hover:text-terra transition"
             >
-              Not now
+              Close
             </button>
           </div>
 
@@ -500,34 +508,28 @@ export default function ScreeningPage() {
               <span className="font-semibold text-warm-800">Fee:</span> {fee} USDC
             </p>
             <p className="break-all">
-              <span className="font-semibold text-warm-800">Recipient:</span>{" "}
-              {recipientAddress || "Preparing recipient..."}
+              <span className="font-semibold text-warm-800">Recipient:</span> {recipientAddress || "Preparing recipient..."}
             </p>
-            {paymentIntent && (
-              <p>
-                <span className="font-semibold text-warm-800">Payment ID:</span> {paymentIntent.id}
-              </p>
-            )}
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
             <button
               onClick={() => void launchBasePay()}
               disabled={!walletAddress || launchingPay || creatingIntent}
-              className="w-full px-3 py-2 rounded-lg border border-sand text-xs font-semibold text-warm-700 hover:border-terra/30 transition disabled:opacity-60"
+              className="w-full rounded-lg border border-sand px-3 py-2 text-xs font-semibold text-warm-700 transition hover:border-terra/30 disabled:opacity-60"
             >
               {creatingIntent
                 ? "Preparing payment..."
                 : launchingPay
                 ? "Launching Base Pay..."
-                : `Launch Base Pay (${fee} USDC)`}
+                : `1) Launch Base Pay (${fee} USDC)`}
             </button>
             <div className="space-y-2">
               <input
                 value={verifyTxHash}
                 onChange={(event) => setVerifyTxHash(event.target.value)}
-                placeholder="Transaction hash (auto-filled after launch)"
-                className="w-full px-3 py-2 rounded-lg border border-sand bg-cream/30 text-xs text-warm-800 focus:outline-none focus:border-terra/40"
+                placeholder="Paste transaction hash"
+                className="w-full rounded-lg border border-sand bg-cream/30 px-3 py-2 text-xs text-warm-800 focus:outline-none focus:border-terra/40"
               />
               {screeningTxUrl && (
                 <a
@@ -542,32 +544,20 @@ export default function ScreeningPage() {
               <button
                 onClick={() => void verifyScreeningPayment()}
                 disabled={!walletAddress || verifyingPayment}
-                className="w-full px-3 py-2 rounded-lg bg-accent text-white text-xs font-semibold hover:opacity-90 transition disabled:opacity-60"
+                className="w-full rounded-lg bg-accent px-3 py-2 text-xs font-semibold text-white transition hover:opacity-90 disabled:opacity-60"
               >
-                {verifyingPayment ? "Verifying payment..." : "Verify Payment"}
+                {verifyingPayment ? "Verifying..." : "2) Verify Payment"}
               </button>
             </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            {paymentReady ? (
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-accent/10 text-accent uppercase">
-                Payment verified
-              </span>
-            ) : (
-              <span className="text-[11px] text-cloudy">
-                Deep recommendations are released only after verified Base Pay settlement.
-              </span>
-            )}
           </div>
 
           {paymentReady && (
             <button
               onClick={() => void runScreening("deep")}
               disabled={running}
-              className="w-full px-3 py-2 rounded-lg bg-terra text-white text-xs font-semibold hover:bg-terra-dark transition disabled:opacity-60"
+              className="w-full rounded-lg bg-terra px-3 py-2 text-xs font-semibold text-white transition hover:bg-terra-dark disabled:opacity-60"
             >
-              {running ? "Generating deep recommendation..." : "Release Deep Recommendation"}
+              {running ? "Generating deep recommendation..." : "3) Release Deep Recommendation"}
             </button>
           )}
         </div>
@@ -575,38 +565,40 @@ export default function ScreeningPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 bg-pampas rounded-2xl border border-sand p-5">
-          <h2 className="text-sm font-bold text-warm-800 mb-3">Simple Screening Intake</h2>
-          <div className="rounded-xl border border-sand/70 bg-cream/30 p-3 mb-3 space-y-2">
+          <h2 className="text-sm font-bold text-warm-800 mb-3">Tell Us Your History</h2>
+          <div className="rounded-xl border border-sand/70 bg-cream/30 p-3 mb-3 space-y-3">
             <label className="text-xs text-warm-600 block">
-              Tell us your history in plain English
+              Write one short sentence (age + family/genetic history if known)
               <textarea
                 value={narrative}
                 onChange={(event) => setNarrative(event.target.value)}
                 rows={4}
-                placeholder="Example: I am 58, father had prostate cancer at 52, BRCA2 germline mutation, former smoker."
-                className="mt-1 w-full px-3 py-2 rounded-lg border border-sand bg-pampas text-sm text-warm-800 placeholder:text-cloudy focus:outline-none focus:border-terra/40 resize-y"
+                placeholder="I am 58, father had prostate cancer at 52, BRCA2 mutation carrier, former smoker."
+                className="mt-1 w-full rounded-lg border border-sand bg-pampas px-3 py-2 text-sm text-warm-800 placeholder:text-cloudy focus:outline-none focus:border-terra/40 resize-y"
               />
             </label>
-            <p className="text-[11px] text-warm-500">
-              One sentence is enough. We auto-parse age, symptoms, inherited-risk clues, and known mutations.
-            </p>
+
             <div className="flex flex-wrap gap-2">
-              {[
-                "Father had prostate cancer at 52.",
-                "Family history of colorectal cancer.",
-                "Known BRCA2 germline mutation.",
-                "Polyposis disorder in family.",
-              ].map((hint) => (
+              {NARRATIVE_STARTERS.map((starter, index) => (
                 <button
-                  key={hint}
+                  key={starter}
                   type="button"
-                  onClick={() => appendNarrativeHint(hint)}
-                  className="rounded-full border border-sand px-2.5 py-1 text-[10px] font-semibold text-warm-600 hover:border-terra/30 hover:text-terra transition"
+                  onClick={() => setNarrative(starter)}
+                  className="rounded-full border border-sand px-2.5 py-1 text-[10px] font-semibold text-warm-600 transition hover:border-terra/30 hover:text-terra"
                 >
-                  + {hint}
+                  Example {index + 1}
                 </button>
               ))}
             </div>
+
+            <button
+              type="button"
+              onClick={() => void parseNarrativeIntakeIfPresent()}
+              className="text-[11px] font-semibold text-terra hover:text-terra-dark transition"
+            >
+              Preview what we understood
+            </button>
+
             {intakeFeedback && <p className="text-[11px] text-warm-500">{intakeFeedback}</p>}
           </div>
 
@@ -616,36 +608,27 @@ export default function ScreeningPage() {
               onClick={() => setShowManualFields((value) => !value)}
               className="text-xs font-semibold text-warm-700 hover:text-terra transition"
             >
-              {showManualFields ? "Hide optional manual fields" : "Add optional manual details"}
+              {showManualFields ? "Hide optional details" : "Add optional details (if needed)"}
             </button>
             {showManualFields && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
                 <label className="text-xs text-warm-600">
-                  Age (optional)
+                  Age
                   <input
                     value={age}
                     onChange={(event) => setAge(event.target.value)}
                     inputMode="numeric"
                     placeholder="58"
-                    className="mt-1 w-full px-3 py-2 rounded-lg border border-sand bg-cream/30 text-sm text-warm-800 placeholder:text-cloudy focus:outline-none focus:border-terra/40"
+                    className="mt-1 w-full rounded-lg border border-sand bg-cream/30 px-3 py-2 text-sm text-warm-800 placeholder:text-cloudy focus:outline-none focus:border-terra/40"
                   />
                 </label>
                 <label className="text-xs text-warm-600">
-                  Symptoms (comma separated)
-                  <input
-                    value={symptoms}
-                    onChange={(event) => setSymptoms(event.target.value)}
-                    placeholder="fatigue, abdominal pain"
-                    className="mt-1 w-full px-3 py-2 rounded-lg border border-sand bg-cream/30 text-sm text-warm-800 placeholder:text-cloudy focus:outline-none focus:border-terra/40"
-                  />
-                </label>
-                <label className="text-xs text-warm-600">
-                  Family history / inherited risk
+                  Family history
                   <input
                     value={familyHistory}
                     onChange={(event) => setFamilyHistory(event.target.value)}
-                    placeholder="father prostate cancer at 52, lynch syndrome"
-                    className="mt-1 w-full px-3 py-2 rounded-lg border border-sand bg-cream/30 text-sm text-warm-800 placeholder:text-cloudy focus:outline-none focus:border-terra/40"
+                    placeholder="father prostate cancer at 52"
+                    className="mt-1 w-full rounded-lg border border-sand bg-cream/30 px-3 py-2 text-sm text-warm-800 placeholder:text-cloudy focus:outline-none focus:border-terra/40"
                   />
                 </label>
                 <label className="text-xs text-warm-600">
@@ -653,8 +636,17 @@ export default function ScreeningPage() {
                   <input
                     value={conditions}
                     onChange={(event) => setConditions(event.target.value)}
-                    placeholder="hypertension, BRCA2 mutation carrier"
-                    className="mt-1 w-full px-3 py-2 rounded-lg border border-sand bg-cream/30 text-sm text-warm-800 placeholder:text-cloudy focus:outline-none focus:border-terra/40"
+                    placeholder="BRCA2 carrier, hypertension"
+                    className="mt-1 w-full rounded-lg border border-sand bg-cream/30 px-3 py-2 text-sm text-warm-800 placeholder:text-cloudy focus:outline-none focus:border-terra/40"
+                  />
+                </label>
+                <label className="text-xs text-warm-600">
+                  Symptoms (optional)
+                  <input
+                    value={symptoms}
+                    onChange={(event) => setSymptoms(event.target.value)}
+                    placeholder="fatigue, abdominal pain"
+                    className="mt-1 w-full rounded-lg border border-sand bg-cream/30 px-3 py-2 text-sm text-warm-800 placeholder:text-cloudy focus:outline-none focus:border-terra/40"
                   />
                 </label>
                 <label className="text-xs text-warm-600">
@@ -664,11 +656,11 @@ export default function ScreeningPage() {
                     onChange={(event) => setBmi(event.target.value)}
                     inputMode="decimal"
                     placeholder="29.4"
-                    className="mt-1 w-full px-3 py-2 rounded-lg border border-sand bg-cream/30 text-sm text-warm-800 placeholder:text-cloudy focus:outline-none focus:border-terra/40"
+                    className="mt-1 w-full rounded-lg border border-sand bg-cream/30 px-3 py-2 text-sm text-warm-800 placeholder:text-cloudy focus:outline-none focus:border-terra/40"
                   />
                 </label>
                 <label className="text-xs text-warm-600 flex items-end">
-                  <span className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-sand bg-cream/30 text-sm text-warm-700">
+                  <span className="inline-flex items-center gap-2 rounded-lg border border-sand bg-cream/30 px-3 py-2 text-sm text-warm-700">
                     <input
                       checked={smoker}
                       onChange={(event) => {
@@ -684,35 +676,32 @@ export default function ScreeningPage() {
               </div>
             )}
           </div>
+
           <div className="mt-4 flex flex-wrap items-center gap-2">
             <button
               onClick={() => void runScreening("preview")}
-              disabled={running}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-terra text-white text-sm font-semibold hover:bg-terra-dark disabled:opacity-60 transition"
+              disabled={running || !canRunPreview}
+              className="inline-flex items-center gap-2 rounded-xl bg-terra px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-terra-dark disabled:opacity-60"
             >
               {running ? <Loader2 size={14} className="animate-spin" /> : <Activity size={14} />}
-              Get My Free Recommendations
+              Get USPSTF Preview (Free)
             </button>
             {(assessment?.accessLevel === "preview" || paymentIntent || paymentReady) && (
               <button
                 onClick={() => void runScreening("deep")}
                 disabled={running || creatingIntent}
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-sand text-sm font-semibold text-warm-700 hover:border-terra/30 transition disabled:opacity-60"
+                className="inline-flex items-center gap-2 rounded-xl border border-sand px-4 py-2.5 text-sm font-semibold text-warm-700 transition hover:border-terra/30 disabled:opacity-60"
               >
                 {running ? <Loader2 size={14} className="animate-spin" /> : <ShieldCheck size={14} />}
-                Generate Deep Dive (Paid)
+                Unlock Deep Genetics ({fee} USDC)
               </button>
             )}
           </div>
+
           {assessment?.accessLevel === "preview" && (
             <p className="text-[11px] text-cloudy mt-2">
               {assessment.upgradeMessage ||
-                "Free preview is ready. Complete Base Pay to unlock mutation-aware deep personalization."}
-            </p>
-          )}
-          {(assessment?.accessLevel === "preview" || paymentIntent) && !paymentReady && (
-            <p className="text-[11px] text-cloudy mt-1">
-              Click &quot;Generate Deep Dive&quot; to open Base Pay just before release.
+                "Preview is ready. Unlock deep mode if you want mutation-aware, inherited-risk personalization."}
             </p>
           )}
         </div>
@@ -799,6 +788,37 @@ export default function ScreeningPage() {
                 </li>
               ))}
             </ul>
+          </div>
+        </div>
+      )}
+
+      {assessment && (
+        <div className="bg-pampas rounded-2xl border border-sand p-5">
+          <div className="flex items-center gap-2 mb-3">
+            <Activity size={14} className="text-terra" />
+            <h2 className="text-sm font-bold text-warm-800">Recommended Timeline</h2>
+          </div>
+          <div className="space-y-2">
+            {assessment.recommendedScreenings.slice(0, 5).map((rec, index) => {
+              const windowLabel =
+                rec.priority === "high" ? "Book within 1-2 weeks" : rec.priority === "medium" ? "Book this month" : "Plan this quarter"
+              return (
+                <div
+                  key={`timeline-${rec.id}`}
+                  className="flex items-start justify-between gap-3 rounded-xl border border-sand/70 bg-cream/30 p-3"
+                >
+                  <div>
+                    <p className="text-xs font-semibold text-warm-800">
+                      {index + 1}. {rec.name}
+                    </p>
+                    <p className="text-[11px] text-warm-500 mt-0.5">{rec.reason}</p>
+                  </div>
+                  <span className="text-[10px] font-bold uppercase px-2 py-1 rounded-full bg-terra/10 text-terra whitespace-nowrap">
+                    {windowLabel}
+                  </span>
+                </div>
+              )
+            })}
           </div>
         </div>
       )}

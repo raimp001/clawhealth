@@ -19,10 +19,11 @@ import { cn } from "@/lib/utils"
 import { useLiveSnapshot } from "@/lib/hooks/use-live-snapshot"
 
 const EXAMPLE_SEARCHES = [
-  "Find a caregiver and endocrinology provider near Seattle WA 98101",
-  "Need a radiology center in Seattle WA for MRI",
-  "Find nearby clinical labs around Austin TX 78701",
-  "Looking for family medicine provider and lab near Miami FL",
+  "hillsboro",
+  "97123",
+  "Find internal medicine providers near Hillsboro",
+  "Need caregiver and lab around Seattle WA 98101",
+  "Find a radiology center in Austin TX",
 ]
 
 export default function ProvidersPage() {
@@ -37,6 +38,7 @@ export default function ProvidersPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [hasSearched, setHasSearched] = useState(false)
   const [error, setError] = useState("")
+  const [autoLocationNote, setAutoLocationNote] = useState("")
   const [activeGroup, setActiveGroup] = useState<"all" | CareDirectoryMatch["kind"]>("all")
 
   const grouped = useMemo(() => {
@@ -70,12 +72,11 @@ export default function ProvidersPage() {
       setIsLoading(true)
       setHasSearched(true)
       setError("")
+      setAutoLocationNote("")
       if (searchQuery) setQuery(searchQuery)
 
       try {
-        const response = await fetch(
-          `/api/providers/search?q=${encodeURIComponent(q)}&limit=24`
-        )
+        const response = await fetch(`/api/providers/search?q=${encodeURIComponent(q)}&limit=24`)
         const data = (await response.json()) as {
           error?: string
           ready?: boolean
@@ -87,6 +88,34 @@ export default function ProvidersPage() {
 
         if (!response.ok || data.error) {
           throw new Error(data.error || "Search failed.")
+        }
+
+        const missingLocation = !data.parsed?.city && !data.parsed?.zip
+        const hasLocationHint = /\bnear\b|\bin\b|\baround\b|\d{5}/i.test(q)
+        if (data.ready === false && missingLocation && profileLocation && !hasLocationHint) {
+          const enrichedQuery = `${q} near ${profileLocation}`.trim()
+          const retryResponse = await fetch(
+            `/api/providers/search?q=${encodeURIComponent(enrichedQuery)}&limit=24`
+          )
+          const retryData = (await retryResponse.json()) as {
+            error?: string
+            ready?: boolean
+            parsed?: ParsedCareQuery
+            clarificationQuestion?: string
+            matches?: CareDirectoryMatch[]
+            prompt?: { image?: string }
+          }
+          if (retryResponse.ok && !retryData.error) {
+            setQuery(enrichedQuery)
+            setReady(Boolean(retryData.ready))
+            setParsed(retryData.parsed || null)
+            setClarificationQuestion(retryData.clarificationQuestion || "")
+            setMatches(retryData.matches || [])
+            setPromptImage(retryData.prompt?.image || "")
+            setAutoLocationNote(`Used your profile location (${profileLocation}) to complete this search.`)
+            setActiveGroup("all")
+            return
+          }
         }
 
         setReady(Boolean(data.ready))
@@ -102,7 +131,7 @@ export default function ProvidersPage() {
         setIsLoading(false)
       }
     },
-    [query]
+    [profileLocation, query]
   )
 
   function useProfileLocation() {
@@ -176,6 +205,9 @@ export default function ProvidersPage() {
           </button>
           <span className="text-[10px] text-cloudy">{profileLocation}</span>
         </div>
+        {autoLocationNote && (
+          <p className="text-[11px] text-accent mt-2">{autoLocationNote}</p>
+        )}
         {error && <p className="text-xs text-soft-red mt-3">{error}</p>}
       </div>
 
@@ -241,7 +273,8 @@ export default function ProvidersPage() {
 
           {matches.length === 0 && (
             <div className="rounded-xl border border-sand bg-cream/30 p-4 text-sm text-warm-600">
-              No NPI matches found for this request. Try adding a nearby ZIP or a different specialty keyword.
+              No NPI matches found yet. Try one of these: `hillsboro`, `97123`, or add a specialty like
+              `internal medicine near hillsboro`.
             </div>
           )}
 

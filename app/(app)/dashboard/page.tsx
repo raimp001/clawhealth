@@ -75,6 +75,12 @@ export default function DashboardPage() {
   const healthScoreLabel = healthScore >= 80 ? "Good" : healthScore >= 60 ? "Fair" : "Needs Attention"
   const healthScoreColor = healthScore >= 80 ? "text-accent" : healthScore >= 60 ? "text-yellow-600" : "text-soft-red"
   const healthScoreBg = healthScore >= 80 ? "bg-accent" : healthScore >= 60 ? "bg-yellow-400" : "bg-soft-red"
+  const preventiveTasksTotal = 3
+  const preventiveTasksDone =
+    (dueVaccines.length === 0 ? 1 : 0) +
+    (upcomingApts.some((apt) => /screen|wellness|annual|preventive/i.test(apt.reason || "")) ? 1 : 0) +
+    (pendingLabs.length === 0 ? 1 : 0)
+  const preventiveProgressPct = Math.round((preventiveTasksDone / preventiveTasksTotal) * 100)
 
   // Dynamic proactive action items
   const actionItems = useMemo(() => {
@@ -216,7 +222,7 @@ export default function DashboardPage() {
             , {patientName.split(" ")[0]}
           </h1>
           <p className="mt-1 text-sm text-warm-500">
-            Your care plan is organized and ready. Use natural language to book, search, and resolve tasks quickly.
+            Your daily plan is ready. Complete today&rsquo;s preventive steps to stay on schedule for age- and history-based screening.
           </p>
 
           {actionItems.length > 0 ? (
@@ -246,6 +252,22 @@ export default function DashboardPage() {
               <span className="font-semibold">You&rsquo;re all caught up — no pending actions</span>
             </div>
           )}
+
+          <div className="mt-4 rounded-xl border border-sand/60 bg-cream/40 px-3 py-2.5">
+            <div className="flex items-center justify-between text-[11px] text-warm-600">
+              <span className="font-semibold text-warm-700">Today&rsquo;s Preventive Plan</span>
+              <span>{preventiveTasksDone}/{preventiveTasksTotal} complete</span>
+            </div>
+            <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-sand/40">
+              <div
+                className="h-full rounded-full bg-terra transition-all duration-700"
+                style={{ width: `${preventiveProgressPct}%` }}
+              />
+            </div>
+            <p className="mt-1 text-[10px] text-cloudy">
+              Includes screening visit scheduling, lab follow-up, and vaccine due checks.
+            </p>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 gap-2 border-t border-sand/70 bg-cream/60 p-3 sm:grid-cols-4">

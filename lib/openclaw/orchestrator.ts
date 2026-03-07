@@ -238,6 +238,25 @@ export function routeUserMessage(message: string): {
     }
   }
 
+  if (
+    lower.includes("provider") ||
+    lower.includes("caregiver") ||
+    lower.includes("care network") ||
+    lower.includes("npi") ||
+    lower.includes("zip code") ||
+    lower.includes("near me") ||
+    lower.includes("radiology") ||
+    lower.includes("imaging center") ||
+    lower.includes("laboratory") ||
+    lower.includes("lab near")
+  ) {
+    return {
+      primaryAgent: "scheduling",
+      collaborators: ["wellness", "coordinator"],
+      reasoning: "Care-network discovery detected. Scheduler coordinates nearby options with wellness context.",
+    }
+  }
+
   if (lower.includes("bill") || lower.includes("claim") || lower.includes("charge") || lower.includes("payment") || lower.includes("insurance") || lower.includes("appeal")) {
     return {
       primaryAgent: "billing",
@@ -282,7 +301,17 @@ export function routeUserMessage(message: string): {
     lower.includes("screening") ||
     lower.includes("risk score") ||
     lower.includes("risk assessment") ||
-    lower.includes("preventive screening")
+    lower.includes("preventive screening") ||
+    lower.includes("uspstf") ||
+    lower.includes("family history") ||
+    lower.includes("genetic") ||
+    lower.includes("germline") ||
+    lower.includes("mutation") ||
+    lower.includes("brca") ||
+    lower.includes("lynch") ||
+    lower.includes("polyposis") ||
+    lower.includes("prostate cancer") ||
+    lower.includes("colorectal cancer")
   ) {
     return {
       primaryAgent: "screening",
