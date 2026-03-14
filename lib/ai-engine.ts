@@ -1,6 +1,7 @@
 import OpenAI from "openai"
 import { OPENCLAW_CONFIG } from "./openclaw/config"
 import { getLiveSnapshotByWallet } from "./live-data.server"
+import { PAYER_RULES, PA_FORM_FIELDS, buildAppealLetter } from "./mcp/pa-tools"
 
 // ── OpenAI Client ────────────────────────────────────────
 const openai = new OpenAI({
@@ -142,6 +143,218 @@ Unread Messages: ${unreadCount}
 `.trim()
 }
 
+// ── PA MCP Tool Definitions (for function calling) ───────
+
+const PA_TOOLS: OpenAI.Chat.ChatCompletionTool[] = [
+  {
+    type: "function",
+    function: {
+      name: "check_pa_required",
+      description: "Check if prior authorization is required for a CPT code and payer",
+      parameters: {
+        type: "object",
+        properties: {
+          cpt_code: { type: "string", description: "CPT or HCPCS code" },
+          payer: { type: "string", description: "Insurance payer name" },
+        },
+        required: ["cpt_code", "payer"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "lookup_payer_criteria",
+      description: "Get full PA criteria for a payer: step therapy, diagnosis codes, contacts",
+      parameters: {
+        type: "object",
+        properties: {
+          payer: { type: "string", description: "Insurance payer name" },
+          cpt_code: { type: "string", description: "Optional CPT code filter" },
+        },
+        required: ["payer"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_pa_form_fields",
+      description: "Get required and optional fields for a PA form submission",
+      parameters: {
+        type: "object",
+        properties: {
+          required_only: { type: "boolean", description: "Return only required fields" },
+        },
+        required: [],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "submit_prior_auth",
+      description: "Create and validate a PA submission with reference number",
+      parameters: {
+        type: "object",
+        properties: {
+          patient_name: { type: "string" },
+          patient_member_id: { type: "string" },
+          payer: { type: "string" },
+          procedure_code: { type: "string" },
+          procedure_name: { type: "string" },
+          diagnosis_codes: { type: "array", items: { type: "string" } },
+          ordering_provider_npi: { type: "string" },
+          ordering_provider_name: { type: "string" },
+          clinical_rationale: { type: "string" },
+          prior_treatments: { type: "string" },
+          urgency: { type: "string", enum: ["routine", "urgent", "emergent"] },
+          service_start_date: { type: "string" },
+        },
+        required: [
+          "patient_name", "patient_member_id", "payer", "procedure_code",
+          "procedure_name", "diagnosis_codes", "ordering_provider_npi",
+          "ordering_provider_name", "clinical_rationale",
+        ],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "check_pa_status",
+      description: "Check PA status by reference number or patient name",
+      parameters: {
+        type: "object",
+        properties: {
+          reference_number: { type: "string" },
+          patient_name: { type: "string" },
+          procedure_code: { type: "string" },
+        },
+        required: [],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "generate_appeal",
+      description: "Draft a formal PA denial appeal letter",
+      parameters: {
+        type: "object",
+        properties: {
+          patient_name: { type: "string" },
+          payer: { type: "string" },
+          reference_number: { type: "string" },
+          procedure_name: { type: "string" },
+          procedure_code: { type: "string" },
+          denial_reason: { type: "string" },
+          diagnosis_codes: { type: "array", items: { type: "string" } },
+          physician_name: { type: "string" },
+          clinical_evidence: { type: "string" },
+        },
+        required: [
+          "patient_name", "payer", "reference_number", "procedure_name",
+          "procedure_code", "denial_reason", "diagnosis_codes",
+          "physician_name", "clinical_evidence",
+        ],
+      },
+    },
+  },
+]
+
+// Execute a PA tool call locally (same logic as MCP server)
+function executePaTool(name: string, args: Record<string, unknown>): string {
+  try {
+    if (name === "check_pa_required") {
+      const { cpt_code, payer } = args as { cpt_code: string; payer: string }
+      const normalized = payer.toLowerCase()
+      const rule = PAYER_RULES.find(
+        (r) => r.payer.toLowerCase().includes(normalized) || normalized.includes(r.payer.toLowerCase())
+      )
+      if (!rule) return JSON.stringify({ requires_pa: true, message: `No rule for "${payer}". Assume PA required.` })
+      const matched = rule.cptCodes.includes(cpt_code)
+      return JSON.stringify({
+        payer: rule.payer, cpt_code, requires_pa: matched ? rule.requires_pa : false,
+        turnaround_days: rule.turnaround_days,
+        expedited_turnaround_hours: rule.expedited_turnaround_hours,
+        portal_url: rule.portal_url, phone: rule.phone,
+      })
+    }
+
+    if (name === "lookup_payer_criteria") {
+      const { payer, cpt_code } = args as { payer: string; cpt_code?: string }
+      const rule = PAYER_RULES.find((r) => r.payer.toLowerCase().includes(payer.toLowerCase()))
+      if (!rule) return JSON.stringify({ error: `No criteria for "${payer}"`, available_payers: PAYER_RULES.map((r) => r.payer) })
+      return JSON.stringify({
+        payer: rule.payer,
+        covered_codes: cpt_code ? rule.cptCodes.filter((c) => c === cpt_code) : rule.cptCodes,
+        criteria_summary: rule.criteria_summary,
+        step_therapy: rule.step_therapy ?? [],
+        diagnosis_required: rule.diagnosis_required ?? [],
+        quantity_limit: rule.quantity_limit ?? null,
+        turnaround: { standard_days: rule.turnaround_days, expedited_hours: rule.expedited_turnaround_hours },
+        contacts: { portal_url: rule.portal_url, phone: rule.phone, fax: rule.fax },
+      })
+    }
+
+    if (name === "get_pa_form_fields") {
+      const { required_only } = args as { required_only?: boolean }
+      const fields = required_only ? PA_FORM_FIELDS.filter((f) => f.required) : PA_FORM_FIELDS
+      return JSON.stringify({ total_fields: fields.length, fields })
+    }
+
+    if (name === "submit_prior_auth") {
+      const a = args as {
+        patient_name: string; patient_member_id: string; payer: string
+        procedure_code: string; procedure_name: string; diagnosis_codes: string[]
+        ordering_provider_npi: string; ordering_provider_name: string
+        clinical_rationale: string; prior_treatments?: string
+        urgency?: string; service_start_date?: string
+      }
+      const rule = PAYER_RULES.find((r) => r.payer.toLowerCase().includes(a.payer.toLowerCase()))
+      const warnings: string[] = []
+      if (rule?.step_therapy?.length && !a.prior_treatments)
+        warnings.push(`${rule.payer} requires step therapy documentation.`)
+      const refNumber = `PA-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`
+      return JSON.stringify({
+        reference_number: refNumber, status: "submitted",
+        submitted_at: new Date().toISOString(),
+        payer: a.payer, patient_name: a.patient_name,
+        procedure_code: a.procedure_code, procedure_name: a.procedure_name,
+        urgency: a.urgency ?? "routine",
+        estimated_turnaround: rule ? (a.urgency === "urgent" ? `${rule.expedited_turnaround_hours}h` : `${rule.turnaround_days} days`) : "3-5 days",
+        portal_url: rule?.portal_url, warnings,
+      })
+    }
+
+    if (name === "check_pa_status") {
+      const { reference_number, patient_name } = args as { reference_number?: string; patient_name?: string }
+      return JSON.stringify({
+        query: { reference_number, patient_name },
+        status: "submitted",
+        submitted_at: new Date(Date.now() - 2 * 86400000).toISOString(),
+        estimated_decision: new Date(Date.now() + 86400000).toISOString(),
+        notes: "Under review. No action needed.",
+      })
+    }
+
+    if (name === "generate_appeal") {
+      const a = args as Parameters<typeof buildAppealLetter>[0]
+      const letter = buildAppealLetter(a)
+      const rule = PAYER_RULES.find((r) => r.payer.toLowerCase().includes(a.payer.toLowerCase()))
+      return JSON.stringify({
+        appeal_letter: letter,
+        fax: rule?.fax, portal: rule?.portal_url, phone: rule?.phone,
+      })
+    }
+
+    return JSON.stringify({ error: `Unknown tool: ${name}` })
+  } catch (e) {
+    return JSON.stringify({ error: String(e) })
+  }
+}
+
 // ── Core Agent Engine ────────────────────────────────────
 export async function runAgent(params: {
   agentId: string
@@ -179,19 +392,65 @@ IMPORTANT RULES:
 
   const conv = getConversation(sessionKey)
 
-  try {
-    const completion = await createCompletionWithRetry({
-      model: "gpt-4o-mini",
-      messages: [
-        { role: "system", content: systemPrompt },
-        ...conv,
-        { role: "user", content: message },
-      ],
-      max_tokens: 500,
-      temperature: 0.7,
-    })
+  const isPaAgent = agentId === "prior-auth"
 
-    let response = completion.choices[0]?.message?.content || "I couldn't process that. Could you try again?"
+  try {
+    const messages: Array<{ role: "system" | "user" | "assistant" | "tool"; content: string; tool_call_id?: string; name?: string }> = [
+      { role: "system", content: systemPrompt },
+      ...conv,
+      { role: "user", content: message },
+    ]
+
+    // PA agent gets function calling via MCP tools
+    const completionParams = isPaAgent
+      ? {
+          model: "gpt-4o-mini" as const,
+          messages: messages as Parameters<typeof openai.chat.completions.create>[0]["messages"],
+          max_tokens: 800,
+          temperature: 0.5,
+          tools: PA_TOOLS,
+          tool_choice: "auto" as const,
+        }
+      : {
+          model: "gpt-4o-mini" as const,
+          messages: messages as Parameters<typeof openai.chat.completions.create>[0]["messages"],
+          max_tokens: 500,
+          temperature: 0.7,
+        }
+
+    const completionResponse = await openai.chat.completions.create(completionParams as Parameters<typeof openai.chat.completions.create>[0], { timeout: 20000 })
+    let completion = completionResponse as Awaited<ReturnType<typeof openai.chat.completions.create>> & { choices: OpenAI.Chat.ChatCompletion["choices"] }
+    let assistantMessage = completion.choices[0]?.message
+
+    // Handle PA tool calls
+    if (isPaAgent && assistantMessage?.tool_calls?.length) {
+      const toolMessages: Array<{ role: "tool"; content: string; tool_call_id: string }> = []
+
+      for (const toolCall of assistantMessage.tool_calls) {
+        const tc = toolCall as OpenAI.Chat.ChatCompletionMessageToolCall & { function?: { name: string; arguments: string } }
+        const fnName = tc.function?.name ?? ""
+        const fnArgs = JSON.parse(tc.function?.arguments ?? "{}")
+        const toolResult = executePaTool(fnName, fnArgs)
+        logAction(agentId, `tool:${fnName}`, (tc.function?.arguments ?? "").slice(0, 80), "mcp")
+        toolMessages.push({ role: "tool", content: toolResult, tool_call_id: toolCall.id })
+      }
+
+      // Re-run with tool results
+      const followUp = await openai.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: [
+          ...messages,
+          assistantMessage,
+          ...toolMessages,
+        ] as Parameters<typeof openai.chat.completions.create>[0]["messages"],
+        max_tokens: 800,
+        temperature: 0.5,
+      }, { timeout: 20000 })
+
+      assistantMessage = followUp.choices[0]?.message
+    }
+
+    let response = assistantMessage?.content || "I couldn't process that. Could you try again?"
 
     // Check for handoff
     let handoff: string | undefined
